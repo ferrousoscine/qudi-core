@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Improved pyqtgraph.AxisItem objects.
 
@@ -22,12 +20,12 @@ If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = ['LabelNudgeAxis', 'label_nudged_plot_widget']
 
-from PySide2.QtCore import QSizeF, QPointF
+
 from pyqtgraph import AxisItem, PlotWidget
-from typing import Type
+from PySide6.QtCore import QPointF, QSizeF
 
 
-def label_nudged_plot_widget(plot_widget_type: Type[PlotWidget]) -> Type[PlotWidget]:
+def label_nudged_plot_widget(plot_widget_type: type[PlotWidget]) -> type[PlotWidget]:
     class NudgedPlotWidget(plot_widget_type):
         def __init__(self, **kwargs) -> None:
             if 'axisItems' not in kwargs:
@@ -37,12 +35,12 @@ def label_nudged_plot_widget(plot_widget_type: Type[PlotWidget]) -> Type[PlotWid
                 left_axis.nudge = 0
                 kwargs['axisItems'] = {'bottom': bottom_axis, 'left': left_axis}
             super().__init__(**kwargs)
+
     return NudgedPlotWidget
 
 
 class LabelNudgeAxis(AxisItem):
-    """ This is a custom axis that extends the normal pyqtgraph to be able to nudge the axis labels
-    """
+    """This is a custom axis that extends the normal pyqtgraph to be able to nudge the axis labels"""
 
     @property
     def nudge(self):

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 ToDo: Document
 
@@ -24,16 +22,17 @@ __all__ = ['FitWidget', 'FitConfigurationWidget', 'FitConfigurationDialog']
 
 import os
 import weakref
-from PySide2 import QtCore, QtWidgets, QtGui
-from qudi.util.datafitting import FitContainer, FitConfigurationsModel, FitConfiguration
+
+from PySide6 import QtCore, QtGui, QtWidgets
+
+from qudi.util.datafitting import FitConfiguration, FitConfigurationsModel, FitContainer
 from qudi.util.paths import get_artwork_dir
 from qudi.util.widgets.scientific_spinbox import ScienDSpinBox
 from qudi.util.widgets.separator_lines import HorizontalLine
 
 
 class FitWidget(QtWidgets.QWidget):
-    """
-    """
+    """ """
 
     sigDoFit = QtCore.Signal(str)
 
@@ -61,8 +60,9 @@ class FitWidget(QtWidgets.QWidget):
             self.link_fit_container(fit_container)
 
     def link_fit_container(self, fit_container):
-        assert (fit_container is None) or isinstance(fit_container, FitContainer), \
+        assert (fit_container is None) or isinstance(fit_container, FitContainer), (
             'Can only link qudi FitContainer instances.'
+        )
         old_container = self.__fit_container_ref()
         # disconnect old fit container if present
         if old_container is not None:
@@ -80,9 +80,7 @@ class FitWidget(QtWidgets.QWidget):
             fit_container.sigFitConfigurationsChanged.connect(
                 self.update_fit_configurations, QtCore.Qt.QueuedConnection
             )
-            fit_container.sigLastFitResultChanged.connect(
-                self.update_fit_result, QtCore.Qt.QueuedConnection
-            )
+            fit_container.sigLastFitResultChanged.connect(self.update_fit_result, QtCore.Qt.QueuedConnection)
 
     @QtCore.Slot(tuple)
     def update_fit_configurations(self, config_names):
@@ -111,8 +109,8 @@ class FitWidget(QtWidgets.QWidget):
 
 
 class FitConfigurationWidget(QtWidgets.QWidget):
-    """
-    """
+    """ """
+
     _sigAddNewConfig = QtCore.Signal(str, str)  # name, model
 
     def __init__(self, *args, fit_config_model, **kwargs):
@@ -143,17 +141,13 @@ class FitConfigurationWidget(QtWidgets.QWidget):
 
         # Create fit config editor list view
         self.config_listview = FitConfigurationListView()
-        self.config_listview.setSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
-        )
+        self.config_listview.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.config_listview.setModel(fit_config_model)
         main_layout.addWidget(self.config_listview)
         main_layout.setStretch(1, 1)
 
         self.add_config_toolbutton.clicked.connect(self._add_config_clicked)
-        self._sigAddNewConfig.connect(
-            fit_config_model.add_configuration, QtCore.Qt.QueuedConnection
-        )
+        self._sigAddNewConfig.connect(fit_config_model.add_configuration, QtCore.Qt.QueuedConnection)
 
     @QtCore.Slot()
     def _add_config_clicked(self):
@@ -165,8 +159,7 @@ class FitConfigurationWidget(QtWidgets.QWidget):
 
 
 class FitConfigurationDialog(QtWidgets.QDialog):
-    """
-    """
+    """ """
 
     def __init__(self, *args, fit_config_model, **kwargs):
         super().__init__(*args, **kwargs)
@@ -191,8 +184,8 @@ class FitConfigurationDialog(QtWidgets.QDialog):
 
 
 class FitConfigurationListView(QtWidgets.QListView):
-    """
-    """
+    """ """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setVerticalScrollMode(self.ScrollPerPixel)
@@ -230,8 +223,8 @@ class FitConfigurationListView(QtWidgets.QListView):
 
 
 class _FitConfigPanel(QtWidgets.QWidget):
-    """
-    """
+    """ """
+
     sigConfigurationRemovedClicked = QtCore.Signal(str)
 
     def __init__(self, *args, fit_config, **kwargs):
@@ -254,12 +247,8 @@ class _FitConfigPanel(QtWidgets.QWidget):
         self._name = fit_config.name
         self.remove_config_toolbutton = QtWidgets.QToolButton()
         self.remove_config_toolbutton.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
-        self.remove_config_toolbutton.setIcon(
-            QtGui.QIcon(os.path.join(icon_dir, 'list-remove'))
-        )
-        self.remove_config_toolbutton.clicked.connect(
-            lambda: self.sigConfigurationRemovedClicked.emit(self._name)
-        )
+        self.remove_config_toolbutton.setIcon(QtGui.QIcon(os.path.join(icon_dir, 'list-remove')))
+        self.remove_config_toolbutton.clicked.connect(lambda: self.sigConfigurationRemovedClicked.emit(self._name))
 
         # add estimator combobox
         self.estimator_selection_combobox = QtWidgets.QComboBox()
@@ -323,7 +312,11 @@ class _FitConfigPanel(QtWidgets.QWidget):
             customize_checkbox.toggled.connect(max_spinbox.setEnabled)
             param_layout.addWidget(max_spinbox, row, 5)
             self.parameters_widgets[param_name] = (
-                customize_checkbox, vary_checkbox, init_spinbox, min_spinbox, max_spinbox
+                customize_checkbox,
+                vary_checkbox,
+                init_spinbox,
+                min_spinbox,
+                max_spinbox,
             )
             row += 1
         param_layout.setColumnStretch(3, 1)
@@ -340,10 +333,12 @@ class _FitConfigPanel(QtWidgets.QWidget):
         parameters = dict()
         for param_name, widgets in self.parameters_widgets.items():
             if widgets[0].isChecked():
-                parameters[param_name] = (widgets[1].isChecked(),
-                                          widgets[2].value(),
-                                          widgets[3].value(),
-                                          widgets[4].value())
+                parameters[param_name] = (
+                    widgets[1].isChecked(),
+                    widgets[2].value(),
+                    widgets[3].value(),
+                    widgets[4].value(),
+                )
         return parameters
 
     def update_fit_config(self, config):
@@ -367,8 +362,7 @@ class _FitConfigPanel(QtWidgets.QWidget):
 
 
 class _FitConfigurationItemDelegate(QtWidgets.QStyledItemDelegate):
-    """
-    """
+    """ """
 
     def createEditor(self, parent, option, index):
         if index.isValid():

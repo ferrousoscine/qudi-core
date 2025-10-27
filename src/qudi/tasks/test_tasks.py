@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This file contains scripts for testing the qudi.core.scripting package.
 
@@ -20,14 +18,13 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-from typing import Iterable, Sequence, Mapping, Union, Any, Optional, Tuple
+from collections.abc import Iterable, Mapping, Sequence
 
-from qudi.core.scripting.moduletask import ModuleTask
 from qudi.core.connector import Connector
+from qudi.core.scripting.moduletask import ModuleTask
 
 
 class TestTask(ModuleTask):
-
     _derp = Connector(name='derp', interface='TemplateLogic')
 
     def _setup(self) -> None:
@@ -48,7 +45,6 @@ class TestTask(ModuleTask):
 
 
 class TestTask2(ModuleTask):
-
     _derp = Connector(name='derp', interface='TemplateLogic')
 
     def _setup(self) -> None:
@@ -61,9 +57,9 @@ class TestTask2(ModuleTask):
         for i in range(100000000):
             i += 1
 
-    def _run(self, seq_arg: Sequence[int], iter_arg: Iterable[str], map_arg: Mapping[str, int],
-             opt_arg: Optional[int] = 42
-             ) -> Tuple[Sequence[int], Iterable[str], Mapping[str, int], int]:
+    def _run(
+        self, seq_arg: Sequence[int], iter_arg: Iterable[str], map_arg: Mapping[str, int], opt_arg: int | None = 42
+    ) -> tuple[Sequence[int], Iterable[str], Mapping[str, int], int]:
         i = 0
         for i in range(10000000):
             if i % 100 == 0:

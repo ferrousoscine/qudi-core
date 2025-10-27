@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This file contains a settings dialog for the qudi main GUI.
 
@@ -19,13 +18,14 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-from PySide2 import QtCore, QtWidgets
+from PySide6 import QtCore, QtWidgets
 
 
 class SettingsDialog(QtWidgets.QDialog):
     """
     Custom QDialog widget for configuration of the qudi main GUI.
     """
+
     def __init__(self, parent=None, **kwargs):
         super().__init__(parent, **kwargs)
         self.setWindowTitle('Qudi: Main GUI settings')
@@ -56,13 +56,15 @@ class SettingsDialog(QtWidgets.QDialog):
         layout.addWidget(label, 1, 0)
         layout.addWidget(self.show_error_popups_checkbox, 1, 1)
 
-        buttonbox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok
-                                               | QtWidgets.QDialogButtonBox.Cancel
-                                               | QtWidgets.QDialogButtonBox.Apply)
+        buttonbox = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.StandardButton.Ok
+            | QtWidgets.QDialogButtonBox.StandardButton.Cancel
+            | QtWidgets.QDialogButtonBox.StandardButton.Apply
+        )
         buttonbox.setOrientation(QtCore.Qt.Horizontal)
         layout.addWidget(buttonbox, 2, 0, 1, 2)
 
         # Add internal signals
         buttonbox.accepted.connect(self.accept)
         buttonbox.rejected.connect(self.reject)
-        buttonbox.button(buttonbox.Apply).clicked.connect(self.accepted)
+        buttonbox.button(QtWidgets.QDialogButtonBox.StandardButton.Apply).clicked.connect(self.accepted)

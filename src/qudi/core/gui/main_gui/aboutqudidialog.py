@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This module contains a QWidgets.QDialog subclass representing an "about qudi" dialog.
 
@@ -19,21 +18,22 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-from PySide2 import QtCore, QtWidgets
+from PySide6 import QtCore, QtWidgets
 
 
 class AboutQudiDialog(QtWidgets.QDialog):
     """
     QWidgets.QDialog subclass representing an "about qudi" dialog.
     """
+
     def __init__(self, parent=None, **kwargs):
         super().__init__(parent, **kwargs)
 
         self.setWindowFlags(QtCore.Qt.WindowTitleHint | QtCore.Qt.WindowCloseButtonHint)
 
-        buttonbox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok)
+        buttonbox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.StandardButton.Ok)
         buttonbox.setOrientation(QtCore.Qt.Horizontal)
-        self.ok_button = buttonbox.button(buttonbox.Ok)
+        self.ok_button = buttonbox.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
         self.ok_button.clicked.connect(self.accept)
 
         self.header_label = QtWidgets.QLabel('qudi')
@@ -44,20 +44,20 @@ class AboutQudiDialog(QtWidgets.QDialog):
         self.header_label.setFont(font)
         self.version_label = QtWidgets.QLabel('Version number goes here...')
         self.version_label.setObjectName('versionLabel')
-        self.version_label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse
-                                                   | QtCore.Qt.TextBrowserInteraction)
+        self.version_label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse | QtCore.Qt.TextBrowserInteraction)
         self.version_label.setOpenExternalLinks(True)
 
-        self.about_label = QtWidgets.QLabel('<html><head/><body><p>Qudi is a suite of tools for '
-                                            'operating multi-instrument and multi-computer '
-                                            'laboratory experiments. Originally built around a '
-                                            'confocal fluorescence microscope experiments, it has '
-                                            'grown to be a generally applicaple framework for '
-                                            'controlling experiments.</p></body></html>')
+        self.about_label = QtWidgets.QLabel(
+            '<html><head/><body><p>Qudi is a suite of tools for '
+            'operating multi-instrument and multi-computer '
+            'laboratory experiments. Originally built around a '
+            'confocal fluorescence microscope experiments, it has '
+            'grown to be a generally applicaple framework for '
+            'controlling experiments.</p></body></html>'
+        )
         self.about_label.setWordWrap(True)
         self.about_label.setObjectName('aboutLabel')
-        self.about_label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse
-                                                 | QtCore.Qt.TextBrowserInteraction)
+        self.about_label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse | QtCore.Qt.TextBrowserInteraction)
         self.about_label.setOpenExternalLinks(True)
 
         self.credits_label = QtWidgets.QLabel(
@@ -70,9 +70,7 @@ class AboutQudiDialog(QtWidgets.QDialog):
         )
         self.credits_label.setWordWrap(True)
         self.credits_label.setObjectName('creditsLabel')
-        self.credits_label.setTextInteractionFlags(
-            QtCore.Qt.TextSelectableByMouse | QtCore.Qt.TextBrowserInteraction
-        )
+        self.credits_label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse | QtCore.Qt.TextBrowserInteraction)
         self.credits_label.setOpenExternalLinks(True)
 
         self.license_label = QtWidgets.QLabel(
@@ -110,8 +108,7 @@ class AboutQudiDialog(QtWidgets.QDialog):
         self.license_label.setWordWrap(True)
         self.license_label.setOpenExternalLinks(True)
         self.license_label.setObjectName('licenseLabel')
-        self.license_label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse
-                                                   | QtCore.Qt.TextBrowserInteraction)
+        self.license_label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse | QtCore.Qt.TextBrowserInteraction)
         self.license_label.setOpenExternalLinks(True)
 
         self.citation_label = QtWidgets.QLabel(
@@ -138,9 +135,7 @@ class AboutQudiDialog(QtWidgets.QDialog):
         )
         self.citation_label.setWordWrap(True)
         self.citation_label.setObjectName('creditsLabel')
-        self.citation_label.setTextInteractionFlags(
-            QtCore.Qt.TextSelectableByMouse | QtCore.Qt.TextBrowserInteraction
-        )
+        self.citation_label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse | QtCore.Qt.TextBrowserInteraction)
         self.citation_label.setOpenExternalLinks(True)
 
         about_scroll_widget = QtWidgets.QScrollArea()
@@ -176,4 +171,3 @@ class AboutQudiDialog(QtWidgets.QDialog):
         self.setLayout(layout)
         self.about_label.setFocus()
         return
-   

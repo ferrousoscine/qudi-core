@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This file contains models of exponential decay fitting routines for qudi based on the lmfit package.
 
@@ -23,8 +21,10 @@ If not, see <https://www.gnu.org/licenses/>.
 __all__ = ('ExponentialDecay', 'multiple_exponential_decay')
 
 import warnings
+
 import numpy as np
 from scipy.ndimage import filters
+
 from qudi.util.fit_models.model import FitModelBase, estimator
 
 
@@ -52,19 +52,18 @@ def multiple_exponential_decay(x, amplitudes, decays, stretches):
 
     """
     assert len(decays) == len(amplitudes) == len(stretches)
-    return sum(amp * np.exp(-(x / decay) ** stretch) for amp, decay, stretch in
-               zip(amplitudes, decays, stretches))
+    return sum(amp * np.exp(-((x / decay) ** stretch)) for amp, decay, stretch in zip(amplitudes, decays, stretches))
 
 
 class ExponentialDecay(FitModelBase):
-    """
-    """
+    """ """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.set_param_hint('offset', value=0., min=-np.inf, max=np.inf)
-        self.set_param_hint('amplitude', value=1., min=-np.inf, max=np.inf)
-        self.set_param_hint('decay', value=1., min=0., max=np.inf)
-        self.set_param_hint('stretch', value=1., min=0., max=np.inf)
+        self.set_param_hint('offset', value=0.0, min=-np.inf, max=np.inf)
+        self.set_param_hint('amplitude', value=1.0, min=-np.inf, max=np.inf)
+        self.set_param_hint('decay', value=1.0, min=0.0, max=np.inf)
+        self.set_param_hint('stretch', value=1.0, min=0.0, max=np.inf)
 
     @staticmethod
     def _model_function(x, offset, amplitude, decay, stretch):
@@ -142,22 +141,20 @@ class ExponentialDecay(FitModelBase):
 
 
 class DoubleExponentialDecay(FitModelBase):
-    """
-    """
+    """ """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.set_param_hint('offset', value=0., min=-np.inf, max=np.inf)
-        self.set_param_hint('amplitude_1', value=1., min=-np.inf, max=np.inf)
-        self.set_param_hint('amplitude_2', value=1., min=-np.inf, max=np.inf)
-        self.set_param_hint('decay_1', value=1., min=0., max=np.inf)
-        self.set_param_hint('decay_2', value=1., min=0., max=np.inf)
-        self.set_param_hint('stretch_1', value=1., min=0., max=np.inf)
-        self.set_param_hint('stretch_2', value=1., min=0., max=np.inf)
+        self.set_param_hint('offset', value=0.0, min=-np.inf, max=np.inf)
+        self.set_param_hint('amplitude_1', value=1.0, min=-np.inf, max=np.inf)
+        self.set_param_hint('amplitude_2', value=1.0, min=-np.inf, max=np.inf)
+        self.set_param_hint('decay_1', value=1.0, min=0.0, max=np.inf)
+        self.set_param_hint('decay_2', value=1.0, min=0.0, max=np.inf)
+        self.set_param_hint('stretch_1', value=1.0, min=0.0, max=np.inf)
+        self.set_param_hint('stretch_2', value=1.0, min=0.0, max=np.inf)
 
     @staticmethod
-    def _model_function(x, offset, amplitude_1, amplitude_2, decay_1, decay_2, stretch_1,
-                        stretch_2):
-        return offset + multiple_exponential_decay(x,
-                                                   (amplitude_1, amplitude_2),
-                                                   (decay_1, decay_2),
-                                                   (stretch_1, stretch_2))
+    def _model_function(x, offset, amplitude_1, amplitude_2, decay_1, decay_2, stretch_1, stretch_2):
+        return offset + multiple_exponential_decay(
+            x, (amplitude_1, amplitude_2), (decay_1, decay_2), (stretch_1, stretch_2)
+        )

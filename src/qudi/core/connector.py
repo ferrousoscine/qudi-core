@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Connector object to establish connections between qudi modules.
 
@@ -22,26 +21,22 @@ If not, see <https://www.gnu.org/licenses/>.
 __all__ = ['Connector']
 
 import weakref
-from typing import Optional, Type, Union, TypeVar, Generic, TYPE_CHECKING
+from typing import TYPE_CHECKING, Generic, TypeVar
+
 from qudi.util.overload import OverloadProxy
 
 if TYPE_CHECKING:
     from qudi.core.module import Base
+
     M = TypeVar('M', bound=Base)
 else:
     M = TypeVar('M')
 
 
 class Connector(Generic[M]):
-    """A connector used to connect qudi modules with each other.
-    """
+    """A connector used to connect qudi modules with each other."""
 
-    def __init__(
-            self,
-            interface: Union[str, Type[M]],
-            name: Optional[str] = None,
-            optional: Optional[bool] = False
-    ):
+    def __init__(self, interface: str | type[M], name: str | None = None, optional: bool | None = False):
         """Initialize a Connector instance.
 
         Parameters
@@ -60,10 +55,10 @@ class Connector(Generic[M]):
             If `name` is not `None` or a non-empty string.
             If `optional` is not a boolean.
         """
-        assert isinstance(interface, (str, type)), \
+        assert isinstance(interface, (str, type)), (
             'Parameter "interface" must be an interface class or the class name as str.'
-        assert name is None or (isinstance(name, str) and name), \
-            'Parameter "name" must be non-empty str or None.'
+        )
+        assert name is None or (isinstance(name, str) and name), 'Parameter "name" must be non-empty str or None.'
         assert isinstance(optional, bool), 'Parameter "optional" must be bool type.'
         self.interface = interface if isinstance(interface, str) else interface.__name__
         self.name = name
@@ -81,9 +76,7 @@ class Connector(Generic[M]):
             return self._obj_proxy
         if self.optional:
             return None
-        raise RuntimeError(
-            f'Connector "{self.name}" (interface "{self.interface}") is not connected.'
-        )
+        raise RuntimeError(f'Connector "{self.name}" (interface "{self.interface}") is not connected.')
 
     def __copy__(self):
         return self.copy()
@@ -111,8 +104,7 @@ class Connector(Generic[M]):
         return self._obj_proxy is not None
 
     def connect(self, target: M) -> None:
-        """Check if target is connectible by this connector and connect.
-        """
+        """Check if target is connectible by this connector and connect."""
         bases = {cls.__name__ for cls in target.__class__.mro()}
         if self.interface not in bases:
             raise RuntimeError(
@@ -123,13 +115,13 @@ class Connector(Generic[M]):
         self._obj_ref = weakref.ref(target, self.__module_died_callback)
 
     def disconnect(self) -> None:
-        """Disconnect connector.
-        """
+        """Disconnect connector."""
         self._obj_proxy = None
 
     def copy(self, **kwargs):
-        """Create a new instance of Connector with copied values and update
-        """
-        return Connector(kwargs.get('interface', self.interface),
-                         kwargs.get('name', self.name),
-                         kwargs.get('optional', self.optional))
+        """Create a new instance of Connector with copied values and update"""
+        return Connector(
+            kwargs.get('interface', self.interface),
+            kwargs.get('name', self.name),
+            kwargs.get('optional', self.optional),
+        )

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This file contains the Qudi console app class.
 
@@ -20,13 +19,15 @@ If not, see <https://www.gnu.org/licenses/>.
 """
 
 import os
-import weakref
 import platform
-from PySide2 import QtCore, QtGui, QtWidgets
+import weakref
+
+from PySide6 import QtCore, QtGui, QtWidgets
+
 from qudi.core.gui.main_gui.main_gui import QudiMainGui
+from qudi.core.logger import get_logger
 from qudi.core.modulemanager import ModuleManager
 from qudi.util.paths import get_artwork_dir
-from qudi.core.logger import get_logger
 
 try:
     import pyqtgraph as pg
@@ -37,8 +38,7 @@ logger = get_logger(__name__)
 
 
 class SystemTrayIcon(QtWidgets.QSystemTrayIcon):
-    """Tray icon class subclassing QSystemTrayIcon for custom functionality.
-    """
+    """Tray icon class subclassing QSystemTrayIcon for custom functionality."""
 
     def __init__(self):
         """Tray icon constructor.
@@ -53,15 +53,15 @@ class SystemTrayIcon(QtWidgets.QSystemTrayIcon):
         iconpath = os.path.join(get_artwork_dir(), 'icons')
         self.managericon = QtGui.QIcon()
         self.managericon.addFile(os.path.join(iconpath, 'go-home'), QtCore.QSize(16, 16))
-        self.managerAction = QtWidgets.QAction(self.managericon, 'Manager', self.left_menu)
+        self.managerAction = QtGui.QAction(self.managericon, 'Manager', self.left_menu)
 
         self.exiticon = QtGui.QIcon()
         self.exiticon.addFile(os.path.join(iconpath, 'application-exit'), QtCore.QSize(16, 16))
-        self.quitAction = QtWidgets.QAction(self.exiticon, 'Quit', self.right_menu)
+        self.quitAction = QtGui.QAction(self.exiticon, 'Quit', self.right_menu)
 
         self.restarticon = QtGui.QIcon()
         self.restarticon.addFile(os.path.join(iconpath, 'view-refresh'), QtCore.QSize(16, 16))
-        self.restartAction = QtWidgets.QAction(self.restarticon, 'Restart', self.right_menu)
+        self.restartAction = QtGui.QAction(self.restarticon, 'Restart', self.right_menu)
 
         self.left_menu.addAction(self.managerAction)
         self.left_menu.addSeparator()
@@ -92,7 +92,7 @@ class SystemTrayIcon(QtWidgets.QSystemTrayIcon):
             iconpath = os.path.join(get_artwork_dir(), 'icons')
             icon.addFile(os.path.join(iconpath, 'go-next'))
 
-        action = QtWidgets.QAction(label)
+        action = QtGui.QAction(label)
         action.setIcon(icon)
         action.triggered.connect(callback)
         self.left_menu.addAction(action)
@@ -106,8 +106,7 @@ class SystemTrayIcon(QtWidgets.QSystemTrayIcon):
 
 
 class Gui(QtCore.QObject):
-    """Set up all necessary GUI elements, like application icons, themes, etc.
-    """
+    """Set up all necessary GUI elements, like application icons, themes, etc."""
 
     _instance = None
 
@@ -120,8 +119,7 @@ class Gui(QtCore.QObject):
             cls._instance = weakref.ref(obj)
             return obj
         raise RuntimeError(
-            'Gui is a singleton. Please use Gui.instance() to get a reference to the already '
-            'created instance.'
+            'Gui is a singleton. Please use Gui.instance() to get a reference to the already created instance.'
         )
 
     def __init__(self, qudi_instance, stylesheet_path=None, theme=None, use_opengl=False):
@@ -146,14 +144,10 @@ class Gui(QtCore.QObject):
         self._sigBalloonMessage.connect(self.balloon_message, QtCore.Qt.QueuedConnection)
 
         self._configure_pyqtgraph(use_opengl)
-        self.main_gui_module = QudiMainGui(qudi_main_weakref=weakref.ref(qudi_instance),
-                                           name='qudi_main_gui')
-        self.system_tray_icon.managerAction.triggered.connect(self.activate_main_gui,
-                                                              QtCore.Qt.QueuedConnection)
-        self.system_tray_icon.quitAction.triggered.connect(qudi_instance.quit,
-                                                           QtCore.Qt.QueuedConnection)
-        self.system_tray_icon.restartAction.triggered.connect(qudi_instance.restart,
-                                                              QtCore.Qt.QueuedConnection)
+        self.main_gui_module = QudiMainGui(qudi_main_weakref=weakref.ref(qudi_instance), name='qudi_main_gui')
+        self.system_tray_icon.managerAction.triggered.connect(self.activate_main_gui, QtCore.Qt.QueuedConnection)
+        self.system_tray_icon.quitAction.triggered.connect(qudi_instance.quit, QtCore.Qt.QueuedConnection)
+        self.system_tray_icon.restartAction.triggered.connect(qudi_instance.restart, QtCore.Qt.QueuedConnection)
         qudi_instance.module_manager.sigModuleStateChanged.connect(self._tray_module_action_changed)
         self.show_system_tray_icon()
 
@@ -165,8 +159,7 @@ class Gui(QtCore.QObject):
 
     @staticmethod
     def _init_app_icon():
-        """Set up the Qudi application icon.
-        """
+        """Set up the Qudi application icon."""
         app_icon = QtGui.QIcon(os.path.join(get_artwork_dir(), 'logo', 'logo-qudi.svg'))
         QtWidgets.QApplication.instance().setWindowIcon(app_icon)
 
@@ -212,7 +205,7 @@ class Gui(QtCore.QObject):
             if not os.path.exists(stylesheet_path):
                 stylesheet_path = os.path.join(get_artwork_dir(), 'styles', stylesheet_path)
 
-            with open(stylesheet_path, 'r') as stylesheetfile:
+            with open(stylesheet_path) as stylesheetfile:
                 stylesheet = stylesheetfile.read()
 
             if stylesheet_path.endswith('qdark.qss'):
@@ -236,15 +229,12 @@ class Gui(QtCore.QObject):
 
     @staticmethod
     def close_windows():
-        """Close all application windows.
-        """
+        """Close all application windows."""
         QtWidgets.QApplication.instance().closeAllWindows()
 
     def activate_main_gui(self):
         if QtCore.QThread.currentThread() is not self.thread():
-            QtCore.QMetaObject.invokeMethod(self,
-                                            'activate_main_gui',
-                                            QtCore.Qt.BlockingQueuedConnection)
+            QtCore.QMetaObject.invokeMethod(self, 'activate_main_gui', QtCore.Qt.BlockingQueuedConnection)
             return
 
         if self.main_gui_module.module_state() != 'deactivated':
@@ -259,9 +249,7 @@ class Gui(QtCore.QObject):
 
     def deactivate_main_gui(self):
         if QtCore.QThread.currentThread() is not self.thread():
-            QtCore.QMetaObject.invokeMethod(self,
-                                            'deactivate_main_gui',
-                                            QtCore.Qt.BlockingQueuedConnection)
+            QtCore.QMetaObject.invokeMethod(self, 'deactivate_main_gui', QtCore.Qt.BlockingQueuedConnection)
             return
 
         if self.main_gui_module.module_state() == 'deactivated':
@@ -271,13 +259,11 @@ class Gui(QtCore.QObject):
         QtWidgets.QApplication.instance().processEvents()
 
     def show_system_tray_icon(self):
-        """Show system tray icon.
-        """
+        """Show system tray icon."""
         self.system_tray_icon.show()
 
     def hide_system_tray_icon(self):
-        """Hide system tray icon.
-        """
+        """Hide system tray icon."""
         self.system_tray_icon.hide()
 
     def close_system_tray_icon(self):
@@ -307,35 +293,30 @@ class Gui(QtCore.QObject):
         self.system_tray_icon.showMessage(title, message, icon, int(round(time * 1000)))
 
     def prompt_shutdown(self, modules_locked=True):
-        """Display a dialog, asking the user to confirm shutdown.
-        """
+        """Display a dialog, asking the user to confirm shutdown."""
         if modules_locked:
-            msg = 'Some qudi modules are locked right now.\n' \
-                  'Do you really want to quit and force modules to deactivate?'
+            msg = 'Some qudi modules are locked right now.\nDo you really want to quit and force modules to deactivate?'
         else:
             msg = 'Do you really want to quit?'
 
-        result = QtWidgets.QMessageBox.question(self.main_gui_module.mw,
-                                                'Qudi: Quit?',
-                                                msg,
-                                                QtWidgets.QMessageBox.Yes,
-                                                QtWidgets.QMessageBox.No)
+        result = QtWidgets.QMessageBox.question(
+            self.main_gui_module.mw, 'Qudi: Quit?', msg, QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No
+        )
         return result == QtWidgets.QMessageBox.Yes
 
     def prompt_restart(self, modules_locked=True):
-        """Display a dialog, asking the user to confirm restart.
-        """
+        """Display a dialog, asking the user to confirm restart."""
         if modules_locked:
-            msg = 'Some qudi modules are locked right now.\n' \
-                  'Do you really want to restart and force modules to deactivate?'
+            msg = (
+                'Some qudi modules are locked right now.\n'
+                'Do you really want to restart and force modules to deactivate?'
+            )
         else:
             msg = 'Do you really want to restart?'
 
-        result = QtWidgets.QMessageBox.question(self.main_gui_module.mw,
-                                                'Qudi: Restart?',
-                                                msg,
-                                                QtWidgets.QMessageBox.Yes,
-                                                QtWidgets.QMessageBox.No)
+        result = QtWidgets.QMessageBox.question(
+            self.main_gui_module.mw, 'Qudi: Restart?', msg, QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No
+        )
         return result == QtWidgets.QMessageBox.Yes
 
     @QtCore.Slot(str, str)
@@ -369,7 +350,7 @@ class Gui(QtCore.QObject):
         @param QIcon icon: optional, an icon to be used in the balloon. "None" will use OS default.
         """
         if not self.system_tray_icon.supportsMessages():
-            logger.warning('{0}:\n{1}'.format(title, message))
+            logger.warning(f'{title}:\n{message}')
             return
         if self.thread() is not QtCore.QThread.currentThread():
             self._sigBalloonMessage.emit(title, message, time, icon)

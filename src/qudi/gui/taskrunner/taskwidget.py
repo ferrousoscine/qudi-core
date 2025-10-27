@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This file contains a widget to control a ModuleTask and display its state.
 
@@ -22,15 +21,17 @@ If not, see <https://www.gnu.org/licenses/>.
 __all__ = ['TaskWidget']
 
 import os
-from typing import Type, Optional, Dict, Tuple, Any, Iterable
-from PySide2 import QtCore, QtWidgets, QtGui
+from collections.abc import Iterable
+from typing import Any
 
+from PySide6 import QtCore, QtGui, QtWidgets
+
+from qudi.core.scripting.moduletask import ModuleTask
 from qudi.util.helpers import is_integer
-from qudi.util.paths import get_artwork_dir
 from qudi.util.parameters import ParameterWidgetMapper
+from qudi.util.paths import get_artwork_dir
 from qudi.util.widgets.loading_indicator import CircleLoadingIndicator
 from qudi.util.widgets.separator_lines import VerticalLine
-from qudi.core.scripting.moduletask import ModuleTask
 
 
 class TestToolButton(QtWidgets.QToolButton):
@@ -43,17 +44,17 @@ class TestToolButton(QtWidgets.QToolButton):
 
 
 class TaskWidget(QtWidgets.QWidget):
-    """QWidget to control a ModuleTask and display its state.
-    """
+    """QWidget to control a ModuleTask and display its state."""
 
     sigStartTask = QtCore.Signal(dict)  # parameters
     sigInterruptTask = QtCore.Signal()
 
-    _ParamWidgetsIterable = Iterable[Tuple[QtWidgets.QLabel, QtWidgets.QWidget]]
-    _ParamWidgetsDict = Dict[str, Tuple[QtWidgets.QLabel, QtWidgets.QWidget]]
+    _ParamWidgetsIterable = Iterable[tuple[QtWidgets.QLabel, QtWidgets.QWidget]]
+    _ParamWidgetsDict = dict[str, tuple[QtWidgets.QLabel, QtWidgets.QWidget]]
 
-    def __init__(self, *args, task_type: Type[ModuleTask], max_columns: Optional[int] = None,
-                 max_rows: Optional[int] = None, **kwargs):
+    def __init__(
+        self, *args, task_type: type[ModuleTask], max_columns: int | None = None, max_rows: int | None = None, **kwargs
+    ):
         super().__init__(*args, **kwargs)
 
         if max_rows is not None and max_columns is not None:
@@ -117,9 +118,8 @@ class TaskWidget(QtWidgets.QWidget):
         self._interrupt_enabled = False
 
     @staticmethod
-    def __create_parameter_editor_widgets(task_type: Type[ModuleTask]) -> _ParamWidgetsDict:
-        """Helper function to create editor widgets and labels for each ModuleTask call parameter.
-        """
+    def __create_parameter_editor_widgets(task_type: type[ModuleTask]) -> _ParamWidgetsDict:
+        """Helper function to create editor widgets and labels for each ModuleTask call parameter."""
         task_parameters = task_type.call_parameters()
         param_widgets = dict()
         for param_name, param in task_parameters.items():
@@ -136,8 +136,7 @@ class TaskWidget(QtWidgets.QWidget):
         return param_widgets
 
     @staticmethod
-    def __layout_parameter_widgets(param_widgets: _ParamWidgetsIterable,
-                                   max_rows: int) -> QtWidgets.QGridLayout:
+    def __layout_parameter_widgets(param_widgets: _ParamWidgetsIterable, max_rows: int) -> QtWidgets.QGridLayout:
         """Helper function to layout parameter widgets in a QGridLayout."""
         row = 0
         column = 0
@@ -194,7 +193,7 @@ class TaskWidget(QtWidgets.QWidget):
         """Updates the task result display."""
         print(result, success)
 
-    def get_parameters(self) -> Dict[str, Any]:
+    def get_parameters(self) -> dict[str, Any]:
         """Reads parameters from parameter editors and returns them in a dict."""
         parameters = dict()
         for param_name, (_, editor) in self.parameter_widgets.items():

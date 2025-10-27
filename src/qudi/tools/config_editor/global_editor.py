@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 QWidget serving as main editor for the global configuration section
 
@@ -22,27 +20,27 @@ If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = ['GlobalEditorWidget']
 
-from PySide2 import QtCore, QtWidgets
-from typing import Optional, Mapping, Dict, Union, Any
+from collections.abc import Mapping
+from typing import Any
+
+from PySide6 import QtCore, QtWidgets
+
 from qudi.tools.config_editor.global_widgets import GlobalConfigWidget
 
 
 class GlobalEditorWidget(QtWidgets.QStackedWidget):
-    """
-    """
+    """ """
 
-    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent=parent)
 
-        self.placeholder_label = QtWidgets.QLabel('Please load configuration from file\n'
-                                                  'or create a new one.')
+        self.placeholder_label = QtWidgets.QLabel('Please load configuration from file\nor create a new one.')
         font = self.placeholder_label.font()
         font.setBold(True)
         font.setPointSize(font.pointSize() + 4)
         self.placeholder_label.setFont(font)
         self.placeholder_label.setAlignment(QtCore.Qt.AlignCenter)
-        self.placeholder_label.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
-                                             QtWidgets.QSizePolicy.Expanding)
+        self.placeholder_label.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.addWidget(self.placeholder_label)
 
         self.global_editor_widget = GlobalConfigWidget()
@@ -51,16 +49,16 @@ class GlobalEditorWidget(QtWidgets.QStackedWidget):
         self.setCurrentIndex(0)
 
     @property
-    def config(self) -> Union[None, Dict[str, Any]]:
+    def config(self) -> None | dict[str, Any]:
         if self.currentIndex() == 0:
             return None
         else:
             return self.global_editor_widget.config
 
-    def set_config(self, config: Union[None, Dict[str, Any]]) -> None:
+    def set_config(self, config: None | dict[str, Any]) -> None:
         self.global_editor_widget.set_config(config)
 
-    def open_editor(self, config: Union[None, Mapping[str, Any]]) -> None:
+    def open_editor(self, config: None | Mapping[str, Any]) -> None:
         self.global_editor_widget.set_config(config)
         self.setCurrentIndex(1)
 

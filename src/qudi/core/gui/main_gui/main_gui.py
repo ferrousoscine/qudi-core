@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-""" This module contains the
+"""This module contains the
 
 Copyright (c) 2021, the qudi developers. See the AUTHORS.md file at the top-level directory of this
 distribution and on <https://github.com/Ulm-IQO/qudi-core/>
@@ -19,24 +18,23 @@ If not, see <https://www.gnu.org/licenses/>.
 """
 
 import os
-import sys
-import logging
 import subprocess
-import jupyter_client.kernelspec
-from PySide2 import QtCore, QtWidgets
-from qtconsole.manager import QtKernelManager
-from collections.abc import Mapping, Sequence, Set
+import sys
 
-from qudi.core.statusvariable import StatusVar
-from qudi.core.threadmanager import ThreadManager
-from qudi.util.paths import get_main_dir, get_default_config_dir
+import jupyter_client.kernelspec
+from PySide6 import QtCore, QtWidgets
+from qtconsole.manager import QtKernelManager
+
 from qudi.core.gui.main_gui.errordialog import ErrorDialog
 from qudi.core.gui.main_gui.mainwindow import QudiMainWindow
-from qudi.core.module import GuiBase
 from qudi.core.logger import get_signal_handler
+from qudi.core.module import GuiBase
+from qudi.core.statusvariable import StatusVar
+from qudi.core.threadmanager import ThreadManager
+from qudi.util.paths import get_default_config_dir, get_main_dir
 
 try:
-    from git import Repo, InvalidGitRepositoryError
+    from git import InvalidGitRepositoryError, Repo
 except ImportError:
     Repo = None
 
@@ -45,6 +43,7 @@ class QudiMainGui(GuiBase):
     """
     This class provides a GUI to the qudi main application object.
     """
+
     # status vars
     _console_font_size = StatusVar(name='console_font_size', default=10)
     _show_error_popups = StatusVar(name='show_error_popups', default=True)
@@ -52,9 +51,9 @@ class QudiMainGui(GuiBase):
     def __init__(self, *args, **kwargs):
         """Create an instance of the module.
 
-          @param object manager:
-          @param str name:
-          @param dict config:
+        @param object manager:
+        @param str name:
+        @param dict config:
         """
         super().__init__(*args, **kwargs)
         self.error_dialog = None
@@ -76,18 +75,19 @@ class QudiMainGui(GuiBase):
         # Get qudi version number and configure statusbar and "about qudi" dialog
         version = self.get_qudi_version()
         if isinstance(version, str):
-            self.mw.about_qudi_dialog.version_label.setText('version {0}'.format(version))
+            self.mw.about_qudi_dialog.version_label.setText(f'version {version}')
             self.mw.version_label.setText(
-                '<a style=\"color: cyan;\"> version {0} </a>  configured from {1}'
-                ''.format(version, self._qudi_main.configuration.file_path))
+                f'<a style="color: cyan;"> version {version} </a>  configured from {self._qudi_main.configuration.file_path}'
+            )
         else:
             self.mw.about_qudi_dialog.version_label.setText(
-                '<a href=\"https://github.com/Ulm-IQO/qudi/commit/{0}\" style=\"color: cyan;\"> {0}'
-                ' </a>, on branch {1}.'.format(version[0], version[1]))
+                f'<a href="https://github.com/Ulm-IQO/qudi/commit/{version[0]}" style="color: cyan;"> {version[0]}'
+                f' </a>, on branch {version[1]}.'
+            )
             self.mw.version_label.setText(
-                '<a href=\"https://github.com/Ulm-IQO/qudi/commit/{0}\" style=\"color: cyan;\"> {0}'
-                ' </a>, on branch {1}, configured from {2}'
-                ''.format(version[0], version[1], self._qudi_main.configuration.file_path))
+                f'<a href="https://github.com/Ulm-IQO/qudi/commit/{version[0]}" style="color: cyan;"> {version[0]}'
+                f' </a>, on branch {version[1]}, configured from {self._qudi_main.configuration.file_path}'
+            )
 
         self._connect_signals()
 
@@ -108,8 +108,7 @@ class QudiMainGui(GuiBase):
         self.show()
 
     def on_deactivate(self):
-        """Close window and remove connections.
-        """
+        """Close window and remove connections."""
         self._disconnect_signals()
         self.stop_jupyter_widget()
         self._save_window_geometry(self.mw)
@@ -121,11 +120,9 @@ class QudiMainGui(GuiBase):
         # Connect up the main windows actions
         self.mw.action_quit.triggered.connect(qudi_main.prompt_quit, QtCore.Qt.QueuedConnection)
         self.mw.action_load_configuration.triggered.connect(self.load_configuration)
-        self.mw.action_reload_qudi.triggered.connect(
-            qudi_main.prompt_restart, QtCore.Qt.QueuedConnection)
+        self.mw.action_reload_qudi.triggered.connect(qudi_main.prompt_restart, QtCore.Qt.QueuedConnection)
         self.mw.action_open_configuration_editor.triggered.connect(self.new_configuration)
-        self.mw.action_load_all_modules.triggered.connect(
-            qudi_main.module_manager.start_all_modules)
+        self.mw.action_load_all_modules.triggered.connect(qudi_main.module_manager.start_all_modules)
         self.mw.action_view_default.triggered.connect(self.reset_default_layout)
         # Connect signals from manager
         qudi_main.configuration.sigConfigChanged.connect(self.update_config_widget)
@@ -139,10 +136,8 @@ class QudiMainGui(GuiBase):
         # Modules list
         self.mw.module_widget.sigActivateModule.connect(qudi_main.module_manager.activate_module)
         self.mw.module_widget.sigReloadModule.connect(qudi_main.module_manager.reload_module)
-        self.mw.module_widget.sigDeactivateModule.connect(
-            qudi_main.module_manager.deactivate_module)
-        self.mw.module_widget.sigCleanupModule.connect(
-            qudi_main.module_manager.clear_module_app_data)
+        self.mw.module_widget.sigDeactivateModule.connect(qudi_main.module_manager.deactivate_module)
+        self.mw.module_widget.sigCleanupModule.connect(qudi_main.module_manager.clear_module_app_data)
 
     def _disconnect_signals(self):
         qudi_main = self._qudi_main
@@ -183,13 +178,10 @@ class QudiMainGui(GuiBase):
             port = server_config['port']
             self.mw.remote_widget.setVisible(True)
             self.mw.remote_widget.server_label.setText(f'Server URL: rpyc://{host}:{port}/')
-            self.mw.remote_widget.shared_module_listview.setModel(
-                remote_server.service.shared_modules
-            )
+            self.mw.remote_widget.shared_module_listview.setModel(remote_server.service.shared_modules)
 
     def show(self):
-        """Show the window and bring it to the top.
-        """
+        """Show the window and bring it to the top."""
         self.mw.show()
         self.mw.activateWindow()
         self.mw.raise_()
@@ -231,8 +223,7 @@ class QudiMainGui(GuiBase):
         return
 
     def start_jupyter_widget(self):
-        """Starts a qudi IPython kernel in a separate process and connects it to the console widget.
-        """
+        """Starts a qudi IPython kernel in a separate process and connects it to the console widget."""
         self._has_console = False
         try:
             # Create and start kernel process
@@ -241,9 +232,11 @@ class QudiMainGui(GuiBase):
             kernel_manager.start_kernel()
 
             # create kernel client and connect to console widget
-            banner = 'This is an interactive IPython console. A reference to the running qudi ' \
-                     'instance can be accessed via "qudi". View the current namespace with dir().\n' \
-                     'Go, play.\n'
+            banner = (
+                'This is an interactive IPython console. A reference to the running qudi '
+                'instance can be accessed via "qudi". View the current namespace with dir().\n'
+                'Go, play.\n'
+            )
             self.mw.console_widget.banner = banner
             self.mw.console_widget.font_size = self._console_font_size
             self.mw.console_widget.reset_font()
@@ -264,14 +257,12 @@ class QudiMainGui(GuiBase):
             )
         except:
             self.log.exception(
-                'Exception while trying to start IPython kernel for qudi main GUI. Qudi IPython '
-                'console not available.'
+                'Exception while trying to start IPython kernel for qudi main GUI. Qudi IPython console not available.'
             )
 
     @QtCore.Slot()
     def kernel_died_callback(self):
-        """
-        """
+        """ """
         try:
             self.mw.console_widget.kernel_client.stop_channels()
         except:
@@ -285,8 +276,7 @@ class QudiMainGui(GuiBase):
             )
 
     def stop_jupyter_widget(self):
-        """Stops the qudi IPython kernel process and detaches it from the console widget.
-        """
+        """Stops the qudi IPython kernel process and detaches it from the console widget."""
         try:
             self.mw.console_widget.kernel_client.stop_channels()
         except:
@@ -299,14 +289,12 @@ class QudiMainGui(GuiBase):
         self.log.info('IPython kernel process for qudi main GUI has shut down.')
 
     def keep_settings(self):
-        """Write old values into settings dialog.
-        """
+        """Write old values into settings dialog."""
         self.mw.settings_dialog.font_size_spinbox.setValue(self._console_font_size)
         self.mw.settings_dialog.show_error_popups_checkbox.setChecked(self._show_error_popups)
 
     def apply_settings(self):
-        """Apply values from settings dialog.
-        """
+        """Apply values from settings dialog."""
         # Console font size
         font_size = self.mw.settings_dialog.font_size_spinbox.value()
         self.mw.console_widget.font_size = font_size
@@ -320,23 +308,20 @@ class QudiMainGui(GuiBase):
 
     @QtCore.Slot()
     def _error_dialog_enabled_changed(self):
-        """Callback for the error dialog disable checkbox.
-        """
+        """Callback for the error dialog disable checkbox."""
         self._show_error_popups = self.error_dialog.enabled
         self.mw.settings_dialog.show_error_popups_checkbox.setChecked(self._show_error_popups)
 
     @QtCore.Slot(object)
     def update_config_widget(self, config=None):
-        """Clear and refill the tree widget showing the configuration.
-        """
+        """Clear and refill the tree widget showing the configuration."""
         if config is None:
             config = self._qudi_main.configuration
         self.mw.config_widget.set_config(config.config_map)
 
     @QtCore.Slot(dict)
     def update_configured_modules(self, modules=None):
-        """Clear and refill the module list widget.
-        """
+        """Clear and refill the module list widget."""
         if modules is None:
             modules = self._qudi_main.module_manager
         self.mw.module_widget.update_modules(modules)
@@ -351,8 +336,7 @@ class QudiMainGui(GuiBase):
         self.mw.module_widget.update_module_app_data(base, name, exists)
 
     def get_qudi_version(self):
-        """Try to determine the software version in case the program is in a git repository.
-        """
+        """Try to determine the software version in case the program is in a git repository."""
         # Try to get repository information if qudi has been checked out as git repo
         if Repo is not None:
             try:
@@ -368,18 +352,17 @@ class QudiMainGui(GuiBase):
         # Try to get qudi.core version number
         try:
             from qudi.core import __version__
+
             return __version__
         except:
             self.log.exception('Unexpected error while trying to get qudi version:')
         return 'unknown'
 
     def load_configuration(self):
-        """Ask the user for a file where the configuration should be loaded from.
-        """
-        filename = QtWidgets.QFileDialog.getOpenFileName(self.mw,
-                                                         'Load Configuration',
-                                                         get_default_config_dir(True),
-                                                         'Configuration files (*.cfg)')[0]
+        """Ask the user for a file where the configuration should be loaded from."""
+        filename = QtWidgets.QFileDialog.getOpenFileName(
+            self.mw, 'Load Configuration', get_default_config_dir(True), 'Configuration files (*.cfg)'
+        )[0]
         if filename:
             reply = QtWidgets.QMessageBox.question(
                 self.mw,
@@ -387,7 +370,7 @@ class QudiMainGui(GuiBase):
                 'Do you want to restart to use the configuration?\n'
                 'Choosing "No" will use the selected config file for the next start of Qudi.',
                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No | QtWidgets.QMessageBox.Cancel,
-                QtWidgets.QMessageBox.No
+                QtWidgets.QMessageBox.No,
             )
             if reply == QtWidgets.QMessageBox.Cancel:
                 return
@@ -400,17 +383,18 @@ class QudiMainGui(GuiBase):
         edit/create config files for qudi.
         """
         reply = QtWidgets.QMessageBox.question(
-                self.mw,
-                'Open Configuration Editor',
-                'Do you want open the graphical qudi configuration editor to create or edit qudi '
-                'config files?\n',
-                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
-                QtWidgets.QMessageBox.Yes
+            self.mw,
+            'Open Configuration Editor',
+            'Do you want open the graphical qudi configuration editor to create or edit qudi config files?\n',
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+            QtWidgets.QMessageBox.Yes,
         )
         if reply == QtWidgets.QMessageBox.Yes:
-            process = subprocess.Popen(args=[sys.executable, '-m', 'tools.config_editor'],
-                                       close_fds=False,
-                                       env=os.environ.copy(),
-                                       stdin=sys.stdin,
-                                       stdout=sys.stdout,
-                                       stderr=sys.stderr)
+            process = subprocess.Popen(
+                args=[sys.executable, '-m', 'tools.config_editor'],
+                close_fds=False,
+                env=os.environ.copy(),
+                stdin=sys.stdin,
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+            )

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This file contains a custom .ui file loader since the current (v5.14.1) Pyside2 implementation or
 qtpy implementation do not fully allow promotion to a custom widget if the custom widget is not a
@@ -31,9 +29,10 @@ __all__ = ['loadUi']
 
 import os
 import re
-import tempfile
 import subprocess
-from importlib.util import spec_from_loader, module_from_spec
+import tempfile
+from importlib.util import module_from_spec, spec_from_loader
+
 from qudi.util.paths import get_artwork_dir
 
 __ui_class_pattern = re.compile(r'class (Ui_.*?)\(')
@@ -75,10 +74,7 @@ def loadUi(file_path, base_widget):
             os.remove(file_path)
             raise
     try:
-        result = subprocess.run(['pyside2-uic', file_path],
-                                capture_output=True,
-                                text=True,
-                                check=True)
+        result = subprocess.run(['pyside2-uic', file_path], capture_output=True, text=True, check=True)
         compiled = result.stdout
     finally:
         if converted is not None:
@@ -89,10 +85,10 @@ def loadUi(file_path, base_widget):
     if match is None:
         raise RuntimeError('Failed to match regex for finding class name in generated python code.')
     class_name = match.groups()[0]
-    # Workaround (again) because pyside2-uic forgot to include objects from PySide2 that can be
+    # Workaround (again) because pyside2-uic forgot to include objects from PySide6 that can be
     # used by Qt Designer. So we inject import statements here just before the class declaration.
     insert = match.start()
-    compiled = compiled[:insert] + 'from PySide2.QtCore import QLocale\n\n' + compiled[insert:]
+    compiled = compiled[:insert] + 'from PySide6.QtCore import QLocale\n\n' + compiled[insert:]
 
     # Execute python code in order to obtain a module object from it
     spec = spec_from_loader('ui_module', loader=None)
@@ -126,7 +122,7 @@ def _convert_ui_to_absolute_paths(file_path):
         Converted file content of the .ui file, None if conversion is not needed.
     """
     path_prefix = get_artwork_dir()
-    with open(file_path, 'r') as file:
+    with open(file_path) as file:
         ui_content = file.read()
     chunks = __artwork_path_pattern.split(ui_content)
     # Iterate over odd indices. Remember if changes were needed

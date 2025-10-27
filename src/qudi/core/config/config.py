@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This file contains an object representing a qudi configuration.
 Qudi configurations are stored in YAML file format.
@@ -24,43 +22,40 @@ If not, see <https://www.gnu.org/licenses/>.
 __all__ = ['Configuration', 'ValidationError', 'ParserError', 'YAMLError', 'DuplicateKeyError']
 
 import copy
-from numbers import Number
-from PySide2 import QtCore
-from typing import Mapping, Optional, Union, Sequence, Set, List, MutableMapping, Any
+from collections.abc import Mapping, MutableMapping, Sequence
 from collections.abc import MutableMapping as _MutableMapping
+from numbers import Number
+from typing import Any, Union
+
+from PySide6 import QtCore
+
 from qudi.core.meta import ABCQObjectMeta as _ABCQObjectMeta
 
+from .file_handler import DuplicateKeyError, ParserError, YAMLError
+from .file_handler import FileHandlerBase as _FileHandlerBase
 from .validator import ValidationError
 from .validator import validate_config as _validate_config
 from .validator import validate_local_module_config as _validate_local_module_config
 from .validator import validate_remote_module_config as _validate_remote_module_config
-from .file_handler import ParserError, YAMLError, DuplicateKeyError
-from .file_handler import FileHandlerBase as _FileHandlerBase
+
+_OptionType = Union[Sequence, Mapping, set, Number, str]
 
 
-_OptionType = Union[Sequence, Mapping, Set, Number, str]
-
-
-class Configuration(_FileHandlerBase,
-                    _MutableMapping,
-                    QtCore.QObject,
-                    metaclass=_ABCQObjectMeta):
+class Configuration(_FileHandlerBase, _MutableMapping, QtCore.QObject, metaclass=_ABCQObjectMeta):
     """QObject subclass representing a valid qudi configuration.
     Handles config file loading/dumping as well as writing qudi load config to AppData.
     Performs JSON schema validation upon file loading/dumping and mutation.
     Includes interface methods to add/remove module configurations as well as getting/setting
     various config items.
     """
+
     sigConfigChanged = QtCore.Signal(object)  # self
 
-    def __init__(self,
-                 config: Optional[MutableMapping[str, Any]] = None,
-                 parent: Optional[QtCore.QObject] = None
-                 ) -> None:
+    def __init__(self, config: MutableMapping[str, Any] | None = None, parent: QtCore.QObject | None = None) -> None:
         super().__init__(parent=parent)
 
         self._file_path = None  # File path for corresponding .cfg file
-        self._config = None     # The raw configuration as dict
+        self._config = None  # The raw configuration as dict
 
         # initialize and validate config dict
         self.set_config(config)
@@ -109,22 +104,21 @@ class Configuration(_FileHandlerBase,
         return copy.deepcopy(self._config)
 
     @property
-    def file_path(self) -> Union[None, str]:
+    def file_path(self) -> None | str:
         """File path of the associated .cfg file.
         Will be None if no file has been associated, i.e. no load/dump has been performed on this
         config.
         """
         return self._file_path
 
-    def set_config(self, config: Union[None, MutableMapping[str, Any]]) -> None:
-        """Validate and reset this Configuration with the given raw config dict.
-        """
+    def set_config(self, config: None | MutableMapping[str, Any]) -> None:
+        """Validate and reset this Configuration with the given raw config dict."""
         new_config = dict() if config is None else copy.deepcopy(config)
         _validate_config(new_config)
         self._config = new_config
         self.sigConfigChanged.emit(self)
 
-    def load(self, file_path: Optional[str] = None, set_default: Optional[bool] = False) -> None:
+    def load(self, file_path: str | None = None, set_default: bool | None = False) -> None:
         """Load a config from file (.cfg), validate it (JSON schema) and reset this Configuration
         instance.
 
@@ -168,7 +162,7 @@ class Configuration(_FileHandlerBase,
         if set_default:
             self.set_default_path(file_path)
 
-    def dump(self, file_path: Optional[str] = None) -> None:
+    def dump(self, file_path: str | None = None) -> None:
         """Dumps this Configuration instance to file (.cfg) after successful JSON schema
         validation.
 
@@ -184,13 +178,15 @@ class Configuration(_FileHandlerBase,
         self._dump(file_path, config)
         self._file_path = file_path
 
-    def add_local_module(self,
-                         base: str,
-                         name: str,
-                         module_class: str,
-                         allow_remote: Optional[bool] = None,
-                         connect: Optional[Mapping[str, str]] = None,
-                         options: Optional[Mapping[str, _OptionType]] = None) -> None:
+    def add_local_module(
+        self,
+        base: str,
+        name: str,
+        module_class: str,
+        allow_remote: bool | None = None,
+        connect: Mapping[str, str] | None = None,
+        options: Mapping[str, _OptionType] | None = None,
+    ) -> None:
         """Mutates the current configuration by validating and adding a new local qudi module
         config with base "gui", "logic" or "hardware" of the form:
             <name>:
@@ -222,14 +218,16 @@ class Configuration(_FileHandlerBase,
         new_config[base][name] = module_config
         self.set_config(new_config)
 
-    def add_remote_module(self,
-                          base: str,
-                          name: str,
-                          native_module_name: str,
-                          address: str,
-                          port: int,
-                          certfile: Optional[str] = None,
-                          keyfile: Optional[str] = None) -> None:
+    def add_remote_module(
+        self,
+        base: str,
+        name: str,
+        native_module_name: str,
+        address: str,
+        port: int,
+        certfile: str | None = None,
+        keyfile: str | None = None,
+    ) -> None:
         """Mutates the current configuration by validating and adding a new remote qudi module
         config with base "gui", "logic" or "hardware" of the form:
             <name>:
@@ -244,9 +242,7 @@ class Configuration(_FileHandlerBase,
         if self.module_configured(name):
             raise KeyError(f'Module with name "{name}" already configured')
         self.validate_module_base(base)
-        module_config = {'native_module_name': native_module_name,
-                         'address'           : address,
-                         'port'              : port}
+        module_config = {'native_module_name': native_module_name, 'address': address, 'port': port}
         if certfile is not None:
             module_config['certfile'] = certfile
         if keyfile is not None:
@@ -299,8 +295,7 @@ class Configuration(_FileHandlerBase,
 
     def module_configured(self, name: str) -> bool:
         """Checks if a module with given name is present in current configuration."""
-        return name in self._config['gui'] or name in self._config['logic'] or name in self._config[
-            'hardware']
+        return name in self._config['gui'] or name in self._config['logic'] or name in self._config['hardware']
 
     def module_config(self, name: str) -> MutableMapping[str, Any]:
         """Returns module configuration for given module <name>.
@@ -329,7 +324,7 @@ class Configuration(_FileHandlerBase,
         return 'module.Class' in self.get_module_config(name)
 
     @property
-    def module_names(self) -> List[str]:
+    def module_names(self) -> list[str]:
         """List of the currently configured module names."""
         return [*self._config['gui'], *self._config['logic'], *self._config['hardware']]
 

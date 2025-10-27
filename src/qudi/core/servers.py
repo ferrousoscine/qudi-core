@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This file contains the Qudi tools for remote module sharing via rpyc server.
 
@@ -22,15 +21,16 @@ If not, see <https://www.gnu.org/licenses/>.
 __all__ = ('get_remote_module_instance', 'BaseServer', 'RemoteModulesServer', 'QudiNamespaceServer')
 
 import ssl
-import rpyc
 import weakref
-from PySide2 import QtCore
 from urllib.parse import urlparse
+
+import rpyc
+from PySide6 import QtCore
 from rpyc.utils.authenticators import SSLAuthenticator
 
-from qudi.util.mutex import Mutex
 from qudi.core.logger import get_logger
-from qudi.core.services import RemoteModulesService, QudiNamespaceService
+from qudi.core.services import QudiNamespaceService, RemoteModulesService
+from qudi.util.mutex import Mutex
 
 logger = get_logger(__name__)
 
@@ -56,21 +56,19 @@ def get_remote_module_instance(remote_url, certfile=None, keyfile=None, protocol
     """
     parsed = urlparse(remote_url)
     if protocol_config is None:
-        protocol_config = {'allow_all_attrs': True,
-                           'allow_setattr': True,
-                           'allow_delattr': True,
-                           'allow_pickle': True,
-                           'sync_request_timeout': 3600}
+        protocol_config = {
+            'allow_all_attrs': True,
+            'allow_setattr': True,
+            'allow_delattr': True,
+            'allow_pickle': True,
+            'sync_request_timeout': 3600,
+        }
     if certfile is not None and keyfile is not None:
-        connection = rpyc.ssl_connect(host=parsed.hostname,
-                                      port=parsed.port,
-                                      config=protocol_config,
-                                      certfile=certfile,
-                                      keyfile=keyfile)
+        connection = rpyc.ssl_connect(
+            host=parsed.hostname, port=parsed.port, config=protocol_config, certfile=certfile, keyfile=keyfile
+        )
     else:
-        connection = rpyc.connect(host=parsed.hostname,
-                                  port=parsed.port,
-                                  config=protocol_config,)
+        connection = rpyc.connect(host=parsed.hostname, port=parsed.port, config=protocol_config)
     logger.debug(f'get_remote_module_instance has protocol_config {protocol_config}')
     return connection.root.get_module_instance(parsed.path.replace('/', ''))
 
@@ -80,8 +78,18 @@ class _ServerRunnable(QtCore.QObject):
     RPyC servers.
     """
 
-    def __init__(self, service, host, port, certfile=None, keyfile=None, protocol_config=None,
-                 ssl_version=None, cert_reqs=None, ciphers=None):
+    def __init__(
+        self,
+        service,
+        host,
+        port,
+        certfile=None,
+        keyfile=None,
+        protocol_config=None,
+        ssl_version=None,
+        cert_reqs=None,
+        ciphers=None,
+    ):
         super().__init__()
 
         self.service = service
@@ -92,11 +100,13 @@ class _ServerRunnable(QtCore.QObject):
         self.certfile = certfile
         self.keyfile = keyfile
         if protocol_config is None:
-            self.protocol_config = {'allow_all_attrs': True,
-                                    'allow_setattr': True,
-                                    'allow_delattr': True,
-                                    'allow_pickle': True,
-                                    'sync_request_timeout': 3600}
+            self.protocol_config = {
+                'allow_all_attrs': True,
+                'allow_setattr': True,
+                'allow_delattr': True,
+                'allow_pickle': True,
+                'sync_request_timeout': 3600,
+            }
         else:
             self.protocol_config = protocol_config
         self.ssl_version = ssl.PROTOCOL_TLSv1_2 if ssl_version is None else ssl_version
@@ -105,28 +115,32 @@ class _ServerRunnable(QtCore.QObject):
 
     @QtCore.Slot()
     def run(self):
-        """Start the RPyC server.
-        """
+        """Start the RPyC server."""
         if self.certfile is not None and self.keyfile is not None:
-            authenticator = SSLAuthenticator(certfile=self.certfile,
-                                             keyfile=self.keyfile,
-                                             cert_reqs=self.cert_reqs,
-                                             ssl_version=self.ssl_version,
-                                             ciphers=self.ciphers)
+            authenticator = SSLAuthenticator(
+                certfile=self.certfile,
+                keyfile=self.keyfile,
+                cert_reqs=self.cert_reqs,
+                ssl_version=self.ssl_version,
+                ciphers=self.ciphers,
+            )
         else:
             authenticator = None
 
         try:
-            self.server = rpyc.ThreadedServer(self.service,
-                                              hostname=self.host,
-                                              port=self.port,
-                                              protocol_config=self.protocol_config,
-                                              authenticator=authenticator)
-            logger.info(f'Starting RPyC server "{self.thread().objectName()}" on '
-                        f'[{self.host}]:{self.port:d}')
-            logger.debug(f'{self.thread().objectName()}: '
-                         f'protocol_config is {self.protocol_config}, '
-                         f'authenticator is {authenticator}')
+            self.server = rpyc.ThreadedServer(
+                self.service,
+                hostname=self.host,
+                port=self.port,
+                protocol_config=self.protocol_config,
+                authenticator=authenticator,
+            )
+            logger.info(f'Starting RPyC server "{self.thread().objectName()}" on [{self.host}]:{self.port:d}')
+            logger.debug(
+                f'{self.thread().objectName()}: '
+                f'protocol_config is {self.protocol_config}, '
+                f'authenticator is {authenticator}'
+            )
             self.server.start()
         except:
             logger.exception(f'Error during start of RPyC Server "{self.thread().objectName()}":')
@@ -134,16 +148,13 @@ class _ServerRunnable(QtCore.QObject):
 
     @QtCore.Slot()
     def stop(self):
-        """Stop the RPyC server.
-        """
+        """Stop the RPyC server."""
         if self.server is not None:
             try:
                 self.server.close()
                 logger.info(f'Stopped RPyC server on [{self.host}]:{self.port:d}')
             except:
-                logger.exception(
-                    f'Exception while trying to stop RPyC server on [{self.host}]:{self.port:d}'
-                )
+                logger.exception(f'Exception while trying to stop RPyC server on [{self.host}]:{self.port:d}')
             finally:
                 self.server = None
 
@@ -154,9 +165,21 @@ class BaseServer(QtCore.QObject):
     Actual RPyC server runs in a QThread.
     """
 
-    def __init__(self, qudi, service_instance, name, host, port, certfile=None,
-                 keyfile=None, protocol_config=None, ssl_version=None, cert_reqs=None,
-                 ciphers=None, parent=None):
+    def __init__(
+        self,
+        qudi,
+        service_instance,
+        name,
+        host,
+        port,
+        certfile=None,
+        keyfile=None,
+        protocol_config=None,
+        ssl_version=None,
+        cert_reqs=None,
+        ciphers=None,
+        parent=None,
+    ):
         """
         Parameters
         ----------
@@ -170,15 +193,17 @@ class BaseServer(QtCore.QObject):
 
         self.service = service_instance
         self._name = name
-        self._server = _ServerRunnable(service=service_instance,
-                                       host=host,
-                                       port=port,
-                                       certfile=certfile,
-                                       keyfile=keyfile,
-                                       protocol_config=protocol_config,
-                                       ssl_version=ssl_version,
-                                       cert_reqs=cert_reqs,
-                                       ciphers=ciphers)
+        self._server = _ServerRunnable(
+            service=service_instance,
+            host=host,
+            port=port,
+            certfile=certfile,
+            keyfile=keyfile,
+            protocol_config=protocol_config,
+            ssl_version=ssl_version,
+            cert_reqs=cert_reqs,
+            ciphers=ciphers,
+        )
 
     @property
     def server(self):
@@ -212,8 +237,7 @@ class BaseServer(QtCore.QObject):
 
     @QtCore.Slot()
     def start(self):
-        """Start the RPyC server.
-        """
+        """Start the RPyC server."""
         with self._thread_lock:
             if self.server is None:
                 thread = self._thread_manager.get_new_thread(self._name)
@@ -225,8 +249,7 @@ class BaseServer(QtCore.QObject):
 
     @QtCore.Slot()
     def stop(self):
-        """Stop the RPyC server.
-        """
+        """Stop the RPyC server."""
         with self._thread_lock:
             if self.server is not None:
                 try:
@@ -238,13 +261,10 @@ class BaseServer(QtCore.QObject):
 
 
 class RemoteModulesServer(BaseServer):
-    """
-    """
+    """ """
 
     def __init__(self, force_remote_calls_by_value=False, **kwargs):
-        kwargs['service_instance'] = RemoteModulesService(
-            force_remote_calls_by_value=force_remote_calls_by_value
-        )
+        kwargs['service_instance'] = RemoteModulesService(force_remote_calls_by_value=force_remote_calls_by_value)
         super().__init__(**kwargs)
 
     def share_module(self, module):
@@ -280,13 +300,7 @@ class QudiNamespaceServer(BaseServer):
         -------
         None
         """
-        service_instance = QudiNamespaceService(
-            qudi=qudi,
-            force_remote_calls_by_value=force_remote_calls_by_value
+        service_instance = QudiNamespaceService(qudi=qudi, force_remote_calls_by_value=force_remote_calls_by_value)
+        super().__init__(
+            parent=parent, qudi=qudi, service_instance=service_instance, name=name, host='localhost', port=port
         )
-        super().__init__(parent=parent,
-                         qudi=qudi,
-                         service_instance=service_instance,
-                         name=name,
-                         host='localhost',
-                         port=port)

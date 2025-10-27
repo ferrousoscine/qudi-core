@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This file contains unit tests for all qudi fit routines for exponential decay models.
 
@@ -21,6 +19,7 @@ If not, see <https://www.gnu.org/licenses/>.
 """
 
 import unittest
+
 import numpy as np
 
 from qudi.util.fit_models.exp_decay import StretchedExponentialDecay
@@ -31,7 +30,7 @@ class TestExpDecayMethods(unittest.TestCase):
 
     @staticmethod
     def stretched_exp_decay(x, offset, amplitude, decay, stretch):
-        return offset + amplitude * np.exp(-(x / decay) ** stretch)
+        return offset + amplitude * np.exp(-((x / decay) ** stretch))
 
     def setUp(self):
         self.offset = (np.random.rand() - 0.5) * 2e6
@@ -48,51 +47,39 @@ class TestExpDecayMethods(unittest.TestCase):
 
     def test_exp_decay(self):
         # Test for exponential decay (stretch == 1)
-        y_values = self.noise + self.stretched_exp_decay(self.x_values,
-                                                         self.offset,
-                                                         self.amplitude,
-                                                         self.decay,
-                                                         1)
+        y_values = self.noise + self.stretched_exp_decay(self.x_values, self.offset, self.amplitude, self.decay, 1)
 
         fit_model = StretchedExponentialDecay()
         guess = fit_model.guess(y_values, self.x_values)
         guess['stretch'].set(vary=False, value=1)
         fit_result = fit_model.fit(data=y_values, x=self.x_values, **guess)
 
-        params_ideal = {'offset': self.offset,
-                        'amplitude': self.amplitude,
-                        'decay': self.decay}
+        params_ideal = {'offset': self.offset, 'amplitude': self.amplitude, 'decay': self.decay}
         for name, ideal_val in params_ideal.items():
             diff = abs(fit_result.best_values[name] - ideal_val)
             tolerance = abs(ideal_val * self._fit_param_tolerance)
-            msg = 'Exp. decay fit parameter "{0}" not within {1:.2%} tolerance'.format(
-                name, self._fit_param_tolerance
-            )
+            msg = f'Exp. decay fit parameter "{name}" not within {self._fit_param_tolerance:.2%} tolerance'
             self.assertLessEqual(diff, tolerance, msg)
 
     def test_stretched_exp_decay(self):
         # Test for stretched exponential decay
-        y_values = self.noise + self.stretched_exp_decay(self.x_values,
-                                                         self.offset,
-                                                         self.amplitude,
-                                                         self.decay,
-                                                         self.stretch)
+        y_values = self.noise + self.stretched_exp_decay(
+            self.x_values, self.offset, self.amplitude, self.decay, self.stretch
+        )
 
         fit_model = StretchedExponentialDecay()
-        fit_result = fit_model.fit(data=y_values,
-                                   x=self.x_values,
-                                   **fit_model.guess(y_values, self.x_values))
+        fit_result = fit_model.fit(data=y_values, x=self.x_values, **fit_model.guess(y_values, self.x_values))
 
-        params_ideal = {'offset': self.offset,
-                        'amplitude': self.amplitude,
-                        'decay': self.decay,
-                        'stretch': self.stretch}
+        params_ideal = {
+            'offset': self.offset,
+            'amplitude': self.amplitude,
+            'decay': self.decay,
+            'stretch': self.stretch,
+        }
         for name, ideal_val in params_ideal.items():
             diff = abs(fit_result.best_values[name] - ideal_val)
             tolerance = abs(ideal_val * self._fit_param_tolerance)
-            msg = 'Stretched exp. decay fit parameter "{0}" not within {1:.2%} tolerance'.format(
-                name, self._fit_param_tolerance
-            )
+            msg = f'Stretched exp. decay fit parameter "{name}" not within {self._fit_param_tolerance:.2%} tolerance'
             self.assertLessEqual(diff, tolerance, msg)
 
 

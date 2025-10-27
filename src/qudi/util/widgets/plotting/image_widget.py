@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This file contains custom widgets to facilitate 2D image display with an adjustable colorscale and
 various other interactive features.
@@ -21,24 +19,31 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['ImageWidget', 'MouseTrackingImageWidget', 'RubberbandZoomImageWidget',
-           'DataSelectionImageWidget', 'RubberbandZoomSelectionImageWidget']
+__all__ = [
+    'ImageWidget',
+    'MouseTrackingImageWidget',
+    'RubberbandZoomImageWidget',
+    'DataSelectionImageWidget',
+    'RubberbandZoomSelectionImageWidget',
+]
 
-from typing import Union, Optional, Tuple, List, Dict
-from PySide2 import QtCore, QtWidgets
+
 from pyqtgraph import PlotWidget as _PlotWidget
-from qudi.util.widgets.plotting.plot_item import DataImageItem as _DataImageItem
-from qudi.util.widgets.plotting.colorbar import ColorBarWidget as _ColorBarWidget
+from PySide6 import QtCore, QtWidgets
+
 import qudi.util.widgets.plotting.plot_widget as _pw
+from qudi.util.widgets.plotting.colorbar import ColorBarWidget as _ColorBarWidget
+from qudi.util.widgets.plotting.plot_item import DataImageItem as _DataImageItem
 
 
 class ImageWidget(QtWidgets.QWidget):
-    """ Composite widget consisting of a PlotWidget and a colorbar to display 2D image data.
+    """Composite widget consisting of a PlotWidget and a colorbar to display 2D image data.
     Provides a convenient image data interface and handles user colorscale interaction.
     """
+
     _plot_widget_type = _PlotWidget
 
-    def __init__(self, parent: Optional[QtWidgets.QWidget] = None, **kwargs):
+    def __init__(self, parent: QtWidgets.QWidget | None = None, **kwargs):
         super().__init__(parent=parent)
 
         self.plot_widget = self._plot_widget_type(**kwargs)
@@ -68,20 +73,20 @@ class ImageWidget(QtWidgets.QWidget):
         self.set_image_extent = self.image_item.set_image_extent
 
     @property
-    def percentiles(self) -> Union[None, Tuple[float, float]]:
+    def percentiles(self) -> None | tuple[float, float]:
         return self.image_item.percentiles
 
     @property
-    def levels(self) -> Tuple[float, float]:
+    def levels(self) -> tuple[float, float]:
         return self.image_item.levels
 
-    def set_image(self,
-                  image,
-                  extent: Optional[Tuple[Tuple[float, float], Tuple[float, float]]] = None,
-                  adjust_for_px_size: Optional[bool] = True
-                  ) -> None:
-        """
-        """
+    def set_image(
+        self,
+        image,
+        extent: tuple[tuple[float, float], tuple[float, float]] | None = None,
+        adjust_for_px_size: bool | None = True,
+    ) -> None:
+        """ """
         if image is None:
             self.image_item.set_image(image=None, autoLevels=False)
             return
@@ -93,9 +98,7 @@ class ImageWidget(QtWidgets.QWidget):
             if levels is not None:
                 self.colorbar_widget.set_limits(*levels)
         else:
-            self.image_item.set_image(image=image,
-                                      autoLevels=False,
-                                      levels=self.colorbar_widget.limits)
+            self.image_item.set_image(image=image, autoLevels=False, levels=self.colorbar_widget.limits)
         if extent is not None:
             self.image_item.set_image_extent(extent, adjust_for_px_size)
 
@@ -111,11 +114,11 @@ class ImageWidget(QtWidgets.QWidget):
         else:
             self._colorbar_limits_changed(self.colorbar_widget.limits)
 
-    def _colorbar_limits_changed(self, limits: Tuple[float, float]) -> None:
+    def _colorbar_limits_changed(self, limits: tuple[float, float]) -> None:
         self.image_item.set_percentiles(None)
         self.image_item.setLevels(limits)
 
-    def _colorbar_percentiles_changed(self, percentiles: Tuple[float, float]) -> None:
+    def _colorbar_percentiles_changed(self, percentiles: tuple[float, float]) -> None:
         self.image_item.set_percentiles(percentiles)
         levels = self.levels
         if levels is not None:
@@ -123,12 +126,13 @@ class ImageWidget(QtWidgets.QWidget):
 
 
 class MouseTrackingMixin:
-    """ Extends the normal qudi ImageWidget with a custom PlotWidget type that tracks mouse
+    """Extends the normal qudi ImageWidget with a custom PlotWidget type that tracks mouse
     activity and sends signals.
     """
+
     _plot_widget_type = _pw.MouseTrackingPlotWidget
 
-    def __init__(self, parent: Optional[QtWidgets.QWidget] = None, **kwargs):
+    def __init__(self, parent: QtWidgets.QWidget | None = None, **kwargs):
         super().__init__(parent=parent, **kwargs)
 
     @property
@@ -145,12 +149,12 @@ class MouseTrackingMixin:
 
 
 class RubberbandZoomMixin:
-    """ Extends the qudi MouseTrackingImageWidget with a rubberband zoom tool.
-    """
+    """Extends the qudi MouseTrackingImageWidget with a rubberband zoom tool."""
+
     _plot_widget_type = _pw.RubberbandZoomPlotWidget
     SelectionMode = _pw.RubberbandZoomPlotWidget.SelectionMode
 
-    def __init__(self, parent: Optional[QtWidgets.QWidget] = None, **kwargs):
+    def __init__(self, parent: QtWidgets.QWidget | None = None, **kwargs):
         super().__init__(parent=parent, **kwargs)
         self.set_rubberband_zoom_selection_mode = self.plot_widget.set_rubberband_zoom_selection_mode
 
@@ -164,12 +168,12 @@ class RubberbandZoomMixin:
 
 
 class DataSelectionMixin:
-    """ Extends the qudi MouseTrackingImageWidget with data selection tools and signals.
-    """
+    """Extends the qudi MouseTrackingImageWidget with data selection tools and signals."""
+
     _plot_widget_type = _pw.DataSelectionPlotWidget
     SelectionMode = _pw.DataSelectionPlotWidget.SelectionMode
 
-    def __init__(self, parent: Optional[QtWidgets.QWidget] = None, **kwargs):
+    def __init__(self, parent: QtWidgets.QWidget | None = None, **kwargs):
         super().__init__(parent=parent, **kwargs)
         self.set_region_selection_mode = self.plot_widget.set_region_selection_mode
         self.set_marker_selection_mode = self.plot_widget.set_marker_selection_mode
@@ -201,11 +205,11 @@ class DataSelectionMixin:
         return self.plot_widget.sigRegionSelectionChanged
 
     @property
-    def marker_selection(self) -> Dict[SelectionMode, List[Tuple[float, float]]]:
+    def marker_selection(self) -> dict[SelectionMode, list[tuple[float, float]]]:
         return self.plot_widget.marker_selection
 
     @property
-    def region_selection(self) -> Dict[SelectionMode, List[Tuple[Tuple[float, float], Tuple[float, float]]]]:
+    def region_selection(self) -> dict[SelectionMode, list[tuple[tuple[float, float], tuple[float, float]]]]:
         return self.plot_widget.region_selection
 
     @property
@@ -221,7 +225,7 @@ class DataSelectionMixin:
         return self.plot_widget.selection_mutable
 
     @property
-    def selection_bounds(self) -> Union[None, List[Union[None, Tuple[float, float]]]]:
+    def selection_bounds(self) -> None | list[None | tuple[float, float]]:
         return self.plot_widget.selection_bounds
 
 

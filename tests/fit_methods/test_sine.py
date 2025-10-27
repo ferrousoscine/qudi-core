@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This file contains unit tests for all qudi fit routines for exponential decay models.
 
@@ -21,9 +19,10 @@ If not, see <https://www.gnu.org/licenses/>.
 """
 
 import unittest
+
 import numpy as np
 
-from qudi.util.fit_models.sine import Sine, DoubleSine
+from qudi.util.fit_models.sine import DoubleSine, Sine
 
 
 class TestSineMethods(unittest.TestCase):
@@ -49,60 +48,48 @@ class TestSineMethods(unittest.TestCase):
 
     def test_sine(self):
         # Test for sine fit
-        y_values = self.noise + self.sine(self.x_values,
-                                          self.offset,
-                                          self.amplitudes[0],
-                                          self.frequencies[0],
-                                          self.phases[0])
+        y_values = self.noise + self.sine(
+            self.x_values, self.offset, self.amplitudes[0], self.frequencies[0], self.phases[0]
+        )
 
         fit_model = Sine()
-        fit_result = fit_model.fit(data=y_values,
-                                   x=self.x_values,
-                                   **fit_model.guess(y_values, self.x_values))
+        fit_result = fit_model.fit(data=y_values, x=self.x_values, **fit_model.guess(y_values, self.x_values))
 
-        params_ideal = {'offset': self.offset,
-                        'amplitude': self.amplitudes[0],
-                        'frequency': self.frequencies[0],
-                        'phase': self.phases[0]}
+        params_ideal = {
+            'offset': self.offset,
+            'amplitude': self.amplitudes[0],
+            'frequency': self.frequencies[0],
+            'phase': self.phases[0],
+        }
         for name, ideal_val in params_ideal.items():
             diff = abs(fit_result.best_values[name] - ideal_val)
             tolerance = abs(ideal_val * self._fit_param_tolerance)
-            msg = 'Sine fit parameter "{0}" not within {1:.2%} tolerance'.format(
-                name, self._fit_param_tolerance
-            )
+            msg = f'Sine fit parameter "{name}" not within {self._fit_param_tolerance:.2%} tolerance'
             self.assertLessEqual(diff, tolerance, msg)
 
     def test_double_sine(self):
         # Test for sine fit
-        y_values = self.noise + self.sine(self.x_values,
-                                          self.offset,
-                                          self.amplitudes[0],
-                                          self.frequencies[0],
-                                          self.phases[0])
-        y_values += self.sine(self.x_values,
-                              self.offset,
-                              self.amplitudes[1],
-                              self.frequencies[1],
-                              self.phases[1])
+        y_values = self.noise + self.sine(
+            self.x_values, self.offset, self.amplitudes[0], self.frequencies[0], self.phases[0]
+        )
+        y_values += self.sine(self.x_values, self.offset, self.amplitudes[1], self.frequencies[1], self.phases[1])
 
         fit_model = DoubleSine()
-        fit_result = fit_model.fit(data=y_values,
-                                   x=self.x_values,
-                                   **fit_model.guess(y_values, self.x_values))
+        fit_result = fit_model.fit(data=y_values, x=self.x_values, **fit_model.guess(y_values, self.x_values))
 
-        params_ideal = {'offset': self.offset,
-                        'amplitude_1': self.amplitudes[0],
-                        'amplitude_2': self.amplitudes[1],
-                        'frequency_1': self.frequencies[0],
-                        'frequency_2': self.frequencies[0],
-                        'phase_1': self.phases[0],
-                        'phase_2': self.phases[1]}
+        params_ideal = {
+            'offset': self.offset,
+            'amplitude_1': self.amplitudes[0],
+            'amplitude_2': self.amplitudes[1],
+            'frequency_1': self.frequencies[0],
+            'frequency_2': self.frequencies[0],
+            'phase_1': self.phases[0],
+            'phase_2': self.phases[1],
+        }
         for name, ideal_val in params_ideal.items():
             diff = abs(fit_result.best_values[name] - ideal_val)
             tolerance = abs(ideal_val * self._fit_param_tolerance)
-            msg = 'Double sine fit parameter "{0}" not within {1:.2%} tolerance'.format(
-                name, self._fit_param_tolerance
-            )
+            msg = f'Double sine fit parameter "{name}" not within {self._fit_param_tolerance:.2%} tolerance'
             self.assertLessEqual(diff, tolerance, msg)
 
 

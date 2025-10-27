@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Copyright (c) 2021, the qudi developers. See the AUTHORS.md file at the top-level directory of this
 distribution and on <https://github.com/Ulm-IQO/qudi-core/>
@@ -19,14 +18,22 @@ If not, see <https://www.gnu.org/licenses/>.
 ToDo: Throw errors around for non-existent directories
 """
 
-__all__ = ['get_appdata_dir', 'get_default_config_dir', 'get_default_log_dir',
-           'get_default_data_dir', 'get_daily_directory', 'get_home_dir', 'get_main_dir',
-           'get_userdata_dir', 'get_artwork_dir', 'get_module_app_data_path']
+__all__ = [
+    'get_appdata_dir',
+    'get_default_config_dir',
+    'get_default_log_dir',
+    'get_default_data_dir',
+    'get_daily_directory',
+    'get_home_dir',
+    'get_main_dir',
+    'get_userdata_dir',
+    'get_artwork_dir',
+    'get_module_app_data_path',
+]
 
 import datetime
 import os
 import sys
-from typing import Optional
 
 
 def get_main_dir() -> str:
@@ -39,6 +46,7 @@ def get_main_dir() -> str:
         Path to the main tree of the software.
     """
     import qudi.core as core
+
     return os.path.abspath(os.path.join(os.path.dirname(core.__file__), '..'))
 
 
@@ -66,7 +74,7 @@ def get_home_dir() -> str:
     return os.path.abspath(os.path.expanduser('~'))
 
 
-def get_userdata_dir(create_missing: Optional[bool] = False) -> str:
+def get_userdata_dir(create_missing: bool | None = False) -> str:
     """
     Returns the absolute path to the Qudi subfolder in the user home directory.
     This path should be used for exposed user data like config files, etc.
@@ -84,7 +92,7 @@ def get_userdata_dir(create_missing: Optional[bool] = False) -> str:
     return path
 
 
-def get_appdata_dir(create_missing: Optional[bool] = False) -> str:
+def get_appdata_dir(create_missing: bool | None = False) -> str:
     """
     Get the system-specific application data directory.
 
@@ -108,7 +116,7 @@ def get_appdata_dir(create_missing: Optional[bool] = False) -> str:
     return path
 
 
-def get_default_config_dir(create_missing: Optional[bool] = False) -> str:
+def get_default_config_dir(create_missing: bool | None = False) -> str:
     """
     Get the system-specific application data directory.
 
@@ -125,7 +133,7 @@ def get_default_config_dir(create_missing: Optional[bool] = False) -> str:
     return path
 
 
-def get_default_log_dir(create_missing: Optional[bool] = False) -> str:
+def get_default_log_dir(create_missing: bool | None = False) -> str:
     """
     Get the system-specific application log directory.
 
@@ -143,7 +151,7 @@ def get_default_log_dir(create_missing: Optional[bool] = False) -> str:
     return path
 
 
-def get_default_data_dir(create_missing: Optional[bool] = False) -> str:
+def get_default_data_dir(create_missing: bool | None = False) -> str:
     """Get the system specific application fallback data root directory.
     Does NOT consider qudi configuration.
 
@@ -160,8 +168,9 @@ def get_default_data_dir(create_missing: Optional[bool] = False) -> str:
     return path
 
 
-def get_daily_directory(timestamp: Optional[datetime.datetime] = None, root: Optional[str] = None,
-                        create_missing: Optional[bool] = False) -> str:
+def get_daily_directory(
+    timestamp: datetime.datetime | None = None, root: str | None = None, create_missing: bool | None = False
+) -> str:
     """
     Returns a path tree according to the timestamp given.
 
@@ -197,7 +206,6 @@ def get_daily_directory(timestamp: Optional[datetime.datetime] = None, root: Opt
 
 
 def get_module_app_data_path(cls_name: str, module_base: str, module_name: str) -> str:
-    """Constructs the appData file path for the given qudi module.
-    """
+    """Constructs the appData file path for the given qudi module."""
     file_name = f'status-{cls_name}_{module_base}_{module_name}.cfg'
     return os.path.join(get_appdata_dir(), file_name)

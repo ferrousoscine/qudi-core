@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This file contains the Qudi Manager class.
 
@@ -23,13 +22,17 @@ __all__ = ['StatusVar', 'ConfigOption', 'Connector', 'Base', 'LogicBase', 'GuiBa
 
 import os
 from importlib import metadata
-__version__ = metadata.version('qudi-core')
 
-# Set QT_API environment variable to PySide2
-os.environ['QT_API'] = 'pyside2'
+try:
+    __version__ = metadata.version('qudi-core')
+except metadata.PackageNotFoundError:
+    __version__ = 'dev'
 
-from qudi.core.statusvariable import StatusVar
+# Set QT_API environment variable to PySide6
+os.environ['QT_API'] = 'pyside6'
+
 from qudi.core.configoption import ConfigOption
 from qudi.core.connector import Connector
-from qudi.core.module import Base, LogicBase, GuiBase
 from qudi.core.logger import get_logger
+from qudi.core.module import Base, GuiBase, LogicBase
+from qudi.core.statusvariable import StatusVar

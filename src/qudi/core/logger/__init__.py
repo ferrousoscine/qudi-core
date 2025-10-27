@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This package provides the qudi logging facility. It facilitates Pythonic logging by joining Qt log
 into native Python logging. Also installs a logging handler that emits a Qt Signal to tap into
@@ -24,28 +23,29 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ('clear_handlers',
-           'get_handler',
-           'get_file_handler',
-           'get_logger',
-           'get_record_table_model',
-           'get_signal_handler',
-           'get_stderr_handler',
-           'init_record_model_handler',
-           'init_rotating_file_handler',
-           'register_handler',
-           'set_log_level',
-           'unregister_handler',
-           )
+__all__ = (
+    'clear_handlers',
+    'get_handler',
+    'get_file_handler',
+    'get_logger',
+    'get_record_table_model',
+    'get_signal_handler',
+    'get_stderr_handler',
+    'init_record_model_handler',
+    'init_rotating_file_handler',
+    'register_handler',
+    'set_log_level',
+    'unregister_handler',
+)
 
-import os
 import logging
+import os
 import warnings
 from logging.handlers import RotatingFileHandler
-from PySide2.QtCore import qInstallMessageHandler
+
+from PySide6.QtCore import qInstallMessageHandler
 
 from .handlers import LogSignalHandler, LogTableModelHandler, qt_message_handler
-
 
 # global variables
 # Keep track of all handlers that have been registered to the qudi
@@ -95,8 +95,7 @@ def register_handler(name, handler, silent=False):
         if silent:
             unregister_handler(name)
         else:
-            raise KeyError(f'Unable to register new logging handler. Handler by name "{name}" '
-                           f'already registered.')
+            raise KeyError(f'Unable to register new logging handler. Handler by name "{name}" already registered.')
     logging.getLogger().addHandler(handler)
     _handlers[name] = handler
 
@@ -106,9 +105,7 @@ def unregister_handler(name, silent=False):
     handler = _handlers.pop(name, None)
     if handler is None:
         if not silent:
-            raise KeyError(
-                f'Unable to unregister logging handler. No handler registered by name "{name}".'
-            )
+            raise KeyError(f'Unable to unregister logging handler. No handler registered by name "{name}".')
     else:
         logging.getLogger().removeHandler(handler)
 
@@ -121,7 +118,7 @@ def clear_handlers():
 
 
 def get_handler(name):
-    return _handlers.get(name, None)
+    return _handlers.get(name)
 
 
 def get_logger(name):
@@ -160,8 +157,7 @@ def init_record_model_handler(max_records=10000):
         logging.getLogger().removeHandler(_table_model_handler)
         _table_model_handler = None
 
-    _table_model_handler = LogTableModelHandler(level=_qudi_root_logger.level,
-                                                max_records=max_records)
+    _table_model_handler = LogTableModelHandler(level=_qudi_root_logger.level, max_records=max_records)
     logging.getLogger().addHandler(_table_model_handler)
 
 
@@ -182,17 +178,20 @@ def init_rotating_file_handler(path='', filename='qudi.log', max_bytes=1024**3, 
             # Start new file if old logfiles exist
             do_rollover = os.path.exists(filepath) and os.stat(filepath).st_size > 0
             _file_handler = RotatingFileHandler(filepath, maxBytes=max_bytes, backupCount=backup_count)
-            _file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s',
-                                                         datefmt="%Y-%m-%d %H:%M:%S"))
+            _file_handler.setFormatter(
+                logging.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s', datefmt="%Y-%m-%d %H:%M:%S")
+            )
             _file_handler.setLevel(_qudi_root_logger.level)
             if do_rollover:
                 _file_handler.doRollover()
         except PermissionError:
             session_count += 1
             if session_count > session_limit:
-                warnings.warn(f'Unable to initialize logger rotating file handler. OS denied '
-                              f'access to log file or there are more than {session_limit:d} qudi '
-                              f'sessions running.')
+                warnings.warn(
+                    f'Unable to initialize logger rotating file handler. OS denied '
+                    f'access to log file or there are more than {session_limit:d} qudi '
+                    f'sessions running.'
+                )
                 return
             split_filename = filename.rsplit('.', 1)
             if len(split_filename) == 2:

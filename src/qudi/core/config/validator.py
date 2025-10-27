@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 JSON (draft v7) validator for qudi YAML configurations that also fills in default values.
 The corresponding JSON schema is defined in ".__schema.py".
@@ -21,16 +19,23 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['ValidationError', 'validate_config', 'validate_local_module_config',
-           'validate_remote_module_config', 'validate_module_name']
+__all__ = [
+    'ValidationError',
+    'validate_config',
+    'validate_local_module_config',
+    'validate_remote_module_config',
+    'validate_module_name',
+]
 
 import re
-from typing import Mapping, Any
+from collections.abc import Mapping
+from typing import Any
+
+from jsonschema import Draft7Validator as __BaseValidator
 from jsonschema import ValidationError
 from jsonschema import validators as __validators
-from jsonschema import Draft7Validator as __BaseValidator
 
-from .schema import config_schema, remote_module_config_schema, local_module_config_schema
+from .schema import config_schema, local_module_config_schema, remote_module_config_schema
 
 
 def __set_defaults(validator, properties, instance, schema):
@@ -52,8 +57,7 @@ def __set_defaults(validator, properties, instance, schema):
 
 
 def __is_iterable(checker, instance):
-    return (__BaseValidator.TYPE_CHECKER.is_type(instance, "array") or
-            isinstance(instance, (set, frozenset, tuple)))
+    return __BaseValidator.TYPE_CHECKER.is_type(instance, "array") or isinstance(instance, (set, frozenset, tuple))
 
 
 # Add custom JSON schema (draft v7) validator that accepts all Python builtin sequences as "array"
@@ -61,7 +65,7 @@ def __is_iterable(checker, instance):
 DefaultInsertionValidator = __validators.extend(
     validator=__BaseValidator,
     validators={'properties': __set_defaults},
-    type_checker=__BaseValidator.TYPE_CHECKER.redefine("array", __is_iterable)
+    type_checker=__BaseValidator.TYPE_CHECKER.redefine("array", __is_iterable),
 )
 
 
@@ -93,6 +97,4 @@ def validate_module_name(name: str) -> None:
     WARNING: The jsonschema.ValidationError raised does not contain any JSON schema information.
     """
     if re.match(r'^[a-zA-Z_]+[a-zA-Z0-9_]*$', name) is None:
-        raise ValidationError(
-            'Module names must only contain word characters [a-zA-Z0-9_] and not start on a number.'
-        )
+        raise ValidationError('Module names must only contain word characters [a-zA-Z0-9_] and not start on a number.')

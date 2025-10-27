@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 StatusVar object for qudi modules to allow storing of application status variables on disk.
 These variables get stored during deactivation of qudi modules and loaded back in during activation.
@@ -24,7 +23,8 @@ __all__ = ['StatusVar']
 
 import copy
 import inspect
-from typing import Callable, Any, Optional
+from collections.abc import Callable
+from typing import Any
 
 
 class StatusVar:
@@ -32,8 +32,14 @@ class StatusVar:
     deactivation.
     """
 
-    def __init__(self, name: Optional[str] = None, default: Optional[Any] = None, *,
-                 constructor: Optional[Callable] = None, representer: Optional[Callable] = None):
+    def __init__(
+        self,
+        name: str | None = None,
+        default: Any | None = None,
+        *,
+        constructor: Callable | None = None,
+        representer: Callable | None = None,
+    ):
         """
         Parameters
         ----------
@@ -73,10 +79,12 @@ class StatusVar:
         **kwargs : dict
             Additional or overridden parameters for the constructor of this class.
         """
-        newargs = {'name': self.name,
-                   'default': copy.deepcopy(self.default),
-                   'constructor': self.constructor_function,
-                   'representer': self.representer_function}
+        newargs = {
+            'name': self.name,
+            'default': copy.deepcopy(self.default),
+            'constructor': self.constructor_function,
+            'representer': self.representer_function,
+        }
         newargs.update(kwargs)
         return StatusVar(**newargs)
 
@@ -116,9 +124,11 @@ class StatusVar:
     def _assert_func_signature(func: Callable) -> Callable:
         assert callable(func), 'StatusVar constructor/representer must be callable'
         params = tuple(inspect.signature(func).parameters)
-        assert 0 < len(params) < 3, 'StatusVar constructor/representer must be function with ' \
-                                    '1 (static) or 2 (bound method) parameters.'
+        assert 0 < len(params) < 3, (
+            'StatusVar constructor/representer must be function with 1 (static) or 2 (bound method) parameters.'
+        )
         if len(params) == 1:
+
             def wrapper(instance, value):
                 return func(value)
 

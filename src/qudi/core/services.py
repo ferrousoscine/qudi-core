@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This file contains the qudi tools for remote module sharing via rpyc server.
 
@@ -22,23 +21,23 @@ If not, see <https://www.gnu.org/licenses/>.
 __all__ = ('RemoteModulesService', 'QudiNamespaceService')
 
 import logging
-
-import rpyc
 import weakref
 from functools import wraps
-from inspect import signature, isfunction, ismethod
+from inspect import isfunction, ismethod, signature
 
-from qudi.util.mutex import Mutex
-from qudi.util.models import DictTableModel
-from qudi.util.network import netobtain
+import rpyc
+
 from qudi.core.logger import get_logger
+from qudi.util.models import DictTableModel
+from qudi.util.mutex import Mutex
+from qudi.util.network import netobtain
 
 logger = get_logger(__name__)
 
 
 class _SharedModulesModel(DictTableModel):
-    """Derived dict model for GUI display elements.
-    """
+    """Derived dict model for GUI display elements."""
+
     def __init__(self):
         super().__init__(headers='Shared Module')
 
@@ -67,8 +66,8 @@ class _SharedModulesModel(DictTableModel):
 
 
 class RemoteModulesService(rpyc.Service):
-    """An RPyC service that has a module list.
-    """
+    """An RPyC service that has a module list."""
+
     ALIASES = ['RemoteModules']
 
     def __init__(self, *args, force_remote_calls_by_value=False, **kwargs):
@@ -91,14 +90,12 @@ class RemoteModulesService(rpyc.Service):
             self.shared_modules.pop(name, None)
 
     def on_connect(self, conn):
-        """Code that runs when a connection is created.
-        """
+        """Code that runs when a connection is created."""
         host, port = conn._config['endpoints'][1]
         logger.info(f'Client connected to remote modules service from [{host}]:{port:d}')
 
     def on_disconnect(self, conn):
-        """Code that runs when the connection is closing.
-        """
+        """Code that runs when the connection is closing."""
         host, port = conn._config['endpoints'][1]
         logger.info(f'Client [{host}]:{port:d} disconnected from remote modules service')
 
@@ -123,8 +120,7 @@ class RemoteModulesService(rpyc.Service):
                 return None
             if activate:
                 if not module.activate():
-                    logger.error(f'Unable to share requested module "{name}" with client. Module '
-                                 f'can not be activated.')
+                    logger.error(f'Unable to share requested module "{name}" with client. Module can not be activated.')
                     return None
             if self._force_remote_calls_by_value:
                 return ModuleRpycProxy(module.instance)
@@ -152,8 +148,7 @@ class RemoteModulesService(rpyc.Service):
         """
         with self._thread_lock:
             all_modules = {name: ref() for name, ref in self.shared_modules.items()}
-            return tuple(name for name, mod in all_modules.items() if
-                         mod is not None and mod.instance is not None)
+            return tuple(name for name, mod in all_modules.items() if mod is not None and mod.instance is not None)
 
     def exposed_get_active_module_names(self):
         """Returns the currently shared module names for all modules that are active.
@@ -165,15 +160,14 @@ class RemoteModulesService(rpyc.Service):
         """
         with self._thread_lock:
             all_modules = {name: ref() for name, ref in self.shared_modules.items()}
-            return tuple(
-                name for name, mod in all_modules.items() if mod is not None and mod.is_active
-            )
+            return tuple(name for name, mod in all_modules.items() if mod is not None and mod.is_active)
 
 
 class QudiNamespaceService(rpyc.Service):
     """An RPyC service providing a namespace dict containing references to all active qudi module
     instances as well as a reference to the qudi application itself.
     """
+
     ALIASES = ['QudiNamespace']
 
     def __init__(self, *args, qudi, force_remote_calls_by_value=False, **kwargs):
@@ -197,8 +191,7 @@ class QudiNamespaceService(rpyc.Service):
         return manager
 
     def on_connect(self, conn):
-        """Code that runs when a connection is created.
-        """
+        """Code that runs when a connection is created."""
         try:
             self._notifier_callbacks[conn] = rpyc.async_(conn.root.modules_changed)
         except AttributeError:
@@ -207,15 +200,15 @@ class QudiNamespaceService(rpyc.Service):
         logger.info(f'Client connected to local module service from [{host}]:{port:d}')
 
     def on_disconnect(self, conn):
-        """Code that runs when the connection is closing.
-        """
+        """Code that runs when the connection is closing."""
         self._notifier_callbacks.pop(conn, None)
         host, port = conn._config['endpoints'][1]
         logger.info(f'Client [{host}]:{port:d} disconnected from local module service')
 
     def notify_module_change(self):
-        logger.debug('Local module server has detected a module state change and sends async '
-                     'notifier signals to all clients')
+        logger.debug(
+            'Local module server has detected a module state change and sends async notifier signals to all clients'
+        )
         for callback in self._notifier_callbacks.values():
             callback()
 
@@ -229,11 +222,9 @@ class QudiNamespaceService(rpyc.Service):
             Names (keys) and object references (values).
         """
         if self._force_remote_calls_by_value:
-            mods = {name: ModuleRpycProxy(mod.instance) for name, mod in
-                    self._module_manager.items() if mod.is_active}
+            mods = {name: ModuleRpycProxy(mod.instance) for name, mod in self._module_manager.items() if mod.is_active}
         else:
-            mods = {name: mod.instance for name, mod in self._module_manager.items() if
-                    mod.is_active}
+            mods = {name: mod.instance for name, mod in self._module_manager.items() if mod.is_active}
         mods['qudi'] = self._qudi
         return mods
 
@@ -287,27 +278,90 @@ class ModuleRpycProxy:
 
     # factories
     _special_names = (
-        '__abs__', '__add__', '__and__', '__call__', '__cmp__', '__coerce__', '__contains__',
-        '__delitem__', '__delslice__', '__div__', '__divmod__', '__eq__', '__float__',
-        '__floordiv__', '__ge__', '__getitem__', '__getslice__', '__gt__', '__hash__', '__hex__',
-        '__iadd__', '__iand__', '__idiv__', '__idivmod__', '__ifloordiv__', '__ilshift__',
-        '__imod__', '__imul__', '__int__', '__invert__', '__ior__', '__ipow__', '__irshift__',
-        '__isub__', '__iter__', '__itruediv__', '__ixor__', '__le__', '__len__', '__long__',
-        '__lshift__', '__lt__', '__mod__', '__mul__', '__ne__', '__neg__', '__oct__', '__or__',
-        '__pos__', '__pow__', '__radd__', '__rand__', '__rdiv__', '__rdivmod__', '__reduce__',
-        '__reduce_ex__', '__repr__', '__reversed__', '__rfloorfiv__', '__rlshift__', '__rmod__',
-        '__rmul__', '__ror__', '__rpow__', '__rrshift__', '__rshift__', '__rsub__', '__rtruediv__',
-        '__rxor__', '__setitem__', '__setslice__', '__sub__', '__truediv__', '__xor__', 'next',
-        '__str__', '__nonzero__'
+        '__abs__',
+        '__add__',
+        '__and__',
+        '__call__',
+        '__cmp__',
+        '__coerce__',
+        '__contains__',
+        '__delitem__',
+        '__delslice__',
+        '__div__',
+        '__divmod__',
+        '__eq__',
+        '__float__',
+        '__floordiv__',
+        '__ge__',
+        '__getitem__',
+        '__getslice__',
+        '__gt__',
+        '__hash__',
+        '__hex__',
+        '__iadd__',
+        '__iand__',
+        '__idiv__',
+        '__idivmod__',
+        '__ifloordiv__',
+        '__ilshift__',
+        '__imod__',
+        '__imul__',
+        '__int__',
+        '__invert__',
+        '__ior__',
+        '__ipow__',
+        '__irshift__',
+        '__isub__',
+        '__iter__',
+        '__itruediv__',
+        '__ixor__',
+        '__le__',
+        '__len__',
+        '__long__',
+        '__lshift__',
+        '__lt__',
+        '__mod__',
+        '__mul__',
+        '__ne__',
+        '__neg__',
+        '__oct__',
+        '__or__',
+        '__pos__',
+        '__pow__',
+        '__radd__',
+        '__rand__',
+        '__rdiv__',
+        '__rdivmod__',
+        '__reduce__',
+        '__reduce_ex__',
+        '__repr__',
+        '__reversed__',
+        '__rfloorfiv__',
+        '__rlshift__',
+        '__rmod__',
+        '__rmul__',
+        '__ror__',
+        '__rpow__',
+        '__rrshift__',
+        '__rshift__',
+        '__rsub__',
+        '__rtruediv__',
+        '__rxor__',
+        '__setitem__',
+        '__setslice__',
+        '__sub__',
+        '__truediv__',
+        '__xor__',
+        'next',
+        '__str__',
+        '__nonzero__',
     )
 
     @classmethod
     def _create_class_proxy(cls, theclass):
-        """Creates a proxy for the given class.
-        """
+        """Creates a proxy for the given class."""
 
         def make_method(method_name):
-
             def method(self, *args, **kw):
                 obj = object.__getattribute__(self, '_obj_ref')()
                 args = [netobtain(arg) for arg in args]

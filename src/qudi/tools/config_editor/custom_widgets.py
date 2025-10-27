@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 QWidgets serving as editors for custom configuration entries.
 
@@ -23,25 +21,27 @@ If not, see <https://www.gnu.org/licenses/>.
 __all__ = ['CustomItemsWidget', 'CustomOptionsWidget', 'CustomConnectorsWidget']
 
 import os
-from PySide2 import QtCore, QtWidgets, QtGui
-from typing import Optional, Mapping, Union, Dict, Iterable, Any
+from collections.abc import Iterable, Mapping
+from typing import Any
+
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from qudi.util.paths import get_artwork_dir
 
 
 class CustomItemsWidget(QtWidgets.QWidget):
-    """
-    """
-    def __init__(self,
-                 forbidden_names: Optional[Iterable[str]] = None,
-                 allowed_values: Optional[Iterable[str]] = None,
-                 config: Optional[Mapping[str, str]] = None,
-                 parent: Optional[QtWidgets.QWidget] = None
-                 ) -> None:
+    """ """
+
+    def __init__(
+        self,
+        forbidden_names: Iterable[str] | None = None,
+        allowed_values: Iterable[str] | None = None,
+        config: Mapping[str, str] | None = None,
+        parent: QtWidgets.QWidget | None = None,
+    ) -> None:
         super().__init__(parent=parent)
 
-        self._forbidden_names = frozenset() if forbidden_names is None else frozenset(
-            forbidden_names)
+        self._forbidden_names = frozenset() if forbidden_names is None else frozenset(forbidden_names)
         self._allowed_values = [val.strip() for val in allowed_values] if allowed_values else None
 
         layout = QtWidgets.QGridLayout()
@@ -65,29 +65,24 @@ class CustomItemsWidget(QtWidgets.QWidget):
         self.set_config(config)
 
     @property
-    def config(self) -> Dict[str, str]:
+    def config(self) -> dict[str, str]:
         if self._allowed_values is None:
-            config = {
-                name: widgets[2].text().strip() for name, widgets in self._item_widgets.items()
-            }
+            config = {name: widgets[2].text().strip() for name, widgets in self._item_widgets.items()}
         else:
-            config = {
-                name: widgets[2].currentText() for name, widgets in self._item_widgets.items()
-            }
+            config = {name: widgets[2].currentText() for name, widgets in self._item_widgets.items()}
         return config
 
-    def set_config(self, config: Union[None, Mapping[str, str]]) -> None:
+    def set_config(self, config: None | Mapping[str, str]) -> None:
         self.clear_items()
         if config:
             for name, value in config.items():
                 self.add_item(name, value)
 
-    def add_item(self, name: str, value: Optional[str] = None) -> None:
+    def add_item(self, name: str, value: str | None = None) -> None:
         if not name:
             raise ValueError('Item name must be non-empty string')
         if name in self._forbidden_names:
-            raise ValueError(f'Item name to add "{name}" is one of the forbidden names:\n'
-                             f'{set(self._forbidden_names)}')
+            raise ValueError(f'Item name to add "{name}" is one of the forbidden names:\n{set(self._forbidden_names)}')
         if name in self._item_widgets:
             raise ValueError(f'Item name to add "{name}" is already present')
 
@@ -166,20 +161,21 @@ class CustomItemsWidget(QtWidgets.QWidget):
 
 
 class CustomOptionsWidget(CustomItemsWidget):
-    """
-    """
-    def __init__(self,
-                 forbidden_names: Optional[Iterable[str]] = None,
-                 config: Optional[Mapping[str, Any]] = None,
-                 parent: Optional[QtWidgets.QWidget] = None
-                 ) -> None:
+    """ """
+
+    def __init__(
+        self,
+        forbidden_names: Iterable[str] | None = None,
+        config: Mapping[str, Any] | None = None,
+        parent: QtWidgets.QWidget | None = None,
+    ) -> None:
         super().__init__(forbidden_names=forbidden_names, config=config, parent=parent)
 
         self.add_item_button.setToolTip('Add custom ConfigOption with given name.')
         self.item_name_lineedit.setPlaceholderText('Enter custom ConfigOption name')
 
     @property
-    def config(self) -> Dict[str, Any]:
+    def config(self) -> dict[str, Any]:
         cfg = super().config
         for name, value in cfg.items():
             if value == '':
@@ -191,29 +187,27 @@ class CustomOptionsWidget(CustomItemsWidget):
                     pass
         return cfg
 
-    def set_config(self, config: Union[None, Mapping[str, Any]]) -> None:
+    def set_config(self, config: None | Mapping[str, Any]) -> None:
         if config:
             config = {name: '' if val is None else repr(val) for name, val in config.items()}
         return super().set_config(config)
 
-    def add_item(self, name: str, value: Optional[str] = None) -> None:
+    def add_item(self, name: str, value: str | None = None) -> None:
         super().add_item(name=name, value=value)
         self._item_widgets[name][2].setPlaceholderText('text parsed by eval()')
 
 
 class CustomConnectorsWidget(CustomItemsWidget):
-    """
-    """
-    def __init__(self,
-                 forbidden_names: Optional[Iterable[str]] = None,
-                 module_names: Optional[Iterable[str]] = None,
-                 config: Optional[Mapping[str, Any]] = None,
-                 parent: Optional[QtWidgets.QWidget] = None
-                 ) -> None:
-        super().__init__(forbidden_names=forbidden_names,
-                         allowed_values=module_names,
-                         config=config,
-                         parent=parent)
+    """ """
+
+    def __init__(
+        self,
+        forbidden_names: Iterable[str] | None = None,
+        module_names: Iterable[str] | None = None,
+        config: Mapping[str, Any] | None = None,
+        parent: QtWidgets.QWidget | None = None,
+    ) -> None:
+        super().__init__(forbidden_names=forbidden_names, allowed_values=module_names, config=config, parent=parent)
 
         self.add_item_button.setToolTip('Add custom Connector with given name.')
         self.item_name_lineedit.setPlaceholderText('Enter custom Connector name')

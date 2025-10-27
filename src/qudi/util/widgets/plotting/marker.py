@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This file contains customized pyqtgraph graphics items to be used as data marker in 1D and 2D plots.
 This is an attempt to provide a somewhat unified interface to these markers contrary to the
@@ -22,22 +20,23 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['InfiniteCrosshair', 'InfiniteLine', 'LinearRegion', 'Rectangle',
-           'InfiniteCrosshairRectangle']
+__all__ = ['InfiniteCrosshair', 'InfiniteLine', 'LinearRegion', 'Rectangle', 'InfiniteCrosshairRectangle']
 
+from collections.abc import Sequence
 from math import isinf
-from typing import Union, Tuple, Optional, List, Sequence, Any
+from typing import Any
 
-from PySide2 import QtCore
-from pyqtgraph import ViewBox
 from pyqtgraph import ROI as _ROI
-from pyqtgraph import LinearRegionItem as _LinearRegionItem
 from pyqtgraph import InfiniteLine as _InfiniteLine
+from pyqtgraph import LinearRegionItem as _LinearRegionItem
+from pyqtgraph import ViewBox
+from PySide6 import QtCore
+
 from qudi.util.widgets.plotting.roi import RectangleROI as _RectangleROI
 
 
 class InfiniteCrosshair(QtCore.QObject):
-    """ Represents a crosshair (two perpendicular infinite lines) """
+    """Represents a crosshair (two perpendicular infinite lines)"""
 
     _default_pen = {'color': '#00ff00', 'width': 1}
     _default_hover_pen = {'color': '#ffff00', 'width': 1}
@@ -46,14 +45,15 @@ class InfiniteCrosshair(QtCore.QObject):
     # start_pos, current_pos, is_start, is_finished
     sigPositionDragged = QtCore.Signal(tuple, tuple, bool, bool)
 
-    def __init__(self,
-                 viewbox: ViewBox,
-                 position: Optional[Tuple[float, float]] = (0, 0),
-                 bounds: Optional[Sequence[Tuple[Union[None, float], Union[None, float]]]] = None,
-                 movable: Optional[bool] = True,
-                 pen: Optional[Any] = None,
-                 hover_pen: Optional[Any] = None,
-                 ) -> None:
+    def __init__(
+        self,
+        viewbox: ViewBox,
+        position: tuple[float, float] | None = (0, 0),
+        bounds: Sequence[tuple[None | float, None | float]] | None = None,
+        movable: bool | None = True,
+        pen: Any | None = None,
+        hover_pen: Any | None = None,
+    ) -> None:
         super().__init__(parent=viewbox)
         if position is None:
             position = (0, 0)
@@ -67,18 +67,12 @@ class InfiniteCrosshair(QtCore.QObject):
         self._bounds = self._normalize_bounds(bounds)
         self._z_value = None
         self._is_dragged = False
-        self.vline = _InfiniteLine(pos=position[0],
-                                   bounds=self._bounds[0],
-                                   angle=90,
-                                   movable=movable,
-                                   pen=pen,
-                                   hoverPen=hover_pen)
-        self.hline = _InfiniteLine(pos=position[1],
-                                   bounds=self._bounds[1],
-                                   angle=0,
-                                   movable=movable,
-                                   pen=pen,
-                                   hoverPen=hover_pen)
+        self.vline = _InfiniteLine(
+            pos=position[0], bounds=self._bounds[0], angle=90, movable=movable, pen=pen, hoverPen=hover_pen
+        )
+        self.hline = _InfiniteLine(
+            pos=position[1], bounds=self._bounds[1], angle=0, movable=movable, pen=pen, hoverPen=hover_pen
+        )
 
         self.vline.sigDragged.connect(self._line_dragged)
         self.vline.sigPositionChanged.connect(self._line_changed)
@@ -93,12 +87,12 @@ class InfiniteCrosshair(QtCore.QObject):
         return bool(self.vline.movable)
 
     def set_movable(self, movable: bool) -> None:
-        """ (Un-)Set the crosshair movable (draggable by mouse cursor) """
+        """(Un-)Set the crosshair movable (draggable by mouse cursor)"""
         self.vline.setMovable(movable)
         self.hline.setMovable(movable)
 
     @property
-    def z_value(self) -> Union[None, int]:
+    def z_value(self) -> None | int:
         return self._z_value
 
     def set_z_value(self, value: int) -> None:
@@ -107,10 +101,10 @@ class InfiniteCrosshair(QtCore.QObject):
         self._z_value = value
 
     @property
-    def position(self) -> Tuple[float, float]:
+    def position(self) -> tuple[float, float]:
         return self.vline.value(), self.hline.value()
 
-    def set_position(self, pos: Tuple[float, float]) -> None:
+    def set_position(self, pos: tuple[float, float]) -> None:
         self.vline.blockSignals(True)
         self.hline.blockSignals(True)
         try:
@@ -122,13 +116,11 @@ class InfiniteCrosshair(QtCore.QObject):
         self.sigPositionChanged.emit(self.position)
 
     @property
-    def bounds(self) -> List[Tuple[Union[None, float], Union[None, float]]]:
+    def bounds(self) -> list[tuple[None | float, None | float]]:
         return self._bounds.copy()
 
-    def set_bounds(self,
-                   bounds: Union[None, Sequence[Tuple[Union[None, float], Union[None, float]]]]
-                   ) -> None:
-        """ Sets a range boundary for the crosshair position """
+    def set_bounds(self, bounds: None | Sequence[tuple[None | float, None | float]]) -> None:
+        """Sets a range boundary for the crosshair position"""
         self._bounds = self._normalize_bounds(bounds)
         self.vline.setBounds(self._bounds[0])
         self.hline.setBounds(self._bounds[1])
@@ -152,14 +144,14 @@ class InfiniteCrosshair(QtCore.QObject):
             view.removeItem(self.hline)
 
     def set_pen(self, pen: Any) -> None:
-        """ Sets the pen to be used for drawing the crosshair lines.
+        """Sets the pen to be used for drawing the crosshair lines.
         Given parameter must be compatible with pyqtgraph.mkPen()
         """
         self.vline.setPen(pen)
         self.hline.setPen(pen)
 
     def set_hover_pen(self, pen: Any) -> None:
-        """ Sets the pen to be used for drawing the crosshair lines when the mouse cursor is
+        """Sets the pen to be used for drawing the crosshair lines when the mouse cursor is
         hovering over them.
         Given parameter must be compatible with pyqtgraph.mkPen()
         """
@@ -168,8 +160,8 @@ class InfiniteCrosshair(QtCore.QObject):
 
     @staticmethod
     def _normalize_bounds(
-            bounds: Union[None, Sequence[Tuple[Union[None, float], Union[None, float]]]]
-            ) -> List[Tuple[Union[None, float], Union[None, float]]]:
+        bounds: None | Sequence[tuple[None | float, None | float]],
+    ) -> list[tuple[None | float, None | float]]:
         if bounds is None:
             bounds = [(None, None), (None, None)]
         else:
@@ -193,7 +185,7 @@ class InfiniteCrosshair(QtCore.QObject):
                 bounds[1] = tuple(bounds[1])
         return bounds
 
-    def _line_dragged(self, line: Optional[_InfiniteLine] = None) -> None:
+    def _line_dragged(self, line: _InfiniteLine | None = None) -> None:
         if self._is_dragged:
             is_start = False
         else:
@@ -214,7 +206,7 @@ class InfiniteCrosshair(QtCore.QObject):
 
         self.sigPositionDragged.emit(start_pos, current_pos, is_start, is_finished)
 
-    def _line_drag_finished(self, line: Optional[_InfiniteLine] = None) -> None:
+    def _line_drag_finished(self, line: _InfiniteLine | None = None) -> None:
         self._is_dragged = False
         current_pos = self.position
         if line is self.vline:
@@ -223,12 +215,12 @@ class InfiniteCrosshair(QtCore.QObject):
             start_pos = (current_pos[0], self.hline.startPosition[1])
         self.sigPositionDragged.emit(start_pos, current_pos, False, True)
 
-    def _line_changed(self, line: Optional[_InfiniteLine] = None) -> None:
+    def _line_changed(self, line: _InfiniteLine | None = None) -> None:
         self.sigPositionChanged.emit(self.position)
 
 
 class InfiniteLine(QtCore.QObject):
-    """ Represents a horizontal or vertical infinite line data marker """
+    """Represents a horizontal or vertical infinite line data marker"""
 
     _default_pen = {'color': '#00ff00', 'width': 1}
     _default_hover_pen = {'color': '#ffff00', 'width': 1}
@@ -237,15 +229,16 @@ class InfiniteLine(QtCore.QObject):
     # start_pos, current_pos, is_start, is_finished
     sigPositionDragged = QtCore.Signal(object, object, bool, bool)
 
-    def __init__(self,
-                 viewbox: ViewBox,
-                 orientation: QtCore.Qt.Orientation,
-                 position: Optional[float] = 0,
-                 bounds: Optional[Tuple[Union[None, float]]] = None,
-                 movable: Optional[bool] = True,
-                 pen: Optional[Any] = None,
-                 hover_pen: Optional[Any] = None,
-                 ) -> None:
+    def __init__(
+        self,
+        viewbox: ViewBox,
+        orientation: QtCore.Qt.Orientation,
+        position: float | None = 0,
+        bounds: tuple[None | float] | None = None,
+        movable: bool | None = True,
+        pen: Any | None = None,
+        hover_pen: Any | None = None,
+    ) -> None:
         super().__init__(parent=viewbox)
         if position is None:
             position = 0
@@ -259,11 +252,13 @@ class InfiniteLine(QtCore.QObject):
         self._bounds = self._normalize_bounds(bounds)
         self._z_value = None
         self._is_dragged = False
-        self.line = _InfiniteLine(pos=position,
-                                  angle=0 if orientation is QtCore.Qt.Horizontal else 90,
-                                  movable=movable,
-                                  pen=pen,
-                                  hoverPen=hover_pen)
+        self.line = _InfiniteLine(
+            pos=position,
+            angle=0 if orientation is QtCore.Qt.Horizontal else 90,
+            movable=movable,
+            pen=pen,
+            hoverPen=hover_pen,
+        )
 
         self.line.sigDragged.connect(self._line_dragged)
         self.line.sigPositionChanged.connect(self._line_changed)
@@ -283,7 +278,7 @@ class InfiniteLine(QtCore.QObject):
         self.line.setMovable(movable)
 
     @property
-    def z_value(self) -> Union[None, int]:
+    def z_value(self) -> None | int:
         return self._z_value
 
     def set_z_value(self, value: int) -> None:
@@ -303,13 +298,11 @@ class InfiniteLine(QtCore.QObject):
         self.sigPositionChanged.emit(self.position)
 
     @property
-    def bounds(self) -> Tuple[Union[None, float], Union[None, float]]:
+    def bounds(self) -> tuple[None | float, None | float]:
         return self._bounds
 
-    def set_bounds(self,
-                   bounds: Union[None, Tuple[Union[None, float], Union[None, float]]]
-                   ) -> None:
-        """ Sets a range boundary for the line position """
+    def set_bounds(self, bounds: None | tuple[None | float, None | float]) -> None:
+        """Sets a range boundary for the line position"""
         self._bounds = self._normalize_bounds(bounds)
         self.line.setBounds(self._bounds)
 
@@ -326,20 +319,19 @@ class InfiniteLine(QtCore.QObject):
             view.removeItem(self.line)
 
     def set_pen(self, pen: Any) -> None:
-        """ Sets the pen to be used for drawing the line.
+        """Sets the pen to be used for drawing the line.
         Given parameter must be compatible with pyqtgraph.mkPen()
         """
         self.line.setPen(pen)
 
     def set_hover_pen(self, pen: Any) -> None:
-        """ Sets the pen to be used for drawing the line when the mouse cursor is hovering over it.
+        """Sets the pen to be used for drawing the line when the mouse cursor is hovering over it.
         Given parameter must be compatible with pyqtgraph.mkPen()
         """
         self.line.setHoverPen(pen)
 
     @staticmethod
-    def _normalize_bounds(bounds: Union[None, Tuple[Union[None, float], Union[None, float]]]
-                          ) -> Tuple[Union[None, float], Union[None, float]]:
+    def _normalize_bounds(bounds: None | tuple[None | float, None | float]) -> tuple[None | float, None | float]:
         if bounds is None:
             bounds = (None, None)
         else:
@@ -361,7 +353,7 @@ class InfiniteLine(QtCore.QObject):
                 bounds = tuple(bounds)
         return bounds
 
-    def _line_dragged(self, line: Optional[_InfiniteLine] = None) -> None:
+    def _line_dragged(self, line: _InfiniteLine | None = None) -> None:
         if self._is_dragged:
             is_start = False
         else:
@@ -371,18 +363,18 @@ class InfiniteLine(QtCore.QObject):
         start_pos = self.line.startPosition[0 if self.line.angle == 90 else 1]
         self.sigPositionDragged.emit(start_pos, self.position, is_start, False)
 
-    def _line_drag_finished(self, line: Optional[_InfiniteLine] = None) -> None:
+    def _line_drag_finished(self, line: _InfiniteLine | None = None) -> None:
         self._is_dragged = False
         start_pos = self.line.startPosition[0 if self.line.angle == 90 else 1]
         self.sigPositionDragged.emit(start_pos, self.position, False, True)
 
-    def _line_changed(self, line: Optional[_InfiniteLine] = None) -> None:
+    def _line_changed(self, line: _InfiniteLine | None = None) -> None:
         self.sigPositionChanged.emit(self.position)
 
 
 class LinearRegion(QtCore.QObject):
-    """
-    """
+    """ """
+
     _default_pen = {'color': '#00ff00', 'width': 1}
     _default_hover_pen = {'color': '#ffff00', 'width': 1}
     _default_brush = None
@@ -392,17 +384,18 @@ class LinearRegion(QtCore.QObject):
     # start_area, current_area, is_start, is_finished
     sigAreaDragged = QtCore.Signal(tuple, tuple, bool, bool)
 
-    def __init__(self,
-                 viewbox: ViewBox,
-                 orientation: QtCore.Qt.Orientation,
-                 span: Optional[Tuple[float, float]] = (0, 1),
-                 bounds: Optional[Tuple[Union[None, float], Union[None, float]]] = None,
-                 movable: Optional[bool] = True,
-                 pen: Optional[Any] = None,
-                 hover_pen: Optional[Any] = None,
-                 brush: Optional[Any] = None,
-                 hover_brush: Optional[Any] = None
-                 ) -> None:
+    def __init__(
+        self,
+        viewbox: ViewBox,
+        orientation: QtCore.Qt.Orientation,
+        span: tuple[float, float] | None = (0, 1),
+        bounds: tuple[None | float, None | float] | None = None,
+        movable: bool | None = True,
+        pen: Any | None = None,
+        hover_pen: Any | None = None,
+        brush: Any | None = None,
+        hover_brush: Any | None = None,
+    ) -> None:
         super().__init__(parent=viewbox)
         if span is None:
             span = (0, 1)
@@ -419,15 +412,17 @@ class LinearRegion(QtCore.QObject):
         orientation = 'vertical' if orientation == QtCore.Qt.Vertical else 'horizontal'
 
         self._bounds = self._normalize_bounds(bounds)
-        self.region = _LinearRegionItem(values=span,
-                                        orientation=orientation,
-                                        brush=brush,
-                                        pen=pen,
-                                        hoverBrush=hover_brush,
-                                        hoverPen=hover_pen,
-                                        movable=movable,
-                                        bounds=self._bounds,
-                                        swapMode='sort')
+        self.region = _LinearRegionItem(
+            values=span,
+            orientation=orientation,
+            brush=brush,
+            pen=pen,
+            hoverBrush=hover_brush,
+            hoverPen=hover_pen,
+            movable=movable,
+            bounds=self._bounds,
+            swapMode='sort',
+        )
 
         self._z_value = None
         self._is_dragged = False
@@ -450,7 +445,7 @@ class LinearRegion(QtCore.QObject):
         self.region.setMovable(movable)
 
     @property
-    def z_value(self) -> Union[None, int]:
+    def z_value(self) -> None | int:
         return self._z_value
 
     def set_z_value(self, value: int) -> None:
@@ -458,10 +453,10 @@ class LinearRegion(QtCore.QObject):
         self._z_value = value
 
     @property
-    def area(self) -> Tuple[float, float]:
+    def area(self) -> tuple[float, float]:
         return self.region.getRegion()
 
-    def set_area(self, area: Tuple[float, float]) -> None:
+    def set_area(self, area: tuple[float, float]) -> None:
         self.region.blockSignals(True)
         try:
             self.region.setRegion(area)
@@ -470,12 +465,10 @@ class LinearRegion(QtCore.QObject):
         self.sigAreaChanged.emit(self.area)
 
     @property
-    def bounds(self) -> Tuple[Union[None, float], Union[None, float]]:
+    def bounds(self) -> tuple[None | float, None | float]:
         return self._bounds
 
-    def set_bounds(self,
-                   bounds: Union[None, Tuple[Union[None, float], Union[None, float]]]
-                   ) -> None:
+    def set_bounds(self, bounds: None | tuple[None | float, None | float]) -> None:
         self._bounds = self._normalize_bounds(bounds)
         self.region.setBounds(self._bounds)
 
@@ -492,35 +485,34 @@ class LinearRegion(QtCore.QObject):
             view.removeItem(self.region)
 
     def set_pen(self, pen: Any) -> None:
-        """ Sets the pen to be used for drawing the lines.
+        """Sets the pen to be used for drawing the lines.
         Given parameter must be compatible with pyqtgraph.mkPen()
         """
         for line in self.region.lines:
             line.setPen(pen)
 
     def set_hover_pen(self, pen: Any) -> None:
-        """ Sets the pen to be used for drawing the lines when the mouse cursor is hovering over it.
+        """Sets the pen to be used for drawing the lines when the mouse cursor is hovering over it.
         Given parameter must be compatible with pyqtgraph.mkPen()
         """
         for line in self.region.lines:
             line.setHoverPen(pen)
 
     def set_brush(self, brush: Any) -> None:
-        """ Sets the brush to be used for filling the area between the lines.
+        """Sets the brush to be used for filling the area between the lines.
         Given parameter must be compatible with pyqtgraph.mkBrush()
         """
         self.region.setBrush(brush)
 
     def set_hover_brush(self, brush: Any) -> None:
-        """ Sets the brush to be used for filling the area between the lines when the mouse cursor
+        """Sets the brush to be used for filling the area between the lines when the mouse cursor
         is hovering over it.
         Given parameter must be compatible with pyqtgraph.mkBrush()
         """
         self.region.setHoverBrush(brush)
 
     @staticmethod
-    def _normalize_bounds(bounds: Union[None, Tuple[Union[None, float], Union[None, float]]]
-                          ) -> Tuple[Union[None, float], Union[None, float]]:
+    def _normalize_bounds(bounds: None | tuple[None | float, None | float]) -> tuple[None | float, None | float]:
         if bounds is None:
             bounds = (None, None)
         else:
@@ -542,7 +534,7 @@ class LinearRegion(QtCore.QObject):
                 bounds = tuple(bounds)
         return bounds
 
-    def _region_changed(self, obj: Optional[_LinearRegionItem] = None) -> None:
+    def _region_changed(self, obj: _LinearRegionItem | None = None) -> None:
         if self._is_dragged:
             is_start = False
         else:
@@ -561,7 +553,7 @@ class LinearRegion(QtCore.QObject):
 
         self.sigAreaDragged.emit(self._start_area, self.area, is_start, is_finished)
 
-    def _region_change_finished(self, obj: Optional[_LinearRegionItem] = None) -> None:
+    def _region_change_finished(self, obj: _LinearRegionItem | None = None) -> None:
         current_area = self.area
         if self._is_dragged:
             self._is_dragged = False
@@ -570,8 +562,7 @@ class LinearRegion(QtCore.QObject):
 
 
 class Rectangle(QtCore.QObject):
-    """
-    """
+    """ """
 
     _default_pen = {'color': '#00ff00', 'width': 1}
     _default_hover_pen = {'color': '#ffff00', 'width': 1}
@@ -580,19 +571,20 @@ class Rectangle(QtCore.QObject):
     # start_area, current_area, is_start, is_finished
     sigAreaDragged = QtCore.Signal(tuple, tuple, bool, bool)
 
-    def __init__(self,
-                 viewbox: ViewBox,
-                 position: Optional[Tuple[float, float]] = (0, 0),
-                 size: Optional[Tuple[float, float]] = (1, 1),
-                 edge_handles: Optional[bool] = False,
-                 corner_handles: Optional[bool] = False,
-                 apply_bounds_to_center: Optional[bool] = False,
-                 bounds: Optional[Sequence[Tuple[Union[None, float], Union[None, float]]]] = None,
-                 movable: Optional[bool] = True,
-                 resizable: Optional[bool] = True,
-                 pen: Optional[Any] = None,
-                 hover_pen: Optional[Any] = None
-                 ) -> None:
+    def __init__(
+        self,
+        viewbox: ViewBox,
+        position: tuple[float, float] | None = (0, 0),
+        size: tuple[float, float] | None = (1, 1),
+        edge_handles: bool | None = False,
+        corner_handles: bool | None = False,
+        apply_bounds_to_center: bool | None = False,
+        bounds: Sequence[tuple[None | float, None | float]] | None = None,
+        movable: bool | None = True,
+        resizable: bool | None = True,
+        pen: Any | None = None,
+        hover_pen: Any | None = None,
+    ) -> None:
         super().__init__(parent=viewbox)
         if position is None:
             position = (0, 0)
@@ -607,16 +599,18 @@ class Rectangle(QtCore.QObject):
         if hover_pen is None:
             hover_pen = self._default_hover_pen
 
-        self.roi = _RectangleROI(pos=position,
-                                 size=size,
-                                 apply_bounds_to_center=apply_bounds_to_center,
-                                 bounds=bounds,
-                                 movable=movable,
-                                 resizable=resizable,
-                                 pen=pen,
-                                 hoverPen=hover_pen,
-                                 handlePen=pen,
-                                 handleHoverPen=hover_pen)
+        self.roi = _RectangleROI(
+            pos=position,
+            size=size,
+            apply_bounds_to_center=apply_bounds_to_center,
+            bounds=bounds,
+            movable=movable,
+            resizable=resizable,
+            pen=pen,
+            hoverPen=hover_pen,
+            handlePen=pen,
+            handleHoverPen=hover_pen,
+        )
 
         self.roi.sigRegionChanged.connect(self._roi_changed)
         self.roi.sigRegionChangeFinished.connect(self._roi_change_finished)
@@ -655,56 +649,51 @@ class Rectangle(QtCore.QObject):
                 self._remove_handles()
 
     @property
-    def z_value(self) -> Union[None, int]:
+    def z_value(self) -> None | int:
         return self._z_value
 
     def set_z_value(self, value: int) -> None:
-        """ (Un-)Set the crosshair movable (draggable by mouse cursor) """
+        """(Un-)Set the crosshair movable (draggable by mouse cursor)"""
         self.roi.setZValue(value)
         self._z_value = value
 
     @property
-    def position(self) -> Tuple[float, float]:
+    def position(self) -> tuple[float, float]:
         return self.roi.area[0]
 
-    def set_position(self, position: Tuple[float, float]) -> None:
+    def set_position(self, position: tuple[float, float]) -> None:
         if not self._is_dragged:
             self.roi.set_area(position=position)
 
     @property
-    def size(self) -> Tuple[float, float]:
+    def size(self) -> tuple[float, float]:
         return self.roi.area[1]
 
-    def set_size(self, size: Tuple[float, float]) -> None:
+    def set_size(self, size: tuple[float, float]) -> None:
         if not self._is_dragged:
             self.roi.set_area(size=(abs(size[0]), abs(size[1])))
 
     @property
-    def min_size(self) -> Tuple[float, float]:
+    def min_size(self) -> tuple[float, float]:
         return self.roi.min_size
 
-    def set_min_size(self, size: Tuple[float, float]) -> None:
+    def set_min_size(self, size: tuple[float, float]) -> None:
         if not self._is_dragged:
             self.roi.set_min_size(size)
 
     @property
-    def area(self) -> Tuple[Tuple[float, float], Tuple[float, float]]:
+    def area(self) -> tuple[tuple[float, float], tuple[float, float]]:
         return self.roi.area
 
-    def set_area(self,
-                 position: Optional[Tuple[float, float]] = None,
-                 size: Optional[Tuple[float, float]] = None
-                 ) -> None:
+    def set_area(self, position: tuple[float, float] | None = None, size: tuple[float, float] | None = None) -> None:
         if not self._is_dragged:
             self.roi.set_area(position=position, size=size)
 
     @property
-    def bounds(self) -> List[Tuple[Union[None, float], Union[None, float]]]:
+    def bounds(self) -> list[tuple[None | float, None | float]]:
         return self.roi.bounds
 
-    def set_bounds(self,
-                   bounds: Union[None, Sequence[Tuple[Union[None, float], Union[None, float]]]]
-                   ) -> None:
+    def set_bounds(self, bounds: None | Sequence[tuple[None | float, None | float]]) -> None:
         return self.roi.set_bounds(bounds)
 
     def show(self):
@@ -720,11 +709,11 @@ class Rectangle(QtCore.QObject):
             view.removeItem(self.roi)
 
     def set_pen(self, pen: Any) -> None:
-        """ Given parameter must be compatible with pyqtgraph.mkPen() """
+        """Given parameter must be compatible with pyqtgraph.mkPen()"""
         self.roi.setPen(pen)
 
     def set_hover_pen(self, pen: Any) -> None:
-        """ Given parameter must be compatible with pyqtgraph.mkPen() """
+        """Given parameter must be compatible with pyqtgraph.mkPen()"""
         self.roi.setHoverPen(pen)
 
     def _add_handles(self) -> None:
@@ -743,17 +732,17 @@ class Rectangle(QtCore.QObject):
         while len(self.roi.handles) > 0:
             self.roi.removeHandle(-1)
 
-    def _roi_change_started(self, roi: Optional[_ROI] = None) -> None:
+    def _roi_change_started(self, roi: _ROI | None = None) -> None:
         self._is_dragged = True
         self._start_area = self.area
         self.sigAreaDragged.emit(self._start_area, self._start_area, True, False)
 
-    def _roi_change_finished(self, roi: Optional[_ROI] = None) -> None:
+    def _roi_change_finished(self, roi: _ROI | None = None) -> None:
         if self._is_dragged:
             self._is_dragged = False
             self.sigAreaDragged.emit(self._start_area, self.area, False, True)
 
-    def _roi_changed(self, roi: Optional[_ROI] = None) -> None:
+    def _roi_changed(self, roi: _ROI | None = None) -> None:
         current_area = self.area
         if self._is_dragged:
             self.sigAreaDragged.emit(self._start_area, current_area, False, False)
@@ -761,52 +750,49 @@ class Rectangle(QtCore.QObject):
 
 
 class InfiniteCrosshairRectangle(Rectangle):
-    """ Represents a crosshair (two perpendicular infinite lines) and a finite sized rectangle ROI
+    """Represents a crosshair (two perpendicular infinite lines) and a finite sized rectangle ROI
     around the intersection
     """
 
-    def __init__(self,
-                 viewbox: ViewBox,
-                 position: Optional[Tuple[float, float]] = (0, 0),
-                 size: Optional[Tuple[float, float]] = (1, 1),
-                 edge_handles: Optional[bool] = False,
-                 corner_handles: Optional[bool] = False,
-                 apply_bounds_to_center: Optional[bool] = True,
-                 bounds: Optional[Sequence[Tuple[Union[None, float], Union[None, float]]]] = None,
-                 movable: Optional[bool] = True,
-                 resizable: Optional[bool] = True,
-                 pen: Optional[Any] = None,
-                 hover_pen: Optional[Any] = None
-                 ) -> None:
+    def __init__(
+        self,
+        viewbox: ViewBox,
+        position: tuple[float, float] | None = (0, 0),
+        size: tuple[float, float] | None = (1, 1),
+        edge_handles: bool | None = False,
+        corner_handles: bool | None = False,
+        apply_bounds_to_center: bool | None = True,
+        bounds: Sequence[tuple[None | float, None | float]] | None = None,
+        movable: bool | None = True,
+        resizable: bool | None = True,
+        pen: Any | None = None,
+        hover_pen: Any | None = None,
+    ) -> None:
         if pen is None:
             pen = self._default_pen
         if hover_pen is None:
             hover_pen = self._default_hover_pen
         bounds = _RectangleROI.normalize_bounds(bounds)
-        self.vline = _InfiniteLine(pos=position[0],
-                                   bounds=bounds[0],
-                                   angle=90,
-                                   movable=movable,
-                                   pen=pen,
-                                   hoverPen=hover_pen)
-        self.hline = _InfiniteLine(pos=position[1],
-                                   bounds=bounds[1],
-                                   angle=0,
-                                   movable=movable,
-                                   pen=pen,
-                                   hoverPen=hover_pen)
+        self.vline = _InfiniteLine(
+            pos=position[0], bounds=bounds[0], angle=90, movable=movable, pen=pen, hoverPen=hover_pen
+        )
+        self.hline = _InfiniteLine(
+            pos=position[1], bounds=bounds[1], angle=0, movable=movable, pen=pen, hoverPen=hover_pen
+        )
 
-        super().__init__(viewbox=viewbox,
-                         position=position,
-                         size=size,
-                         edge_handles=edge_handles,
-                         corner_handles=corner_handles,
-                         apply_bounds_to_center=apply_bounds_to_center,
-                         bounds=bounds,
-                         movable=movable,
-                         resizable=resizable,
-                         pen=pen,
-                         hover_pen=hover_pen)
+        super().__init__(
+            viewbox=viewbox,
+            position=position,
+            size=size,
+            edge_handles=edge_handles,
+            corner_handles=corner_handles,
+            apply_bounds_to_center=apply_bounds_to_center,
+            bounds=bounds,
+            movable=movable,
+            resizable=resizable,
+            pen=pen,
+            hover_pen=hover_pen,
+        )
 
         self._line_is_dragged = False
 
@@ -824,33 +810,28 @@ class InfiniteCrosshairRectangle(Rectangle):
         self.hline.setMovable(movable)
 
     def set_z_value(self, value: int) -> None:
-        """ (Un-)Set the crosshair movable (draggable by mouse cursor) """
+        """(Un-)Set the crosshair movable (draggable by mouse cursor)"""
         if self._z_value is not None:
             self.roi.setZValue(value)
             self.vline.setZValue(value)
             self.hline.setZValue(value)
             self._z_value = value
 
-    def set_position(self, position: Tuple[float, float]) -> None:
+    def set_position(self, position: tuple[float, float]) -> None:
         super().set_position(position)
         if not self._line_is_dragged:
             self._move_lines_to_roi()
 
-    def set_size(self, size: Tuple[float, float]) -> None:
+    def set_size(self, size: tuple[float, float]) -> None:
         super().set_size(size)
         self._move_lines_to_roi()
 
-    def set_area(self,
-                 position: Optional[Tuple[float, float]] = None,
-                 size: Optional[Tuple[float, float]] = None
-                 ) -> None:
+    def set_area(self, position: tuple[float, float] | None = None, size: tuple[float, float] | None = None) -> None:
         super().set_area(position=position, size=size)
         if not self._line_is_dragged:
             self._move_lines_to_roi()
 
-    def set_bounds(self,
-                   bounds: Union[None, Sequence[Tuple[Union[None, float], Union[None, float]]]]
-                   ) -> None:
+    def set_bounds(self, bounds: None | Sequence[tuple[None | float, None | float]]) -> None:
         super().set_bounds(bounds)
         x_bounds, y_bounds = self.bounds
         self.vline.setBounds(x_bounds)
@@ -876,13 +857,13 @@ class InfiniteCrosshairRectangle(Rectangle):
             view.removeItem(self.vline)
 
     def set_pen(self, pen: Any) -> None:
-        """ Given parameter must be compatible with pyqtgraph.mkPen() """
+        """Given parameter must be compatible with pyqtgraph.mkPen()"""
         self.roi.setPen(pen)
         self.vline.setPen(pen)
         self.hline.setPen(pen)
 
     def set_hover_pen(self, pen: Any) -> None:
-        """ Given parameter must be compatible with pyqtgraph.mkPen() """
+        """Given parameter must be compatible with pyqtgraph.mkPen()"""
         self.roi.setHoverPen(pen)
         self.vline.setHoverPen(pen)
         self.hline.setHoverPen(pen)
@@ -905,7 +886,7 @@ class InfiniteCrosshairRectangle(Rectangle):
             self.vline.blockSignals(False)
             self.hline.blockSignals(False)
 
-    def _line_dragged(self, line: Optional[_InfiniteLine] = None) -> None:
+    def _line_dragged(self, line: _InfiniteLine | None = None) -> None:
         if self._line_is_dragged:
             is_start = False
         else:
@@ -923,14 +904,14 @@ class InfiniteCrosshairRectangle(Rectangle):
 
         self.sigAreaDragged.emit(self._start_area, current_area, is_start, False)
 
-    def _line_drag_finished(self, line: Optional[_InfiniteLine] = None) -> None:
+    def _line_drag_finished(self, line: _InfiniteLine | None = None) -> None:
         if self._line_is_dragged:
             self._line_is_dragged = False
             self.sigAreaDragged.emit(self._start_area, self.area, False, True)
 
-    def _line_changed(self, line: Optional[_InfiniteLine] = None) -> None:
+    def _line_changed(self, line: _InfiniteLine | None = None) -> None:
         self.sigAreaChanged.emit(self.area)
 
-    def _roi_changed(self, roi: Optional[_ROI] = None) -> None:
+    def _roi_changed(self, roi: _ROI | None = None) -> None:
         self._move_lines_to_roi()
         super()._roi_changed(roi)

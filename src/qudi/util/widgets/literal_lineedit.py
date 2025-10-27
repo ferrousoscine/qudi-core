@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This module provides QWidget subclasses to enter different literals (complex, dict, list, tuple,
 set).
@@ -21,24 +19,35 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['ComplexLineEdit', 'ComplexValidator', 'DictLineEdit', 'DictValidator', 'ListLineEdit',
-           'ListValidator', 'LiteralLineEdit', 'LiteralValidator', 'SetLineEdit', 'SetValidator',
-           'TupleLineEdit', 'TupleValidator']
+__all__ = [
+    'ComplexLineEdit',
+    'ComplexValidator',
+    'DictLineEdit',
+    'DictValidator',
+    'ListLineEdit',
+    'ListValidator',
+    'LiteralLineEdit',
+    'LiteralValidator',
+    'SetLineEdit',
+    'SetValidator',
+    'TupleLineEdit',
+    'TupleValidator',
+]
 
-from PySide2 import QtCore, QtGui, QtWidgets
-from typing import Any, Optional, Mapping, MutableSequence, Sequence, Set, FrozenSet, Union, List
-from typing import Tuple, Dict
+from collections.abc import Mapping, MutableSequence, Sequence
+from typing import Any
+
+from PySide6 import QtCore, QtGui, QtWidgets
 
 
 class LiteralValidator(QtGui.QValidator):
-    """
-    """
-    def __init__(self, parent: Optional[QtCore.QObject] = None):
+    """ """
+
+    def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(parent=parent)
 
     def validate(self, text: str, position: int) -> QtGui.QValidator.State:
-        """
-        """
+        """ """
         try:
             self.value_from_text(text)
             return self.Acceptable
@@ -56,14 +65,13 @@ class LiteralValidator(QtGui.QValidator):
 
 
 class ComplexValidator(QtGui.QValidator):
-    """
-    """
-    def __init__(self, parent: Optional[QtCore.QObject] = None):
+    """ """
+
+    def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(parent=parent)
 
     def validate(self, text: str, position: int) -> QtGui.QValidator.State:
-        """
-        """
+        """ """
         try:
             self.value_from_text(text)
             return self.Acceptable
@@ -83,14 +91,13 @@ class ComplexValidator(QtGui.QValidator):
 
 
 class ListValidator(QtGui.QValidator):
-    """
-    """
-    def __init__(self, parent: Optional[QtCore.QObject] = None):
+    """ """
+
+    def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(parent=parent)
 
     def validate(self, text: str, position: int) -> QtGui.QValidator.State:
-        """
-        """
+        """ """
         try:
             self.value_from_text(text)
             return self.Acceptable
@@ -100,7 +107,7 @@ class ListValidator(QtGui.QValidator):
     def fixup(self, text: str) -> str:
         return text
 
-    def value_from_text(self, text: str) -> List[Any]:
+    def value_from_text(self, text: str) -> list[Any]:
         tmp = eval(text)
         if isinstance(tmp, (list, tuple)):
             return list(tmp)
@@ -113,14 +120,13 @@ class ListValidator(QtGui.QValidator):
 
 
 class TupleValidator(QtGui.QValidator):
-    """
-    """
-    def __init__(self, parent: Optional[QtCore.QObject] = None):
+    """ """
+
+    def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(parent=parent)
 
     def validate(self, text: str, position: int) -> QtGui.QValidator.State:
-        """
-        """
+        """ """
         try:
             self.value_from_text(text)
             return self.Acceptable
@@ -130,7 +136,7 @@ class TupleValidator(QtGui.QValidator):
     def fixup(self, text: str) -> str:
         return text
 
-    def value_from_text(self, text: str) -> Tuple[Any, ...]:
+    def value_from_text(self, text: str) -> tuple[Any, ...]:
         tmp = eval(text)
         if isinstance(tmp, tuple):
             return tmp
@@ -143,14 +149,13 @@ class TupleValidator(QtGui.QValidator):
 
 
 class SetValidator(QtGui.QValidator):
-    """
-    """
-    def __init__(self, parent: Optional[QtCore.QObject] = None):
+    """ """
+
+    def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(parent=parent)
 
     def validate(self, text: str, position: int) -> QtGui.QValidator.State:
-        """
-        """
+        """ """
         try:
             self.value_from_text(text)
             return self.Acceptable
@@ -160,27 +165,26 @@ class SetValidator(QtGui.QValidator):
     def fixup(self, text: str) -> str:
         return text
 
-    def value_from_text(self, text: str) -> Set[Any]:
+    def value_from_text(self, text: str) -> set[Any]:
         tmp = eval(text)
         if isinstance(tmp, (tuple, set, frozenset)):
             return set(tmp)
         raise ValueError
 
-    def text_from_value(self, value: Union[Set[Any], FrozenSet[Any]]) -> str:
+    def text_from_value(self, value: set[Any] | frozenset[Any]) -> str:
         if value is None:
             value = set()
         return repr(set(value))
 
 
 class DictValidator(QtGui.QValidator):
-    """
-    """
-    def __init__(self, parent: Optional[QtCore.QObject] = None):
+    """ """
+
+    def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(parent=parent)
 
     def validate(self, text: str, position: int) -> QtGui.QValidator.State:
-        """
-        """
+        """ """
         try:
             self.value_from_text(text)
             return self.Acceptable
@@ -190,7 +194,7 @@ class DictValidator(QtGui.QValidator):
     def fixup(self, text: str) -> str:
         return text
 
-    def value_from_text(self, text: str) -> Dict[Any, Any]:
+    def value_from_text(self, text: str) -> dict[Any, Any]:
         tmp = eval(text)
         if isinstance(tmp, dict):
             return tmp
@@ -205,13 +209,16 @@ class DictValidator(QtGui.QValidator):
 
 
 class LiteralLineEdit(QtWidgets.QLineEdit):
-    """
-    """
+    """ """
 
     valueChanged = QtCore.Signal(object)
 
-    def __init__(self, value: Optional[Any] = None, parent: Optional[QtWidgets.QWidget] = None,
-                 validator: Optional[QtGui.QValidator] = None):
+    def __init__(
+        self,
+        value: Any | None = None,
+        parent: QtWidgets.QWidget | None = None,
+        validator: QtGui.QValidator | None = None,
+    ):
         super().__init__(parent=parent)
         if validator is None:
             validator = LiteralValidator()
@@ -220,8 +227,7 @@ class LiteralLineEdit(QtWidgets.QLineEdit):
         self.setValue(value)
 
     def setValue(self, value: Any) -> None:
-        """
-        """
+        """ """
         validator = self.validator()
         text = validator.fixup(validator.text_from_value(value))
         if self._new_text_valid(text):
@@ -232,8 +238,7 @@ class LiteralLineEdit(QtWidgets.QLineEdit):
             raise ValueError
 
     def value(self) -> Any:
-        """
-        """
+        """ """
         return self.validator().value_from_text(self._last_valid_text)
 
     def focusOutEvent(self, event: QtGui.QFocusEvent) -> None:
@@ -259,7 +264,7 @@ class LiteralLineEdit(QtWidgets.QLineEdit):
             self.setText(self._last_valid_text)
 
     def _new_text_valid(self, text: str) -> bool:
-        """ Helper method to check if the given text is suitable to replace the current text as
+        """Helper method to check if the given text is suitable to replace the current text as
         valid value.
         """
         if text != self._last_valid_text:
@@ -269,63 +274,55 @@ class LiteralLineEdit(QtWidgets.QLineEdit):
 
 
 class ComplexLineEdit(LiteralLineEdit):
-    """
-    """
+    """ """
 
     valueChanged = QtCore.Signal(complex)
 
-    def __init__(self, value: Optional[complex] = None, parent: Optional[QtWidgets.QWidget] = None):
+    def __init__(self, value: complex | None = None, parent: QtWidgets.QWidget | None = None):
         if value is None:
             value = complex()
         super().__init__(value=value, parent=parent, validator=ComplexValidator())
 
 
 class ListLineEdit(LiteralLineEdit):
-    """
-    """
+    """ """
 
     valueChanged = QtCore.Signal(list)
 
-    def __init__(self, value: Optional[MutableSequence] = None,
-                 parent: Optional[QtWidgets.QWidget] = None):
+    def __init__(self, value: MutableSequence | None = None, parent: QtWidgets.QWidget | None = None):
         if value is None:
             value = list()
         super().__init__(value=value, parent=parent, validator=ListValidator())
 
 
 class TupleLineEdit(LiteralLineEdit):
-    """
-    """
+    """ """
 
     valueChanged = QtCore.Signal(tuple)
 
-    def __init__(self, value: Optional[Sequence] = None,
-                 parent: Optional[QtWidgets.QWidget] = None):
+    def __init__(self, value: Sequence | None = None, parent: QtWidgets.QWidget | None = None):
         if value is None:
             value = tuple()
         super().__init__(value=value, parent=parent, validator=TupleValidator())
 
 
 class SetLineEdit(LiteralLineEdit):
-    """
-    """
+    """ """
 
     valueChanged = QtCore.Signal(set)
 
-    def __init__(self, value: Optional[Union[Set, FrozenSet]] = None,
-                 parent: Optional[QtWidgets.QWidget] = None):
+    def __init__(self, value: set | frozenset | None = None, parent: QtWidgets.QWidget | None = None):
         if value is None:
             value = set()
         super().__init__(value=value, parent=parent, validator=SetValidator())
 
 
 class DictLineEdit(LiteralLineEdit):
-    """
-    """
+    """ """
 
     valueChanged = QtCore.Signal(dict)
 
-    def __init__(self, value: Optional[Mapping] = None, parent: Optional[QtWidgets.QWidget] = None):
+    def __init__(self, value: Mapping | None = None, parent: QtWidgets.QWidget | None = None):
         if value is None:
             value = dict()
         super().__init__(value=value, parent=parent, validator=DictValidator())

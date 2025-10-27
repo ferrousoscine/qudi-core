@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This file contains a custom QAbstractTableModel object providing text data for all logged records.
 
@@ -23,7 +22,9 @@ __all__ = ('LogRecordsTableModel',)
 
 import traceback
 from datetime import datetime
-from PySide2 import QtCore, QtGui
+
+from PySide6 import QtCore, QtGui
+
 from qudi.util.mutex import Mutex
 
 
@@ -32,12 +33,13 @@ class LogRecordsTableModel(QtCore.QAbstractTableModel):
     Can be displayed with a QTableView for example.
     """
 
-    _color_map = {'debug'   : QtGui.QColor('#77F'),
-                  'info'    : QtGui.QColor('#1F1'),
-                  'warning' : QtGui.QColor('#F90'),
-                  'error'   : QtGui.QColor('#F11'),
-                  'critical': QtGui.QColor('#FF00FF'),
-                  }
+    _color_map = {
+        'debug': QtGui.QColor('#77F'),
+        'info': QtGui.QColor('#1F1'),
+        'warning': QtGui.QColor('#F90'),
+        'error': QtGui.QColor('#F11'),
+        'critical': QtGui.QColor('#FF00FF'),
+    }
     _fallback_color = QtGui.QColor('#FFF')
     _header = ('Time', 'Level', 'Source', 'Message')
 

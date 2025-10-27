@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 QWidgets for configuring the individual module config sections
 
@@ -20,31 +18,32 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['LocalModuleConfigWidget', 'RemoteModuleConfigWidget', 'ModuleConnectorsWidget',
-           'ModuleOptionsWidget']
+__all__ = ['LocalModuleConfigWidget', 'RemoteModuleConfigWidget', 'ModuleConnectorsWidget', 'ModuleOptionsWidget']
 
 import copy
-from PySide2 import QtCore, QtWidgets
-from typing import Optional, Iterable, Mapping, Dict, Sequence, Union, Any, Tuple, List
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any
 
-from qudi.core import Connector, ConfigOption
-from qudi.core.config.validator import validate_remote_module_config, validate_local_module_config
-from qudi.core.config.validator import ValidationError
-from qudi.util.widgets.separator_lines import HorizontalLine
+from PySide6 import QtCore, QtWidgets
+
+from qudi.core import ConfigOption, Connector
+from qudi.core.config.validator import ValidationError, validate_local_module_config, validate_remote_module_config
+from qudi.tools.config_editor.custom_widgets import CustomConnectorsWidget, CustomOptionsWidget
 from qudi.util.widgets.path_line_edit import PathLineEdit
-from qudi.tools.config_editor.custom_widgets import CustomOptionsWidget, CustomConnectorsWidget
+from qudi.util.widgets.separator_lines import HorizontalLine
 
 
 class ModuleConnectorsWidget(QtWidgets.QWidget):
-    """
-    """
-    def __init__(self,
-                 mandatory_targets: Optional[Mapping[str, Sequence[str]]] = None,
-                 optional_targets: Optional[Mapping[str, Sequence[str]]] = None,
-                 module_names: Optional[Iterable[str]] = None,
-                 config: Optional[Mapping[str, str]] = None,
-                 parent: Optional[QtWidgets.QWidget] = None
-                 ) -> None:
+    """ """
+
+    def __init__(
+        self,
+        mandatory_targets: Mapping[str, Sequence[str]] | None = None,
+        optional_targets: Mapping[str, Sequence[str]] | None = None,
+        module_names: Iterable[str] | None = None,
+        config: Mapping[str, str] | None = None,
+        parent: QtWidgets.QWidget | None = None,
+    ) -> None:
         super().__init__(parent=parent)
 
         if mandatory_targets is None:
@@ -91,8 +90,7 @@ class ModuleConnectorsWidget(QtWidgets.QWidget):
 
         # Create custom connector editor
         self.custom_connectors_widget = CustomConnectorsWidget(
-            forbidden_names=list(self._connector_editors),
-            module_names=module_names
+            forbidden_names=list(self._connector_editors), module_names=module_names
         )
         layout.addWidget(self.custom_connectors_widget, len(self._connector_editors) + 2, 0, 1, 2)
 
@@ -101,12 +99,12 @@ class ModuleConnectorsWidget(QtWidgets.QWidget):
         self.set_config(config)
 
     @property
-    def config(self) -> Dict[str, Union[None, str]]:
+    def config(self) -> dict[str, None | str]:
         conn = {name: editor.currentText() for name, editor in self._connector_editors.items()}
         conn.update(self.custom_connectors_widget.config)
         return {name: target if target else None for name, target in conn.items()}
 
-    def set_config(self, config: Union[None, Mapping[str, Union[None, str]]]) -> None:
+    def set_config(self, config: None | Mapping[str, None | str]) -> None:
         if config is None:
             for editor in self._connector_editors.values():
                 editor.setCurrentIndex(0)
@@ -121,10 +119,9 @@ class ModuleConnectorsWidget(QtWidgets.QWidget):
             self.custom_connectors_widget.set_config(cfg)
 
     @staticmethod
-    def _make_conn_widgets(name: str,
-                           targets: Sequence[str],
-                           optional: bool
-                           ) -> Tuple[QtWidgets.QLabel, QtWidgets.QComboBox]:
+    def _make_conn_widgets(
+        name: str, targets: Sequence[str], optional: bool
+    ) -> tuple[QtWidgets.QLabel, QtWidgets.QComboBox]:
         label = QtWidgets.QLabel(f'{name}:' if optional else f'* {name}:')
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
@@ -137,14 +134,15 @@ class ModuleConnectorsWidget(QtWidgets.QWidget):
 
 
 class ModuleOptionsWidget(QtWidgets.QWidget):
-    """
-    """
-    def __init__(self,
-                 mandatory_names: Optional[Iterable[str]] = None,
-                 optional_names: Optional[Iterable[str]] = None,
-                 config: Optional[Mapping[str, Any]] = None,
-                 parent: Optional[QtWidgets.QWidget] = None
-                 ) -> None:
+    """ """
+
+    def __init__(
+        self,
+        mandatory_names: Iterable[str] | None = None,
+        optional_names: Iterable[str] | None = None,
+        config: Mapping[str, Any] | None = None,
+        parent: QtWidgets.QWidget | None = None,
+    ) -> None:
         super().__init__(parent=parent)
 
         self._mandatory_names = list() if mandatory_names is None else list(mandatory_names)
@@ -192,7 +190,7 @@ class ModuleOptionsWidget(QtWidgets.QWidget):
         self.set_config(config)
 
     @property
-    def config(self) -> Dict[str, Any]:
+    def config(self) -> dict[str, Any]:
         cfg = dict()
         for name, editor in self._option_editors.items():
             text = editor.text().strip()
@@ -210,7 +208,7 @@ class ModuleOptionsWidget(QtWidgets.QWidget):
                     cfg[name] = text
         return cfg
 
-    def set_config(self, config: Union[None, Mapping[str, Any]]) -> None:
+    def set_config(self, config: None | Mapping[str, Any]) -> None:
         if config is None:
             for editor in self._option_editors.values():
                 editor.setText('')
@@ -226,9 +224,7 @@ class ModuleOptionsWidget(QtWidgets.QWidget):
             self.custom_options_widget.set_config(cfg)
 
     @staticmethod
-    def _make_option_widgets(name: str,
-                             optional: bool
-                             ) -> Tuple[QtWidgets.QLabel, QtWidgets.QLineEdit]:
+    def _make_option_widgets(name: str, optional: bool) -> tuple[QtWidgets.QLabel, QtWidgets.QLineEdit]:
         label = QtWidgets.QLabel(f'{name}:' if optional else f'* {name}:')
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
@@ -239,18 +235,18 @@ class ModuleOptionsWidget(QtWidgets.QWidget):
 
 
 class LocalModuleConfigWidget(QtWidgets.QWidget):
-    """
-    """
+    """ """
 
-    def __init__(self,
-                 module_class: str,
-                 config_options: Sequence[ConfigOption],
-                 connectors: Sequence[Connector],
-                 valid_connector_targets: Mapping[str, Sequence[str]],
-                 named_modules: Mapping[str, str],
-                 config: Optional[Dict[str, Union[str, bool, Dict[str, str], Dict[str, Any]]]] = None,
-                 parent: Optional[QtWidgets.QWidget] = None
-                 ) -> None:
+    def __init__(
+        self,
+        module_class: str,
+        config_options: Sequence[ConfigOption],
+        connectors: Sequence[Connector],
+        valid_connector_targets: Mapping[str, Sequence[str]],
+        named_modules: Mapping[str, str],
+        config: dict[str, str | bool | dict[str, str] | dict[str, Any]] | None = None,
+        parent: QtWidgets.QWidget | None = None,
+    ) -> None:
         super().__init__(parent=parent)
 
         layout = QtWidgets.QVBoxLayout()
@@ -287,23 +283,20 @@ class LocalModuleConfigWidget(QtWidgets.QWidget):
         # Create splitter to spread options and connectors horizontally
         self.splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
         self.splitter.setChildrenCollapsible(False)
-        self.splitter.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
-                                    QtWidgets.QSizePolicy.Expanding)
+        self.splitter.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         layout.addWidget(self.splitter)
         # Module Connectors editor
         mandatory_targets, optional_targets = self._get_connector_targets(
-            connectors=connectors,
-            named_modules=named_modules,
-            valid_targets=valid_connector_targets
+            connectors=connectors, named_modules=named_modules, valid_targets=valid_connector_targets
         )
-        self.connectors_editor = ModuleConnectorsWidget(mandatory_targets=mandatory_targets,
-                                                        optional_targets=optional_targets,
-                                                        module_names=list(named_modules))
+        self.connectors_editor = ModuleConnectorsWidget(
+            mandatory_targets=mandatory_targets, optional_targets=optional_targets, module_names=list(named_modules)
+        )
         self.splitter.addWidget(self.connectors_editor)
         # Module ConfigOptions editor
         self.options_editor = ModuleOptionsWidget(
             mandatory_names=[opt.name for opt in config_options if not opt.optional],
-            optional_names=[opt.name for opt in config_options if opt.optional]
+            optional_names=[opt.name for opt in config_options if opt.optional],
         )
         self.splitter.addWidget(self.options_editor)
 
@@ -315,15 +308,15 @@ class LocalModuleConfigWidget(QtWidgets.QWidget):
         return self._module_label.text()
 
     @property
-    def config(self) -> Dict[str, Union[str, bool, Dict[str, str], Dict[str, Any]]]:
-        return {'module.Class': self.module_class,
-                'allow_remote': self.allow_remote_checkbox.isChecked(),
-                'options'     : self.options_editor.config,
-                'connect'     : self.connectors_editor.config}
+    def config(self) -> dict[str, str | bool | dict[str, str] | dict[str, Any]]:
+        return {
+            'module.Class': self.module_class,
+            'allow_remote': self.allow_remote_checkbox.isChecked(),
+            'options': self.options_editor.config,
+            'connect': self.connectors_editor.config,
+        }
 
-    def set_config(self,
-                   config: Union[None, Dict[str, Union[str, bool, Dict[str, str], Dict[str, Any]]]]
-                   ) -> None:
+    def set_config(self, config: None | dict[str, str | bool | dict[str, str] | dict[str, Any]]) -> None:
         if config:
             self.allow_remote_checkbox.setChecked(config.get('allow_remote', False))
             self.options_editor.set_config(config.get('options', dict()))
@@ -334,16 +327,13 @@ class LocalModuleConfigWidget(QtWidgets.QWidget):
             self.connectors_editor.set_config(None)
 
     @staticmethod
-    def _get_connector_targets(connectors: Sequence[Connector],
-                               named_modules: Mapping[str, str],
-                               valid_targets: Mapping[str, Sequence[str]]
-                               ) -> Tuple[Dict[str, List[str]], Dict[str, List[str]]]:
+    def _get_connector_targets(
+        connectors: Sequence[Connector], named_modules: Mapping[str, str], valid_targets: Mapping[str, Sequence[str]]
+    ) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
         mandatory_targets = dict()
         optional_targets = dict()
         for conn in connectors:
-            targets = [
-                name for name, mod in named_modules.items() if mod in valid_targets[conn.name]
-            ]
+            targets = [name for name, mod in named_modules.items() if mod in valid_targets[conn.name]]
             if conn.optional:
                 optional_targets[conn.name] = targets
             else:
@@ -362,13 +352,9 @@ class LocalModuleConfigWidget(QtWidgets.QWidget):
 
 
 class RemoteModuleConfigWidget(QtWidgets.QWidget):
-    """
-    """
+    """ """
 
-    def __init__(self,
-                 config: Optional[Mapping[str, Union[str, None]]] = None,
-                 parent: Optional[QtWidgets.QWidget] = None
-                 ) -> None:
+    def __init__(self, config: Mapping[str, str | None] | None = None, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent=parent)
 
         layout = QtWidgets.QGridLayout()
@@ -381,8 +367,9 @@ class RemoteModuleConfigWidget(QtWidgets.QWidget):
         label = QtWidgets.QLabel('* Native module name:')
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.native_name_lineedit = QtWidgets.QLineEdit()
-        self.native_name_lineedit.setToolTip('The native module name as configured on the remote '
-                                             'host qudi instance to connect to.')
+        self.native_name_lineedit.setToolTip(
+            'The native module name as configured on the remote host qudi instance to connect to.'
+        )
         self.native_name_lineedit.setPlaceholderText('Module name on remote host')
         self.native_name_lineedit.textChanged.connect(self._validate_and_mark_config)
         layout.addWidget(label, 0, 0)
@@ -392,8 +379,9 @@ class RemoteModuleConfigWidget(QtWidgets.QWidget):
         label = QtWidgets.QLabel('* Remote address:')
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.remote_host_lineedit = QtWidgets.QLineEdit('localhost')
-        self.remote_host_lineedit.setToolTip('The IP address of the remote host. Can also be '
-                                             '"localhost" for local qudi instances.')
+        self.remote_host_lineedit.setToolTip(
+            'The IP address of the remote host. Can also be "localhost" for local qudi instances.'
+        )
         self.remote_host_lineedit.setPlaceholderText('IP address or "localhost"')
         self.remote_host_lineedit.textChanged.connect(self._validate_and_mark_config)
         layout.addWidget(label, 1, 0)
@@ -413,12 +401,9 @@ class RemoteModuleConfigWidget(QtWidgets.QWidget):
         # certfile editor
         label = QtWidgets.QLabel('Certificate file:')
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.certfile_lineedit = PathLineEdit(dialog_caption='Select SSL Certificate File',
-                                              follow_symlinks=True)
+        self.certfile_lineedit = PathLineEdit(dialog_caption='Select SSL Certificate File', follow_symlinks=True)
         self.certfile_lineedit.setPlaceholderText('No certificate')
-        self.certfile_lineedit.setToolTip(
-            'SSL certificate file path for the remote module connection'
-        )
+        self.certfile_lineedit.setToolTip('SSL certificate file path for the remote module connection')
         self.certfile_lineedit.textChanged.connect(self._validate_and_mark_config)
         layout.addWidget(label, 3, 0)
         layout.addWidget(self.certfile_lineedit, 3, 1)
@@ -426,8 +411,7 @@ class RemoteModuleConfigWidget(QtWidgets.QWidget):
         # keyfile editor
         label = QtWidgets.QLabel('Key file:')
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.keyfile_lineedit = PathLineEdit(dialog_caption='Select SSL Key File',
-                                             follow_symlinks=True)
+        self.keyfile_lineedit = PathLineEdit(dialog_caption='Select SSL Key File', follow_symlinks=True)
         self.keyfile_lineedit.setPlaceholderText('No key')
         self.keyfile_lineedit.setToolTip('SSL key file path for the remote module server')
         self.keyfile_lineedit.textChanged.connect(self._validate_and_mark_config)
@@ -438,12 +422,14 @@ class RemoteModuleConfigWidget(QtWidgets.QWidget):
         self._validate_and_mark_config()
 
     @property
-    def config(self) -> Dict[str, Union[None, int, str]]:
+    def config(self) -> dict[str, None | int | str]:
         native_module_name = self.native_name_lineedit.text()
         host = self.remote_host_lineedit.text()
-        cfg = {'native_module_name': native_module_name if native_module_name else None,
-               'address'           : host if host else None,
-               'port'              : self.remote_port_spinbox.value()}
+        cfg = {
+            'native_module_name': native_module_name if native_module_name else None,
+            'address': host if host else None,
+            'port': self.remote_port_spinbox.value(),
+        }
         try:
             cfg['certfile'] = self.certfile_lineedit.paths[0]
         except IndexError:
@@ -454,7 +440,7 @@ class RemoteModuleConfigWidget(QtWidgets.QWidget):
             pass
         return cfg
 
-    def set_config(self, config: Union[None, Dict[str, Union[None, int, str]]]) -> None:
+    def set_config(self, config: None | dict[str, None | int | str]) -> None:
         if config:
             native_module_name = config.get('native_module_name', None)
             host = config.get('address', None)

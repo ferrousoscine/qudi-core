@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This file contains a custom module widget for the Qudi manager GUI.
 
@@ -20,15 +19,18 @@ If not, see <https://www.gnu.org/licenses/>.
 """
 
 import os
-from PySide2 import QtCore, QtGui, QtWidgets
-from qudi.util.paths import get_artwork_dir
+
+from PySide6 import QtCore, QtGui, QtWidgets
+
 from qudi.util.mutex import Mutex
+from qudi.util.paths import get_artwork_dir
 
 
 class ModuleFrameWidget(QtWidgets.QWidget):
     """
     Custom module QWidget for the Qudi main GUI.
     """
+
     sigActivateClicked = QtCore.Signal(str)
     sigDeactivateClicked = QtCore.Signal(str)
     sigReloadClicked = QtCore.Signal(str)
@@ -56,8 +58,7 @@ class ModuleFrameWidget(QtWidgets.QWidget):
         self.activate_button.setObjectName('loadButton')
         self.activate_button.setCheckable(True)
         self.activate_button.setMinimumWidth(200)
-        self.activate_button.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
-                                           QtWidgets.QSizePolicy.Fixed)
+        self.activate_button.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)
 
         # Create status label
         self.status_label = QtWidgets.QLabel('Module status goes here...')
@@ -91,19 +92,19 @@ class ModuleFrameWidget(QtWidgets.QWidget):
 
     def set_module_name(self, name):
         if name:
-            self.activate_button.setText('Load {0}'.format(name))
+            self.activate_button.setText(f'Load {name}')
             self._module_name = name
 
     def set_module_state(self, state):
         if state == 'not loaded':
-            self.activate_button.setText('Load {0}'.format(self._module_name))
+            self.activate_button.setText(f'Load {self._module_name}')
             self.cleanup_button.setEnabled(True)
             self.deactivate_button.setEnabled(False)
             self.reload_button.setEnabled(False)
             if self.activate_button.isChecked():
                 self.activate_button.setChecked(False)
         elif state == 'deactivated':
-            self.activate_button.setText('Activate {0}'.format(self._module_name))
+            self.activate_button.setText(f'Activate {self._module_name}')
             self.cleanup_button.setEnabled(True)
             self.deactivate_button.setEnabled(False)
             self.reload_button.setEnabled(True)
@@ -116,7 +117,7 @@ class ModuleFrameWidget(QtWidgets.QWidget):
             self.reload_button.setEnabled(True)
             if not self.activate_button.isChecked():
                 self.activate_button.setChecked(True)
-        self.status_label.setText('Module is {0}'.format(state))
+        self.status_label.setText(f'Module is {state}')
 
     def set_module_app_data(self, exists):
         self.cleanup_button.setEnabled(exists)
@@ -139,8 +140,8 @@ class ModuleFrameWidget(QtWidgets.QWidget):
 
 
 class ModuleListModel(QtCore.QAbstractListModel):
-    """
-    """
+    """ """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._lock = Mutex()
@@ -201,21 +202,17 @@ class ModuleListModel(QtCore.QAbstractListModel):
         with self._lock:
             if name not in self._module_states:
                 raise RuntimeError(
-                    f'Can not change module state in ModuleListModel. No module by the name '
-                    f'"{name}" found.'
+                    f'Can not change module state in ModuleListModel. No module by the name "{name}" found.'
                 )
             self._module_states[name] = state
             row = self._module_names.index(name)
-            self.dataChanged.emit(self.createIndex(row, 0),
-                                  self.createIndex(row + 1, 0),
-                                  (QtCore.Qt.DisplayRole,))
+            self.dataChanged.emit(self.createIndex(row, 0), self.createIndex(row + 1, 0), (QtCore.Qt.DisplayRole,))
 
     def change_app_data(self, name, exists):
         with self._lock:
             if name not in self._module_app_data:
                 raise RuntimeError(
-                    f'Can not change module app status in ModuleListModel. No module by the name '
-                    f'"{name}" found.'
+                    f'Can not change module app status in ModuleListModel. No module by the name "{name}" found.'
                 )
             self._module_app_data[name] = exists
             row = self._module_names.index(name)
@@ -223,8 +220,8 @@ class ModuleListModel(QtCore.QAbstractListModel):
 
 
 class ModuleListItemDelegate(QtWidgets.QStyledItemDelegate):
-    """
-    """
+    """ """
+
     sigActivateClicked = QtCore.Signal(str)
     sigDeactivateClicked = QtCore.Signal(str)
     sigReloadClicked = QtCore.Signal(str)
@@ -259,8 +256,7 @@ class ModuleListItemDelegate(QtWidgets.QStyledItemDelegate):
         return self.render_widget.sizeHint()
 
     def paint(self, painter, option, index):
-        """
-        """
+        """ """
         name, state, app_data = index.data()
         self.render_widget.set_module_name(name)
         self.render_widget.set_module_state(state)
@@ -273,8 +269,8 @@ class ModuleListItemDelegate(QtWidgets.QStyledItemDelegate):
 
 
 class ModuleListView(QtWidgets.QListView):
-    """
-    """
+    """ """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setMouseTracking(True)
@@ -302,8 +298,8 @@ class ModuleListView(QtWidgets.QListView):
 
 
 class ModuleWidget(QtWidgets.QTabWidget):
-    """
-    """
+    """ """
+
     sigActivateModule = QtCore.Signal(str)
     sigDeactivateModule = QtCore.Signal(str)
     sigCleanupModule = QtCore.Signal(str)
@@ -312,12 +308,8 @@ class ModuleWidget(QtWidgets.QTabWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
-        self.list_models = {'gui'     : ModuleListModel(),
-                            'logic'   : ModuleListModel(),
-                            'hardware': ModuleListModel()}
-        self.list_views = {'gui'     : ModuleListView(),
-                           'logic'   : ModuleListView(),
-                           'hardware': ModuleListView()}
+        self.list_models = {'gui': ModuleListModel(), 'logic': ModuleListModel(), 'hardware': ModuleListModel()}
+        self.list_views = {'gui': ModuleListView(), 'logic': ModuleListView(), 'hardware': ModuleListView()}
         self.addTab(self.list_views['gui'], 'GUI')
         self.addTab(self.list_views['logic'], 'Logic')
         self.addTab(self.list_views['hardware'], 'Hardware')
@@ -334,8 +326,7 @@ class ModuleWidget(QtWidgets.QTabWidget):
         for base, model in self.list_models.items():
             model.reset_modules(
                 {name: mod.state for name, mod in modules_dict.items() if mod.module_base == base},
-                {name: mod.has_app_data for name, mod in modules_dict.items() if
-                 mod.module_base == base}
+                {name: mod.has_app_data for name, mod in modules_dict.items() if mod.module_base == base},
             )
         return
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This file contains utility methods to annotate arguments for which the user can potentially edit
 values via GUI. These arguments are boiled down to simple builtin types that can be represented by
@@ -56,35 +55,35 @@ __all__ = ['FilePath', 'RealNumber', 'ParameterWidgetMapper']
 
 import inspect
 import typing
+from collections.abc import Callable, Iterable, Mapping, MutableSequence, Sequence
 from os import PathLike
-from PySide2 import QtWidgets
-from typing import Callable, Any, Set, FrozenSet, MutableSequence, Mapping, Tuple, Dict, Type, Union
-from typing import get_origin, get_args, Iterable, Sequence
+from typing import Any, Union, get_args, get_origin
+
+from PySide6 import QtWidgets
 
 from qudi.util.helpers import is_complex_type, is_float_type, is_integer_type, is_string_type
-from qudi.util.widgets.scientific_spinbox import ScienSpinBox, ScienDSpinBox
-from qudi.util.widgets.literal_lineedit import ComplexLineEdit, TupleLineEdit, ListLineEdit
-from qudi.util.widgets.literal_lineedit import SetLineEdit, DictLineEdit
-
+from qudi.util.widgets.literal_lineedit import ComplexLineEdit, DictLineEdit, ListLineEdit, SetLineEdit, TupleLineEdit
+from qudi.util.widgets.scientific_spinbox import ScienDSpinBox, ScienSpinBox
 
 FilePath = Union[str, bytes, PathLike]
 RealNumber = Union[int, float]
 
 
 class ParameterWidgetMapper:
-
-    _type_widget_map = {int: ScienSpinBox,
-                        float: ScienDSpinBox,
-                        str: QtWidgets.QLineEdit,
-                        PathLike: QtWidgets.QLineEdit,
-                        complex: ComplexLineEdit,
-                        set: SetLineEdit,
-                        dict: DictLineEdit,
-                        tuple: TupleLineEdit,
-                        list: ListLineEdit}
+    _type_widget_map = {
+        int: ScienSpinBox,
+        float: ScienDSpinBox,
+        str: QtWidgets.QLineEdit,
+        PathLike: QtWidgets.QLineEdit,
+        complex: ComplexLineEdit,
+        set: SetLineEdit,
+        dict: DictLineEdit,
+        tuple: TupleLineEdit,
+        list: ListLineEdit,
+    }
 
     @classmethod
-    def widgets_for_callable(cls, func: Callable) -> Dict[str, Union[Type[QtWidgets.QWidget], None]]:
+    def widgets_for_callable(cls, func: Callable) -> dict[str, type[QtWidgets.QWidget] | None]:
         """Returns QWidget classes for each parameter from the call signature of "func".
         See ParameterWidgetMapper.widget_for_parameter for more information.
         """
@@ -92,7 +91,7 @@ class ParameterWidgetMapper:
         return {name: cls.widget_for_parameter(param) for name, param in sig.parameters.items()}
 
     @classmethod
-    def widget_for_parameter(cls, param: inspect.Parameter) -> Union[Type[QtWidgets.QWidget], None]:
+    def widget_for_parameter(cls, param: inspect.Parameter) -> type[QtWidgets.QWidget] | None:
         """Tries to determine a suitable QWidget to represent the given parameter.
         If no type annotation is given for a parameter it will try to determine the type from the
         default value.
@@ -108,21 +107,19 @@ class ParameterWidgetMapper:
             return cls.widget_from_annotation(param.annotation)
 
     @classmethod
-    def widget_from_value(cls, value: Any) -> Union[Type[QtWidgets.QWidget], None]:
-        """Tries to determine a suitable QWidget to represent the type of the given value.
-        """
+    def widget_from_value(cls, value: Any) -> type[QtWidgets.QWidget] | None:
+        """Tries to determine a suitable QWidget to represent the type of the given value."""
         normalized_type = cls._normalize_type(type(value))
         return cls._type_widget_map.get(normalized_type, None)
 
     @classmethod
-    def widget_from_annotation(cls, annotation: Any) -> Union[Type[QtWidgets.QWidget], None]:
-        """Tries to determine a suitable QWidget to represent values of the given annotation type.
-        """
+    def widget_from_annotation(cls, annotation: Any) -> type[QtWidgets.QWidget] | None:
+        """Tries to determine a suitable QWidget to represent values of the given annotation type."""
         normalized_type = cls._annotation_to_type(annotation)
         return cls._type_widget_map.get(normalized_type, None)
 
     @staticmethod
-    def _normalize_type(typ: Type) -> Type:
+    def _normalize_type(typ: type) -> type:
         """Normalizes given type to a base/builtin type.
         Examples:
                       numpy.float32 -> float
@@ -138,18 +135,18 @@ class ParameterWidgetMapper:
             return complex
         elif issubclass(typ, (bytes, PathLike)):
             return PathLike
-        elif issubclass(typ, (Set, FrozenSet)):
+        elif issubclass(typ, (set, frozenset)):
             return set
         elif issubclass(typ, Mapping):
             return dict
         elif issubclass(typ, MutableSequence):
             return list
-        elif issubclass(typ, (Tuple, Iterable, Sequence)):
+        elif issubclass(typ, (tuple, Iterable, Sequence)):
             return tuple
         return None
 
     @classmethod
-    def _annotation_to_type(cls, annotation: Any) -> Type:
+    def _annotation_to_type(cls, annotation: Any) -> type:
         """Converts a type annotation (e.g. from a callable signature) to a normalized type.
         See ParameterWidgetMapper._normalize_type for more information.
         """

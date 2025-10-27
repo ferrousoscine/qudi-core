@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 QWidget serving as editor for the default global configuration section
 
@@ -22,22 +20,21 @@ If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = ['GlobalConfigWidget', 'GlobalOptionsWidget', 'RemoteServerWidget', 'CustomOptionsWidget']
 
-from typing import Dict, Union, Mapping, Optional, Any
-from PySide2 import QtCore, QtWidgets
+from collections.abc import Mapping
+from typing import Any
 
-from qudi.util.widgets.separator_lines import HorizontalLine
-from qudi.util.widgets.path_line_edit import PathLineEdit
-from qudi.tools.config_editor.custom_widgets import CustomOptionsWidget
+from PySide6 import QtCore, QtWidgets
+
 from qudi.core.config.schema import config_schema
+from qudi.tools.config_editor.custom_widgets import CustomOptionsWidget
+from qudi.util.widgets.path_line_edit import PathLineEdit
+from qudi.util.widgets.separator_lines import HorizontalLine
 
 
 class RemoteServerWidget(QtWidgets.QWidget):
-    """Remote modules server configuration editor widget.
-    """
-    def __init__(self,
-                 config: Optional[Mapping[str, Union[int, str]]] = None,
-                 parent: Optional[QtWidgets.QWidget] = None
-                 ) -> None:
+    """Remote modules server configuration editor widget."""
+
+    def __init__(self, config: Mapping[str, int | str] | None = None, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent=parent)
 
         # Create main layout
@@ -65,9 +62,7 @@ class RemoteServerWidget(QtWidgets.QWidget):
         label = QtWidgets.QLabel('Host address:')
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.host_lineedit = QtWidgets.QLineEdit()
-        self.host_lineedit.setToolTip(
-            'The host address to share qudi modules with other qudi instances'
-        )
+        self.host_lineedit.setToolTip('The host address to share qudi modules with other qudi instances')
         self._server_layout.addWidget(label, 0, 0)
         self._server_layout.addWidget(self.host_lineedit, 0, 1)
 
@@ -82,8 +77,7 @@ class RemoteServerWidget(QtWidgets.QWidget):
 
         label = QtWidgets.QLabel('Certificate file:')
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.certfile_lineedit = PathLineEdit(dialog_caption='Select SSL Certificate File',
-                                              follow_symlinks=True)
+        self.certfile_lineedit = PathLineEdit(dialog_caption='Select SSL Certificate File', follow_symlinks=True)
         self.certfile_lineedit.setPlaceholderText('No certificate')
         self.certfile_lineedit.setToolTip('SSL certificate file path for the remote module server')
         self._server_layout.addWidget(label, 2, 0)
@@ -91,8 +85,7 @@ class RemoteServerWidget(QtWidgets.QWidget):
 
         label = QtWidgets.QLabel('Key file:')
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.keyfile_lineedit = PathLineEdit(dialog_caption='Select SSL Key File',
-                                             follow_symlinks=True)
+        self.keyfile_lineedit = PathLineEdit(dialog_caption='Select SSL Key File', follow_symlinks=True)
         self.keyfile_lineedit.setPlaceholderText('No key')
         self.keyfile_lineedit.setToolTip('SSL key file path for the remote module server')
         self._server_layout.addWidget(label, 3, 0)
@@ -101,11 +94,10 @@ class RemoteServerWidget(QtWidgets.QWidget):
         self.set_config(config)
 
     @property
-    def config(self) -> Union[None, Dict[str, Union[int, str]]]:
+    def config(self) -> None | dict[str, int | str]:
         if self.enable_checkbox.isChecked():
             host = self.host_lineedit.text().strip()
-            cfg = {'address': host if host else 'localhost',
-                   'port'   : self.port_spinbox.value()}
+            cfg = {'address': host if host else 'localhost', 'port': self.port_spinbox.value()}
             try:
                 cfg['certfile'] = self.certfile_lineedit.paths[0]
             except IndexError:
@@ -118,7 +110,7 @@ class RemoteServerWidget(QtWidgets.QWidget):
             return cfg
         return None
 
-    def set_config(self, config: Union[None, Mapping[str, Union[None, int, str]]]) -> None:
+    def set_config(self, config: None | Mapping[str, None | int | str]) -> None:
         if config is None:
             self.enable_checkbox.setChecked(False)
         else:
@@ -140,21 +132,15 @@ class RemoteServerWidget(QtWidgets.QWidget):
 
     @QtCore.Slot(bool)
     def _toggle_editors(self, enabled: bool) -> None:
-        widget_iterator = (
-            self._server_layout.itemAt(ii).widget() for ii in range(self._server_layout.count())
-        )
+        widget_iterator = (self._server_layout.itemAt(ii).widget() for ii in range(self._server_layout.count()))
         for widget in widget_iterator:
             widget.setVisible(enabled)
 
 
 class GlobalOptionsWidget(QtWidgets.QWidget):
-    """
-    """
+    """ """
 
-    def __init__(self,
-                 config: Optional[Mapping[str, Any]] = None,
-                 parent: Optional[QtWidgets.QWidget] = None
-                 ) -> None:
+    def __init__(self, config: Mapping[str, Any] | None = None, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent=parent)
 
         # Create main layout
@@ -193,9 +179,7 @@ class GlobalOptionsWidget(QtWidgets.QWidget):
         label = QtWidgets.QLabel('Hide manager window:')
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.hide_manager_window_checkbox = QtWidgets.QCheckBox()
-        self.hide_manager_window_checkbox.setToolTip(
-            'Whether to suppress the qudi module manager window at startup.'
-        )
+        self.hide_manager_window_checkbox.setToolTip('Whether to suppress the qudi module manager window at startup.')
         layout.addWidget(label, 4, 0)
         layout.addWidget(self.hide_manager_window_checkbox, 4, 1)
 
@@ -213,11 +197,13 @@ class GlobalOptionsWidget(QtWidgets.QWidget):
         # Create default data path editor
         label = QtWidgets.QLabel('Default data directory:')
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.data_directory_lineedit = PathLineEdit(dialog_caption='Select Default Data Directory',
-                                                    select_directory=True)
+        self.data_directory_lineedit = PathLineEdit(
+            dialog_caption='Select Default Data Directory', select_directory=True
+        )
         self.data_directory_lineedit.setPlaceholderText('Default "<UserHome>/qudi/Data/"')
-        self.data_directory_lineedit.setToolTip('Default data directory for qudi modules to save '
-                                                'measurement data into.')
+        self.data_directory_lineedit.setToolTip(
+            'Default data directory for qudi modules to save measurement data into.'
+        )
         layout.addWidget(label, 6, 0)
         layout.addWidget(self.data_directory_lineedit, 6, 1)
 
@@ -226,17 +212,18 @@ class GlobalOptionsWidget(QtWidgets.QWidget):
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.startup_lineedit = QtWidgets.QLineEdit()
         self.startup_lineedit.setPlaceholderText('No startup modules')
-        self.startup_lineedit.setToolTip('Modules to be automatically activated on qudi startup.\n'
-                                         'Separate multiple module names with commas.')
+        self.startup_lineedit.setToolTip(
+            'Modules to be automatically activated on qudi startup.\nSeparate multiple module names with commas.'
+        )
         layout.addWidget(label, 7, 0)
         layout.addWidget(self.startup_lineedit, 7, 1)
 
         # Create stylesheet file path editor
         label = QtWidgets.QLabel('Stylesheet:')
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.stylesheet_lineedit = PathLineEdit(dialog_caption='Select QSS Stylesheet',
-                                                filters='Stylesheets (*.qss)',
-                                                follow_symlinks=True)
+        self.stylesheet_lineedit = PathLineEdit(
+            dialog_caption='Select QSS Stylesheet', filters='Stylesheets (*.qss)', follow_symlinks=True
+        )
         self.stylesheet_lineedit.setPlaceholderText('Platform dependent Qt default')
         self.stylesheet_lineedit.setToolTip(
             'File path for qudi QSS stylesheet to use.\nIf just a file name is given, the file '
@@ -247,24 +234,21 @@ class GlobalOptionsWidget(QtWidgets.QWidget):
 
         # Get default config from JSON schema
         global_props = config_schema()['properties']['global']['properties']
-        self._config_defaults = {
-            name: prop.get('default', None) for name, prop in global_props.items()
-        }
+        self._config_defaults = {name: prop.get('default', None) for name, prop in global_props.items()}
         # Fixme: Remove deprecated option manually
         del self._config_defaults['extension_paths']
 
         self.set_config(config)
 
     @property
-    def config(self) -> Dict[str, Any]:
+    def config(self) -> dict[str, Any]:
         config = {
-            'remote_modules_server'      : self.remote_server_editor.config,
-            'namespace_server_port'      : self.namespace_port_spinbox.value(),
+            'remote_modules_server': self.remote_server_editor.config,
+            'namespace_server_port': self.namespace_port_spinbox.value(),
             'force_remote_calls_by_value': self.force_calls_by_value_checkbox.isChecked(),
-            'hide_manager_window'        : self.hide_manager_window_checkbox.isChecked(),
-            'daily_data_dirs'            : self.daily_data_dirs_checkbox.isChecked(),
-            'startup_modules'            : [mod.strip() for mod in
-                                            self.startup_lineedit.text().split(',') if mod.strip()],
+            'hide_manager_window': self.hide_manager_window_checkbox.isChecked(),
+            'daily_data_dirs': self.daily_data_dirs_checkbox.isChecked(),
+            'startup_modules': [mod.strip() for mod in self.startup_lineedit.text().split(',') if mod.strip()],
         }
         try:
             config['default_data_dir'] = self.data_directory_lineedit.paths[0]
@@ -276,12 +260,10 @@ class GlobalOptionsWidget(QtWidgets.QWidget):
             config['stylesheet'] = self._config_defaults['stylesheet']
         return config
 
-    def set_config(self, config: Union[None, Mapping[str, Any]]):
+    def set_config(self, config: None | Mapping[str, Any]):
         if config is None:
             config = dict()
-        config = {
-            name: config.get(name, default) for name, default in self._config_defaults.items()
-        }
+        config = {name: config.get(name, default) for name, default in self._config_defaults.items()}
 
         self.remote_server_editor.set_config(config['remote_modules_server'])
         self.namespace_port_spinbox.setValue(config['namespace_server_port'])
@@ -296,13 +278,9 @@ class GlobalOptionsWidget(QtWidgets.QWidget):
 
 
 class GlobalConfigWidget(QtWidgets.QWidget):
-    """
-    """
+    """ """
 
-    def __init__(self,
-                 config: Optional[Mapping[str, Any]] = None,
-                 parent: Optional[QtWidgets.QWidget] = None
-                 ) -> None:
+    def __init__(self, config: Mapping[str, Any] | None = None, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent=parent)
 
         # Create main layout
@@ -337,19 +315,17 @@ class GlobalConfigWidget(QtWidgets.QWidget):
         self.set_config(config)
 
     @property
-    def config(self) -> Dict[str, Any]:
+    def config(self) -> dict[str, Any]:
         config = self.default_options_widget.config
         config.update(self.custom_options_widget.config)
         return config
 
-    def set_config(self, config: Union[None, Mapping[str, Any]]) -> None:
+    def set_config(self, config: None | Mapping[str, Any]) -> None:
         if config is None:
             self.default_options_widget.set_config(None)
             self.custom_options_widget.set_config(None)
         else:
-            default_config = {name: value for name, value in config.items() if
-                              name in self._default_option_names}
-            custom_config = {name: value for name, value in config.items() if
-                             name not in self._default_option_names}
+            default_config = {name: value for name, value in config.items() if name in self._default_option_names}
+            custom_config = {name: value for name, value in config.items() if name not in self._default_option_names}
             self.default_options_widget.set_config(default_config)
             self.custom_options_widget.set_config(custom_config)

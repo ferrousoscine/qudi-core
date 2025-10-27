@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This file contains modified pyqtgraph ViewBoxes for qudi to track mouse activity and provide
 advanced functionality inside data plots.
@@ -21,20 +19,33 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['MouseTrackingViewBox', 'DataSelectionViewBox', 'RubberbandZoomViewBox',
-           'RubberbandZoomSelectionViewBox', 'RubberbandZoomMixin', 'DataSelectionMixin',
-           'MouseTrackingMixin', 'SelectionMode']
+__all__ = [
+    'MouseTrackingViewBox',
+    'DataSelectionViewBox',
+    'RubberbandZoomViewBox',
+    'RubberbandZoomSelectionViewBox',
+    'RubberbandZoomMixin',
+    'DataSelectionMixin',
+    'MouseTrackingMixin',
+    'SelectionMode',
+]
 
-import warnings
-from typing import Optional, Union, Any, Tuple, Sequence, List, Dict
+from collections.abc import Sequence
 from enum import IntEnum
+from typing import Any
 
-from PySide2 import QtCore
-from pyqtgraph import ViewBox, PlotDataItem, ImageItem, PlotCurveItem, ScatterPlotItem
+from pyqtgraph import ImageItem, PlotCurveItem, PlotDataItem, ScatterPlotItem, ViewBox
 from pyqtgraph import LinearRegionItem as _LinearRegionItem
 from pyqtgraph.GraphicsScene.mouseEvents import MouseClickEvent, MouseDragEvent
-from qudi.util.widgets.plotting.marker import Rectangle, InfiniteCrosshairRectangle
-from qudi.util.widgets.plotting.marker import InfiniteLine, LinearRegion, InfiniteCrosshair
+from PySide6 import QtCore
+
+from qudi.util.widgets.plotting.marker import (
+    InfiniteCrosshair,
+    InfiniteCrosshairRectangle,
+    InfiniteLine,
+    LinearRegion,
+    Rectangle,
+)
 
 
 class SelectionMode(IntEnum):
@@ -45,7 +56,7 @@ class SelectionMode(IntEnum):
 
 
 class MouseTrackingMixin:
-    """ Extension for pg.ViewBox to tap into mouse move/click/drag events and emit signals.
+    """Extension for pg.ViewBox to tap into mouse move/click/drag events and emit signals.
 
     x-y-positions emitted will be in real world data coordinates.
     """
@@ -55,9 +66,7 @@ class MouseTrackingMixin:
     # position (x, y), MouseClickEvent
     sigMouseClicked = QtCore.Signal(tuple, object)
 
-    def __init__(self,
-                 allow_tracking_outside_data: Optional[bool] = False,
-                 **kwargs) -> None:
+    def __init__(self, allow_tracking_outside_data: bool | None = False, **kwargs) -> None:
         super().__init__(**kwargs)
         self.allow_tracking_outside_data = bool(allow_tracking_outside_data)
 
@@ -68,7 +77,7 @@ class MouseTrackingMixin:
         if not ev.isAccepted():
             super().mouseClickEvent(ev)
 
-    def mouseDragEvent(self, ev: MouseDragEvent, axis: Optional[int] = None) -> None:
+    def mouseDragEvent(self, ev: MouseDragEvent, axis: int | None = None) -> None:
         if self.allow_tracking_outside_data or self.pointer_on_data(ev.buttonDownScenePos()):
             start = self.mapToView(ev.buttonDownPos())
             current = self.mapToView(ev.pos())
@@ -86,7 +95,7 @@ class MouseTrackingMixin:
 
 
 class DataSelectionMixin:
-    """ Expands MouseTrackingViewBox with data selection functionality.
+    """Expands MouseTrackingViewBox with data selection functionality.
 
     You can select:
         - linear region in x or y
@@ -102,17 +111,18 @@ class DataSelectionMixin:
     sigMarkerSelectionChanged = QtCore.Signal(dict)
     sigRegionSelectionChanged = QtCore.Signal(dict)
 
-    def __init__(self,
-                 selection_bounds: Optional[Sequence[Tuple[Union[None, float], Union[None, float]]]] = None,
-                 selection_pen: Optional[Any] = None,
-                 selection_hover_pen: Optional[Any] = None,
-                 selection_brush: Optional[Any] = None,
-                 selection_hover_brush: Optional[Any] = None,
-                 xy_region_selection_crosshair: Optional[bool] = False,
-                 xy_region_selection_handles: Optional[bool] = True,
-                 xy_region_min_size_percentile: Optional[float] = None,
-                 **kwargs
-                 ) -> None:
+    def __init__(
+        self,
+        selection_bounds: Sequence[tuple[None | float, None | float]] | None = None,
+        selection_pen: Any | None = None,
+        selection_hover_pen: Any | None = None,
+        selection_brush: Any | None = None,
+        selection_hover_brush: Any | None = None,
+        xy_region_selection_crosshair: bool | None = False,
+        xy_region_selection_handles: bool | None = True,
+        xy_region_min_size_percentile: float | None = None,
+        **kwargs,
+    ) -> None:
         super().__init__(**kwargs)
         self._selection_bounds = None if selection_bounds is None else list(selection_bounds)
         self._selection_pen = selection_pen
@@ -134,9 +144,7 @@ class DataSelectionMixin:
         self.__markers = list()
 
     def _update_xy_region_min_size(self, viewbox, new_range, changed) -> None:
-        min_size = [
-            self._xy_region_min_size_percentile * abs(rang[1] - rang[0]) for rang in new_range
-        ]
+        min_size = [self._xy_region_min_size_percentile * abs(rang[1] - rang[0]) for rang in new_range]
         for region in self.__regions:
             region.set_min_size(min_size)
 
@@ -149,14 +157,12 @@ class DataSelectionMixin:
                 self.add_marker_selection((pos.x(), pos.y()))
         return super().mouseClickEvent(ev)
 
-    def mouseDragEvent(self, ev: MouseDragEvent, axis: Optional[int] = None) -> None:
+    def mouseDragEvent(self, ev: MouseDragEvent, axis: int | None = None) -> None:
         if not ev.isAccepted():
             selection_enabled = self._region_selection_mode != self.SelectionMode.Disabled
             no_mod = ev.modifiers() == QtCore.Qt.NoModifier
             is_left_button = ev.button() == QtCore.Qt.LeftButton
-            data_valid = self.allow_tracking_outside_data or self.pointer_on_data(
-                ev.buttonDownScenePos()
-            )
+            data_valid = self.allow_tracking_outside_data or self.pointer_on_data(ev.buttonDownScenePos())
             if selection_enabled and no_mod and (axis is None) and is_left_button and data_valid:
                 ev.accept()
                 start = self.mapToView(ev.buttonDownPos())
@@ -177,14 +183,14 @@ class DataSelectionMixin:
     def region_selection_mode(self) -> SelectionMode:
         return self._region_selection_mode
 
-    def set_region_selection_mode(self, mode: Union[SelectionMode, int]) -> None:
+    def set_region_selection_mode(self, mode: SelectionMode | int) -> None:
         self._region_selection_mode = self.SelectionMode(mode)
 
     @property
     def marker_selection_mode(self) -> SelectionMode:
         return self._marker_selection_mode
 
-    def set_marker_selection_mode(self, mode: Union[SelectionMode, int]) -> None:
+    def set_marker_selection_mode(self, mode: SelectionMode | int) -> None:
         self._marker_selection_mode = self.SelectionMode(mode)
 
     @property
@@ -205,15 +211,13 @@ class DataSelectionMixin:
             self._selection_mutable = mutable
 
     @property
-    def selection_bounds(self) -> Union[None, List[Union[None, Tuple[float, float]]]]:
+    def selection_bounds(self) -> None | list[None | tuple[float, float]]:
         try:
             return self._selection_bounds.copy()
         except AttributeError:
             return self._selection_bounds
 
-    def set_selection_bounds(self,
-                             bounds: Union[None, List[Union[None, Tuple[float, float]]]]
-                             ) -> None:
+    def set_selection_bounds(self, bounds: None | list[None | tuple[float, float]]) -> None:
         old_bounds = self.selection_bounds
         if bounds != old_bounds:
             self._selection_bounds = bounds
@@ -223,17 +227,15 @@ class DataSelectionMixin:
                 self._selection_bounds = old_bounds
                 raise
 
-    def add_region_selection(self,
-                             span: Tuple[Tuple[float, float], Tuple[float, float]],
-                             mode: Optional[Union[SelectionMode, int]] = None,
-                             ) -> None:
+    def add_region_selection(
+        self, span: tuple[tuple[float, float], tuple[float, float]], mode: SelectionMode | int | None = None
+    ) -> None:
         self._add_region_selection(span, mode)
         self._emit_region_change()
 
-    def _add_region_selection(self,
-                              span: Tuple[Tuple[float, float], Tuple[float, float]],
-                              mode: Optional[Union[SelectionMode, int]] = None,
-                              ) -> None:
+    def _add_region_selection(
+        self, span: tuple[tuple[float, float], tuple[float, float]], mode: SelectionMode | int | None = None
+    ) -> None:
         mode = self._region_selection_mode if mode is None else self.SelectionMode(mode)
         if mode == self.SelectionMode.Disabled:
             return
@@ -256,7 +258,7 @@ class DataSelectionMixin:
                 movable=self.selection_mutable,
                 resizable=self.selection_mutable,
                 pen=self._selection_pen,
-                hover_pen=self._selection_hover_pen
+                hover_pen=self._selection_hover_pen,
             )
         else:
             if mode == self.SelectionMode.X:
@@ -267,40 +269,38 @@ class DataSelectionMixin:
                 orientation = QtCore.Qt.Horizontal
                 bounds = None if self._selection_bounds is None else self._selection_bounds[1]
                 values = span[1]
-            item = LinearRegion(viewbox=self,
-                                orientation=orientation,
-                                span=values,
-                                bounds=bounds,
-                                movable=self.selection_mutable,
-                                pen=self._selection_pen,
-                                hover_pen=self._selection_hover_pen,
-                                brush=self._selection_brush,
-                                hover_brush=self._selection_hover_brush)
+            item = LinearRegion(
+                viewbox=self,
+                orientation=orientation,
+                span=values,
+                bounds=bounds,
+                movable=self.selection_mutable,
+                pen=self._selection_pen,
+                hover_pen=self._selection_hover_pen,
+                brush=self._selection_brush,
+                hover_brush=self._selection_hover_brush,
+            )
         item.sigAreaChanged.connect(self._emit_region_change)
         item.set_z_value(10)
         self.__regions.append(item)
 
-    def add_marker_selection(self,
-                             position: Tuple[float, float],
-                             mode: Optional[Union[SelectionMode, int]] = None,
-                             ) -> None:
+    def add_marker_selection(self, position: tuple[float, float], mode: SelectionMode | int | None = None) -> None:
         self._add_marker_selection(position, mode)
         self._emit_marker_change()
 
-    def _add_marker_selection(self,
-                              position: Tuple[float, float],
-                              mode: Optional[Union[SelectionMode, int]] = None,
-                              ) -> None:
+    def _add_marker_selection(self, position: tuple[float, float], mode: SelectionMode | int | None = None) -> None:
         mode = self._marker_selection_mode if mode is None else self.SelectionMode(mode)
         if mode == self.SelectionMode.Disabled:
             return
         elif mode == self.SelectionMode.XY:
-            item = InfiniteCrosshair(viewbox=self,
-                                     position=position,
-                                     bounds=self.selection_bounds,
-                                     movable=self.selection_mutable,
-                                     pen=self._selection_pen,
-                                     hover_pen=self._selection_hover_pen)
+            item = InfiniteCrosshair(
+                viewbox=self,
+                position=position,
+                bounds=self.selection_bounds,
+                movable=self.selection_mutable,
+                pen=self._selection_pen,
+                hover_pen=self._selection_hover_pen,
+            )
         else:
             if mode == self.SelectionMode.X:
                 orientation = QtCore.Qt.Vertical
@@ -310,28 +310,24 @@ class DataSelectionMixin:
                 orientation = QtCore.Qt.Horizontal
                 bounds = None if self._selection_bounds is None else self._selection_bounds[1]
                 pos = position[1]
-            item = InfiniteLine(viewbox=self,
-                                orientation=orientation,
-                                position=pos,
-                                bounds=bounds,
-                                movable=self.selection_mutable,
-                                pen=self._selection_pen,
-                                hover_pen=self._selection_hover_pen)
+            item = InfiniteLine(
+                viewbox=self,
+                orientation=orientation,
+                position=pos,
+                bounds=bounds,
+                movable=self.selection_mutable,
+                pen=self._selection_pen,
+                hover_pen=self._selection_hover_pen,
+            )
         item.sigPositionChanged.connect(self._emit_marker_change)
         item.set_z_value(11)
         self.__markers.append(item)
 
-    def move_region_selection(self,
-                              span: Tuple[Tuple[float, float], Tuple[float, float]],
-                              index: int
-                              ) -> None:
+    def move_region_selection(self, span: tuple[tuple[float, float], tuple[float, float]], index: int) -> None:
         self._move_region_selection(span, index)
         self._emit_region_change()
 
-    def _move_region_selection(self,
-                               span: Tuple[Tuple[float, float], Tuple[float, float]],
-                               index: int
-                               ) -> None:
+    def _move_region_selection(self, span: tuple[tuple[float, float], tuple[float, float]], index: int) -> None:
         item = self.__regions[index]
         item.blockSignals(True)
         if isinstance(item, LinearRegion):
@@ -347,17 +343,11 @@ class DataSelectionMixin:
             item.set_area(position, size)
         item.blockSignals(False)
 
-    def move_marker_selection(self,
-                              position: Tuple[float, float],
-                              index: int
-                              ) -> None:
+    def move_marker_selection(self, position: tuple[float, float], index: int) -> None:
         self._move_marker_selection(position, index)
         self._emit_marker_change()
 
-    def _move_marker_selection(self,
-                               position: Tuple[float, float],
-                               index: int
-                               ) -> None:
+    def _move_marker_selection(self, position: tuple[float, float], index: int) -> None:
         item = self.__markers[index]
         item.blockSignals(True)
         if isinstance(item, InfiniteLine):
@@ -433,33 +423,31 @@ class DataSelectionMixin:
         self.__regions[index].show()
 
     @property
-    def marker_selection(self) -> Dict[SelectionMode, List[Union[float, Tuple[float, float]]]]:
+    def marker_selection(self) -> dict[SelectionMode, list[float | tuple[float, float]]]:
         return {
             self.SelectionMode.X: [
-                m.position for m in self.__markers if
-                isinstance(m, InfiniteLine) and m.orientation == QtCore.Qt.Vertical
+                m.position
+                for m in self.__markers
+                if isinstance(m, InfiniteLine) and m.orientation == QtCore.Qt.Vertical
             ],
             self.SelectionMode.Y: [
-                m.position for m in self.__markers if
-                isinstance(m, InfiniteLine) and m.orientation == QtCore.Qt.Horizontal
+                m.position
+                for m in self.__markers
+                if isinstance(m, InfiniteLine) and m.orientation == QtCore.Qt.Horizontal
             ],
-            self.SelectionMode.XY: [
-                m.position for m in self.__markers if isinstance(m, InfiniteCrosshair)
-            ]
+            self.SelectionMode.XY: [m.position for m in self.__markers if isinstance(m, InfiniteCrosshair)],
         }
 
     @property
-    def region_selection(self) -> Dict[SelectionMode, List[tuple]]:
+    def region_selection(self) -> dict[SelectionMode, list[tuple]]:
         return {
             self.SelectionMode.X: [
-                r.area for r in self.__regions if
-                isinstance(r, LinearRegion) and r.orientation == QtCore.Qt.Vertical
+                r.area for r in self.__regions if isinstance(r, LinearRegion) and r.orientation == QtCore.Qt.Vertical
             ],
             self.SelectionMode.Y: [
-                r.area for r in self.__regions if
-                isinstance(r, LinearRegion) and r.orientation == QtCore.Qt.Horizontal
+                r.area for r in self.__regions if isinstance(r, LinearRegion) and r.orientation == QtCore.Qt.Horizontal
             ],
-            self.SelectionMode.XY: [r.area for r in self.__regions if isinstance(r, Rectangle)]
+            self.SelectionMode.XY: [r.area for r in self.__regions if isinstance(r, Rectangle)],
         }
 
     def _emit_marker_change(self) -> None:
@@ -486,8 +474,8 @@ class DataSelectionMixin:
 
 
 class RubberbandZoomMixin:
-    """
-    """
+    """ """
+
     SelectionMode = SelectionMode
 
     sigZoomAreaApplied = QtCore.Signal(QtCore.QRectF)
@@ -496,6 +484,7 @@ class RubberbandZoomMixin:
     #  checks like the one below
     try:
         from pyqtgraph import __version__ as __pyqtgraph_version
+
         if __pyqtgraph_version == '0.12.4':
             raise RuntimeError(
                 'You are using an unupported version of pyqtgraph. Please re-install qudi-core '
@@ -507,32 +496,35 @@ class RubberbandZoomMixin:
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self._rubberband_zoom_selection_mode = self.SelectionMode.Disabled
-        self._x_zoom_region = _LinearRegionItem(orientation='vertical',
-                                                brush=kwargs.get('brush', None),
-                                                pen=kwargs.get('pen', None),
-                                                hoverBrush=kwargs.get('hover_brush', None),
-                                                hoverPen=kwargs.get('hover_pen', None),
-                                                movable=False)
-        self._y_zoom_region = _LinearRegionItem(orientation='horizontal',
-                                                brush=kwargs.get('brush', None),
-                                                pen=kwargs.get('pen', None),
-                                                hoverBrush=kwargs.get('hover_brush', None),
-                                                hoverPen=kwargs.get('hover_pen', None),
-                                                movable=False)
+        self._x_zoom_region = _LinearRegionItem(
+            orientation='vertical',
+            brush=kwargs.get('brush'),
+            pen=kwargs.get('pen'),
+            hoverBrush=kwargs.get('hover_brush'),
+            hoverPen=kwargs.get('hover_pen'),
+            movable=False,
+        )
+        self._y_zoom_region = _LinearRegionItem(
+            orientation='horizontal',
+            brush=kwargs.get('brush'),
+            pen=kwargs.get('pen'),
+            hoverBrush=kwargs.get('hover_brush'),
+            hoverPen=kwargs.get('hover_pen'),
+            movable=False,
+        )
 
     @property
     def rubberband_zoom_selection_mode(self) -> SelectionMode:
         return self._rubberband_zoom_selection_mode
 
     def set_rubberband_zoom_selection_mode(self, mode: SelectionMode) -> None:
-        """ Set selection mode for automatic zooming into a rubberband selection when dragging the
+        """Set selection mode for automatic zooming into a rubberband selection when dragging the
         mouse cursor.
         """
         self._rubberband_zoom_selection_mode = self.SelectionMode(mode)
 
     def mouseDragEvent(self, ev, axis=None):
-        """ Additional mouse drag event handling to implement rubber band selection and zooming.
-        """
+        """Additional mouse drag event handling to implement rubber band selection and zooming."""
         if not ev.isAccepted():
             no_mod = ev.modifiers() == QtCore.Qt.NoModifier
             is_left_button = ev.button() == QtCore.Qt.LeftButton

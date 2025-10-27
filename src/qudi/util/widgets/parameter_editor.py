@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Copyright (c) 2021, the qudi developers. See the AUTHORS.md file at the top-level directory of this
 distribution and on <https://github.com/Ulm-IQO/qudi-core/>
@@ -20,20 +19,23 @@ If not, see <https://www.gnu.org/licenses/>.
 __all__ = ['ParameterEditor', 'ParameterEditorDialog']
 
 import inspect
-from typing import Any, Optional, Dict, Mapping, Callable
-from PySide2 import QtCore, QtWidgets
+from collections.abc import Callable, Mapping
+from typing import Any
+
+from PySide6 import QtCore, QtWidgets
 
 from qudi.util.parameters import ParameterWidgetMapper
 
 
 class ParameterEditor(QtWidgets.QWidget):
-    """ Dynamically created editor widget for callable parameters.
+    """Dynamically created editor widget for callable parameters.
     For best results use default values and simple type annotations in the callable to create the
     editor for.
     """
+
     INVALID = object()
 
-    def __init__(self, *args, func: Callable, values: Optional[Mapping[str, Any]] = None, **kwargs):
+    def __init__(self, *args, func: Callable, values: Mapping[str, Any] | None = None, **kwargs):
         super().__init__(*args, **kwargs)
         if values is None:
             values = dict()
@@ -72,8 +74,8 @@ class ParameterEditor(QtWidgets.QWidget):
             self.parameter_editors[name] = editor
         self.setLayout(layout)
 
-    def get_parameter_values(self) -> Dict[str, Any]:
-        """ Returns the current parameter values entered into the editor """
+    def get_parameter_values(self) -> dict[str, Any]:
+        """Returns the current parameter values entered into the editor"""
         values = dict()
         for name, editor in self.parameter_editors.items():
             if isinstance(editor, QtWidgets.QLabel):
@@ -93,18 +95,16 @@ class ParameterEditor(QtWidgets.QWidget):
 
 
 class ParameterEditorDialog(QtWidgets.QDialog):
-    """ QDialog containing a ParameterEditor widget and OK, Cancel and Apply buttons.
-    """
-    def __init__(self, *args, func: Callable, values: Optional[Mapping[str, Any]] = None, **kwargs):
+    """QDialog containing a ParameterEditor widget and OK, Cancel and Apply buttons."""
+
+    def __init__(self, *args, func: Callable, values: Mapping[str, Any] | None = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.parameter_editor = ParameterEditor(func=func, values=values)
         self.scroll_area = QtWidgets.QScrollArea()
         self.scroll_area.setWidget(self.parameter_editor)
         self.button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.Ok |
-            QtWidgets.QDialogButtonBox.Cancel |
-            QtWidgets.QDialogButtonBox.Apply,
-            orientation=QtCore.Qt.Horizontal
+            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Apply,
+            orientation=QtCore.Qt.Horizontal,
         )
         self.ok_button = self.button_box.button(QtWidgets.QDialogButtonBox.Ok)
         self.cancel_button = self.button_box.button(QtWidgets.QDialogButtonBox.Cancel)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This file contains Qudi methods for handling real-world values with units.
 
@@ -19,11 +18,19 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ('create_formatted_output', 'get_relevant_digit', 'get_si_norm', 'get_unit_prefix_dict',
-           'round_value_to_error', 'ScaledFloat')
+__all__ = (
+    'create_formatted_output',
+    'get_relevant_digit',
+    'get_si_norm',
+    'get_unit_prefix_dict',
+    'round_value_to_error',
+    'ScaledFloat',
+)
 
 import math
+
 import numpy as np
+
 try:
     import pyqtgraph.functions as fn
 except ImportError:
@@ -39,7 +46,7 @@ def get_unit_prefix_dict():
 
     Returns
     -------
-    dict 
+    dict
         Keys are string prefix and values are magnitude values.
     """
     unit_prefix_dict = {
@@ -59,7 +66,7 @@ def get_unit_prefix_dict():
         'P': 1e15,
         'E': 1e18,
         'Z': 1e21,
-        'Y': 1e24
+        'Y': 1e24,
     }
     return unit_prefix_dict
 
@@ -120,7 +127,7 @@ class ScaledFloat(float):
 
         Parameters
         ----------
-        fmt : str 
+        fmt : str
             Format string.
         """
         autoscale = False
@@ -141,7 +148,7 @@ class ScaledFloat(float):
             else:
                 index = scale
             value = self / get_unit_prefix_dict()[index]
-            return '{:s} {:s}'.format(value.__format__(fmt), scale)
+            return f'{value.__format__(fmt):s} {scale:s}'
         else:
             return super().__format__(fmt)
 
@@ -164,54 +171,52 @@ def create_formatted_output(param_dict, num_sig_digits=5):
     -------
     str
         A nicely formatted string.
-        
+
     Notes
     -----
     The absolute tolerance to a zero is set to 1e-18.
-        
+
     Examples
     --------
 
     Example of a param dict:
-    
+
     param_dict = {'Rabi frequency': {'value': 123.43, 'error': 0.321, 'unit': 'Hz'},
                   'ODMR contrast':  {'value': 2.563423, 'error': 0.523, 'unit': '%'},
                   'Fidelity':       {'value': 0.783, 'error': 0.2222, 'unit': ''}}
-    
+
     If you want to access the value of the Fidelity, then you can do that via:
-    
+
     >>> param_dict['Fidelity']['value']
-    
+
     or on the error of the ODMR contrast:
-    
+
     >>> param_dict['ODMR contrast']['error']
     """
     if fn is None:
         raise RuntimeError('Function "create_formatted_output" requires pyqtgraph.')
 
     output_str = ''
-    atol = 1e-18    # absolute tolerance for the detection of zero.
+    atol = 1e-18  # absolute tolerance for the detection of zero.
 
     for entry in param_dict:
         if param_dict[entry].get('error') is not None:
+            value, error, digit = round_value_to_error(param_dict[entry]['value'], param_dict[entry]['error'])
 
-            value, error, digit = round_value_to_error(
-                param_dict[entry]['value'], param_dict[entry]['error'])
-
-            if (np.isclose(value, 0.0, atol=atol)
-                    or np.isnan(error)
-                    or np.isclose(error, 0.0, atol=atol)
-                    or np.isinf(error)):
+            if (
+                np.isclose(value, 0.0, atol=atol)
+                or np.isnan(error)
+                or np.isclose(error, 0.0, atol=atol)
+                or np.isinf(error)
+            ):
                 sc_fact, unit_prefix = fn.siScale(param_dict[entry]['value'])
-                str_val = '{0:.{1}e}'.format(
-                    param_dict[entry]['value'], num_sig_digits - 1)
+                str_val = '{0:.{1}e}'.format(param_dict[entry]['value'], num_sig_digits - 1)
                 if np.isnan(float(str_val)):
-                    value = np.NAN
+                    value = np.nan
                 elif np.isinf(float(str_val)):
                     value = np.inf
                 else:
-                    value = float('{0:.{1}e}'.format(
-                        param_dict[entry]['value'], num_sig_digits - 1))
+                    value = float('{0:.{1}e}'.format(param_dict[entry]['value'], num_sig_digits - 1))
 
             else:
                 # the factor 10 moves the displayed digit by one to the right,
@@ -219,17 +224,19 @@ def create_formatted_output(param_dict, num_sig_digits=5):
                 # range, rather then from the value 1000 to 1, which is
                 # default.
                 sc_fact, unit_prefix = fn.siScale(error * 10)
-            output_str += '{0}: ({1} \u00B1 {2}) {3}{4} \n'.format(entry, round(value * sc_fact,
-                                                                                num_sig_digits - 1),
-                                                                   round(error * sc_fact,
-                                                                         num_sig_digits - 1),
-                                                                   unit_prefix,
-                                                                   param_dict[entry]['unit'])
+            output_str += '{0}: ({1} \u00b1 {2}) {3}{4} \n'.format(
+                entry,
+                round(value * sc_fact, num_sig_digits - 1),
+                round(error * sc_fact, num_sig_digits - 1),
+                unit_prefix,
+                param_dict[entry]['unit'],
+            )
         else:
-            output_str += '{0}: '.format(entry) + fn.siFormat(param_dict[entry]['value'],
-                                                              precision=num_sig_digits,
-                                                              suffix=param_dict[entry][
-                                                                  'unit']) + ' (fixed) \n'
+            output_str += (
+                f'{entry}: '
+                + fn.siFormat(param_dict[entry]['value'], precision=num_sig_digits, suffix=param_dict[entry]['unit'])
+                + ' (fixed) \n'
+            )
     return output_str
 
 
@@ -238,7 +245,7 @@ def round_value_to_error(value, error):
 
     Parameters
     ----------
-    value : float or int 
+    value : float or int
         The measurement value.
     error : float or int
         The error for that measurement value.
@@ -247,7 +254,7 @@ def round_value_to_error(value, error):
     -------
     tuple
         A tuple containing the following elements:
-        
+
         float
             The rounded value according to the error.
         float
@@ -307,7 +314,7 @@ def round_value_to_error(value, error):
     (961000, 4000, -3)
     """
 
-    atol = 1e-18    # absolute tolerance for the detection of zero.
+    atol = 1e-18  # absolute tolerance for the detection of zero.
 
     # check if error is zero, since that is an invalid input!
     if np.isclose(error, 0.0, atol=atol) or np.isnan(error) or np.isinf(error):
@@ -329,7 +336,7 @@ def round_value_to_error(value, error):
     else:
         round_digit = -(int(log_val))
 
-    first_err_digit = '{:e}'.format(error)[0]
+    first_err_digit = f'{error:e}'[0]
 
     if first_err_digit in ('1', '2'):
         round_digit += 1
@@ -350,7 +357,7 @@ def get_relevant_digit(entry):
     Parameters
     ----------
     entry : float
-        
+
     Returns
     -------
     int
@@ -367,8 +374,7 @@ def get_relevant_digit(entry):
         return int(np.log10(entry))
     else:
         # catch the asymmetric behaviour of the log and int operation.
-        return int(int(np.abs(np.log10(entry))) + 1 + np.log10(entry)) - (
-                    int(np.abs(np.log10(entry))) + 1)
+        return int(int(np.abs(np.log10(entry))) + 1 + np.log10(entry)) - (int(np.abs(np.log10(entry))) + 1)
 
 
 def get_si_norm(entry):
@@ -376,7 +382,7 @@ def get_si_norm(entry):
 
     Parameters
     ----------
-    entry : float 
+    entry : float
         The float number from which normalization factor should
         be obtained.
 
@@ -390,6 +396,6 @@ def get_si_norm(entry):
     val = get_relevant_digit(entry)
     fact = int(val / 3)
     power = int(3 * fact)
-    norm = 10 ** power
+    norm = 10**power
 
     return entry / norm, norm

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Copyright (c) 2022, the qudi developers. See the AUTHORS.md file at the top-level directory of this
 distribution and on <https://github.com/Ulm-IQO/qudi-core/>
@@ -20,4 +18,4 @@ If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = ['Configuration', 'ValidationError', 'ParserError', 'DuplicateKeyError', 'YAMLError']
 
-from .config import Configuration, ParserError, ValidationError, DuplicateKeyError, YAMLError
+from .config import Configuration, DuplicateKeyError, ParserError, ValidationError, YAMLError

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This file contains the qudi log widget class.
 
@@ -19,7 +18,8 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-from PySide2 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
+
 from qudi.core.logger import get_record_table_model
 
 
@@ -77,8 +77,8 @@ class LogFilterProxy(QtCore.QSortFilterProxyModel):
 
 
 class SelectableTextDelegate(QtWidgets.QStyledItemDelegate):
-    """A subclass of QStyledItemDelegate to display a text editor for copying text fragments.
-    """
+    """A subclass of QStyledItemDelegate to display a text editor for copying text fragments."""
+
     def createEditor(self, parent, option, index):
         """
         Overwrite method from base class QStyledItemDelegate to show a read-only QLabel widget.
@@ -119,8 +119,8 @@ class SelectableTextDelegate(QtWidgets.QStyledItemDelegate):
 
 
 class LogTableWidget(QtWidgets.QTableView):
-    """Customized QTableView including the model for display of logging entries.
-    """
+    """Customized QTableView including the model for display of logging entries."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -168,8 +168,7 @@ class LogTableWidget(QtWidgets.QTableView):
 
 
 class LogWidget(QtWidgets.QSplitter):
-    """A widget to show log entries and filter them.
-    """
+    """A widget to show log entries and filter them."""
 
     def __init__(self, parent=None, debug_mode=False, **kwargs):
         """
@@ -192,8 +191,7 @@ class LogWidget(QtWidgets.QSplitter):
         # Set up QTreeWidget for log filter ui
         self.filter_treewidget = QtWidgets.QTreeWidget()
         self.filter_treewidget.setObjectName('filter_treewidget')
-        self.filter_treewidget.setSizePolicy(QtWidgets.QSizePolicy.Preferred,
-                                             QtWidgets.QSizePolicy.Preferred)
+        self.filter_treewidget.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         self.filter_treewidget.setMinimumSize(210, 0)
         self.filter_treewidget.setEditTriggers(QtWidgets.QTreeWidget.NoEditTriggers)
         self.filter_treewidget.setDropIndicatorShown(False)
@@ -205,7 +203,7 @@ class LogWidget(QtWidgets.QSplitter):
         item = QtWidgets.QTreeWidgetItem()
         item.setText(0, 'All message types:')
         item.setCheckState(0, QtCore.Qt.Checked)
-        log_levels = ('debug', 'info', 'warning', 'error', 'critical')[int(not debug_mode):]
+        log_levels = ('debug', 'info', 'warning', 'error', 'critical')[int(not debug_mode) :]
         for text in log_levels:
             child_item = QtWidgets.QTreeWidgetItem()
             child_item.setText(0, text)

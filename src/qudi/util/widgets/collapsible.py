@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This file contains a custom QWidget to wrap a collapsible widget with expand/collapse animation.
 
@@ -23,21 +21,21 @@ If not, see <https://www.gnu.org/licenses/>.
 __all__ = ['CollapsibleWidget']
 
 
-from PySide2 import QtCore, QtWidgets
-from typing import Optional
+from PySide6 import QtCore, QtWidgets
 
 
 class CollapsibleWidget(QtWidgets.QWidget):
-    """ ToDo: Document
-    """
+    """ToDo: Document"""
 
     sigCollapsedChanged = QtCore.Signal(bool)  # True: Collapsed, False: Expanded
 
-    def __init__(self,
-                 widget: QtWidgets.QWidget,
-                 title: Optional[str] = '',
-                 animation_duration: Optional[float] = 0.2,
-                 parent: Optional[QtWidgets.QWidget] = None):
+    def __init__(
+        self,
+        widget: QtWidgets.QWidget,
+        title: str | None = '',
+        animation_duration: float | None = 0.2,
+        parent: QtWidgets.QWidget | None = None,
+    ):
         super().__init__(parent=parent)
         if animation_duration is None:
             animation_duration = 0.2
@@ -45,9 +43,7 @@ class CollapsibleWidget(QtWidgets.QWidget):
         self._last_collapsed = True
 
         self.expand_collapse_button = QtWidgets.QToolButton()
-        self.expand_collapse_button.setStyleSheet(
-            'QToolButton { border: none; background-color: none; }'
-        )
+        self.expand_collapse_button.setStyleSheet('QToolButton { border: none; background-color: none; }')
         self.expand_collapse_button.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
         self.expand_collapse_button.setArrowType(QtCore.Qt.RightArrow)
         self.expand_collapse_button.setText(title if title else '')
@@ -96,7 +92,7 @@ class CollapsibleWidget(QtWidgets.QWidget):
 
     @property
     def animation_duration(self) -> float:
-        return self._min_height_animation.duration() / 1000.
+        return self._min_height_animation.duration() / 1000.0
 
     def set_collapsed(self, collapse: bool) -> None:
         self.expand_collapse_button.setChecked(not collapse)

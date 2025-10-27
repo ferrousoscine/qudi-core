@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This file contains the Qudi thread manager singleton class.
 
@@ -19,13 +18,13 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-import logging
 import weakref
 from functools import partial
-from PySide2 import QtCore
 
-from qudi.util.mutex import RecursiveMutex
+from PySide6 import QtCore
+
 from qudi.core.logger import get_logger
+from qudi.util.mutex import RecursiveMutex
 
 logger = get_logger(__name__)
 
@@ -35,6 +34,7 @@ class ThreadManager(QtCore.QAbstractListModel):
 
     Using this class is thread-safe.
     """
+
     _instance = None
     _lock = RecursiveMutex()
 
@@ -80,7 +80,7 @@ class ThreadManager(QtCore.QAbstractListModel):
             New thread, or None if creation failed.
         """
         with self._lock:
-            logger.debug('Creating thread: "{0}".'.format(name))
+            logger.debug(f'Creating thread: "{name}".')
             if name in self._thread_names:
                 return None
             thread = QtCore.QThread()
@@ -102,16 +102,13 @@ class ThreadManager(QtCore.QAbstractListModel):
             if name in self._thread_names:
                 if self.get_thread_by_name(name) is thread:
                     return None
-                raise RuntimeError(
-                    f'Different thread with name "{name}" already registered in ThreadManager'
-                )
+                raise RuntimeError(f'Different thread with name "{name}" already registered in ThreadManager')
 
             row = len(self._threads)
             self.beginInsertRows(QtCore.QModelIndex(), row, row)
             self._threads.append(thread)
             self._thread_names.append(name)
-            thread.finished.connect(
-                partial(self.unregister_thread, name=name), QtCore.Qt.QueuedConnection)
+            thread.finished.connect(partial(self.unregister_thread, name=name), QtCore.Qt.QueuedConnection)
             self.endInsertRows()
 
     @QtCore.Slot(object)
@@ -131,7 +128,7 @@ class ThreadManager(QtCore.QAbstractListModel):
                 if self._threads[index].isRunning():
                     self.quit_thread(name)
                     return
-                logger.debug('Cleaning up thread {0}.'.format(name))
+                logger.debug(f'Cleaning up thread {name}.')
                 self.beginRemoveRows(QtCore.QModelIndex(), index, index)
                 del self._threads[index]
                 del self._thread_names[index]
@@ -152,9 +149,9 @@ class ThreadManager(QtCore.QAbstractListModel):
             else:
                 thread = self.get_thread_by_name(name)
             if thread is None:
-                logger.debug('You tried quitting a nonexistent thread {0}.'.format(name))
+                logger.debug(f'You tried quitting a nonexistent thread {name}.')
             else:
-                logger.debug('Quitting thread {0}.'.format(name))
+                logger.debug(f'Quitting thread {name}.')
                 thread.quit()
 
     @QtCore.Slot(object, int)
@@ -174,9 +171,9 @@ class ThreadManager(QtCore.QAbstractListModel):
             else:
                 thread = self.get_thread_by_name(name)
             if thread is None:
-                logger.debug('You tried waiting for a nonexistent thread {0}.'.format(name))
+                logger.debug(f'You tried waiting for a nonexistent thread {name}.')
             else:
-                logger.debug('Waiting for thread {0} to end.'.format(name))
+                logger.debug(f'Waiting for thread {name} to end.')
                 if time is None:
                     thread.wait()
                 else:
@@ -184,14 +181,13 @@ class ThreadManager(QtCore.QAbstractListModel):
 
     @QtCore.Slot(int)
     def quit_all_threads(self, thread_timeout=10000):
-        """Stop event loop of all QThreads.
-        """
+        """Stop event loop of all QThreads."""
         with self._lock:
             logger.debug('Quit all threads.')
             for thread in self._threads:
                 thread.quit()
                 if not thread.wait(int(thread_timeout)):
-                    logger.error('Waiting for thread {0} timed out.'.format(thread.objectName()))
+                    logger.error(f'Waiting for thread {thread.objectName()} timed out.')
 
     def get_thread_by_name(self, name):
         """Get registered QThread instance by its objectName.

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Jupyter notebook kernel executable file for Qudi.
 
@@ -19,16 +18,16 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['install_kernel', 'uninstall_kernel', 'QudiIPythonKernel', 'QudiKernelClient',
-           'QudiKernelService']
+__all__ = ['install_kernel', 'uninstall_kernel', 'QudiIPythonKernel', 'QudiKernelClient', 'QudiKernelService']
 
-import os
-import sys
-import rpyc
 import json
-import shutil
 import logging
+import os
+import shutil
+import sys
 import tempfile
+
+import rpyc
 from ipykernel.ipkernel import IPythonKernel
 
 from qudi.core.config import Configuration, ValidationError, YAMLError
@@ -48,7 +47,7 @@ def install_kernel():
         kernel_dict = {
             'argv': [sys.executable, kernel_path, '-f', '{connection_file}'],
             'display_name': 'qudi',
-            'language': 'python'
+            'language': 'python',
         }
         # write the kernelspec file
         with open(os.path.join(path, 'kernel.json'), 'w') as f:
@@ -76,19 +75,18 @@ def uninstall_kernel():
 
 
 class QudiKernelService(rpyc.Service):
-    """
-    """
+    """ """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._background_server = None
 
     def on_connect(self, conn):
-        logging.warning(f'Qudi IPython kernel connected to local module service.')
+        logging.warning('Qudi IPython kernel connected to local module service.')
         self._background_server = rpyc.BgServingThread(conn)
 
     def on_disconnect(self, conn):
-        logging.warning(f'Qudi IPython kernel disconnected from local module service.')
+        logging.warning('Qudi IPython kernel disconnected from local module service.')
         try:
             self._background_server.stop()
         except:
@@ -101,8 +99,7 @@ class QudiKernelService(rpyc.Service):
 
 
 class QudiKernelClient:
-    """
-    """
+    """ """
 
     def __init__(self):
         self.service_instance = QudiKernelService()
@@ -126,14 +123,18 @@ class QudiKernelClient:
             config.load()
         except (ValueError, ValidationError, YAMLError):
             pass
-        self.connection = rpyc.connect(host='localhost',
-                                       config={'allow_all_attrs': True,
-                                               'allow_setattr': True,
-                                               'allow_delattr': True,
-                                               'allow_pickle': True,
-                                               'sync_request_timeout': 3600},
-                                       port=config['namespace_server_port'],
-                                       service=self.service_instance)
+        self.connection = rpyc.connect(
+            host='localhost',
+            config={
+                'allow_all_attrs': True,
+                'allow_setattr': True,
+                'allow_delattr': True,
+                'allow_pickle': True,
+                'sync_request_timeout': 3600,
+            },
+            port=config['namespace_server_port'],
+            service=self.service_instance,
+        )
 
     def disconnect(self):
         if self.connection is not None:
@@ -146,8 +147,7 @@ class QudiKernelClient:
 
 
 class QudiIPythonKernel(IPythonKernel):
-    """
-    """
+    """ """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

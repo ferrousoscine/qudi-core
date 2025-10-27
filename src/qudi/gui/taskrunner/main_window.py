@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This file contains the QMainWindow class for the task GUI.
 
@@ -20,11 +19,13 @@ If not, see <https://www.gnu.org/licenses/>.
 """
 
 import os
-from typing import Any, Mapping, Dict, Type, Callable
-from PySide2 import QtCore, QtGui, QtWidgets
+from collections.abc import Callable, Mapping
+from typing import Any
 
-from qudi.util.paths import get_artwork_dir
+from PySide6 import QtCore, QtGui, QtWidgets
+
 from qudi.core.scripting.moduletask import ModuleTask
+from qudi.util.paths import get_artwork_dir
 
 from .taskwidget import TaskWidget
 
@@ -38,14 +39,14 @@ class TaskMainWindow(QtWidgets.QMainWindow):
     sigInterruptTask = QtCore.Signal(str)  # task name
     sigClosed = QtCore.Signal()
 
-    def __init__(self, *args, tasks: Mapping[str, Type[ModuleTask]], **kwargs):
+    def __init__(self, *args, tasks: Mapping[str, type[ModuleTask]], **kwargs):
         super().__init__(*args, **kwargs)
 
         self.setWindowTitle('qudi: Taskrunner')
 
         # Create actions
         icon_path = os.path.join(get_artwork_dir(), 'icons')
-        self.action_quit = QtWidgets.QAction()
+        self.action_quit = QtGui.QAction()
         self.action_quit.setIcon(QtGui.QIcon(os.path.join(icon_path, 'application-exit')))
         self.action_quit.setText('Close')
         self.action_quit.setToolTip('Close')
@@ -95,7 +96,7 @@ class TaskMainWindow(QtWidgets.QMainWindow):
     def task_finished(self, name: str, result: Any, success: bool) -> None:
         self.task_widgets[name].task_finished(result, success)
 
-    def _initialize_task_widgets(self, tasks: Mapping[str, Type[ModuleTask]]) -> None:
+    def _initialize_task_widgets(self, tasks: Mapping[str, type[ModuleTask]]) -> None:
         for ii, (task_name, task_type) in enumerate(tasks.items()):
             groupbox = QtWidgets.QGroupBox(task_name)
             font = groupbox.font()
@@ -112,8 +113,7 @@ class TaskMainWindow(QtWidgets.QMainWindow):
             self.task_widgets[task_name] = widget
 
     def _clear_task_widgets(self) -> None:
-        """Helper method to disconnect and delete all TaskWidgets and remove them from layout.
-        """
+        """Helper method to disconnect and delete all TaskWidgets and remove them from layout."""
         for widget in reversed(self.task_widgets):
             groupbox = widget.parent()
             widget.sigStartTask.disconnect()
@@ -123,15 +123,13 @@ class TaskMainWindow(QtWidgets.QMainWindow):
             groupbox.deleteLater()
         self.task_widgets = dict()
 
-    def _get_start_task_callback(self, task_name: str) -> Callable[[Dict[str, Any]], None]:
-
-        def callback(parameters: Dict[str, Any]) -> None:
+    def _get_start_task_callback(self, task_name: str) -> Callable[[dict[str, Any]], None]:
+        def callback(parameters: dict[str, Any]) -> None:
             self.sigStartTask.emit(task_name, parameters)
 
         return callback
 
     def _get_interrupt_task_callback(self, task_name: str) -> Callable[[], None]:
-
         def callback() -> None:
             self.sigInterruptTask.emit(task_name)
 

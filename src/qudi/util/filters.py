@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This file contains Qudi methods for data filtering.
 
@@ -21,9 +20,10 @@ If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = ('scan_blink_correction',)
 
-import numpy as np
-from scipy.ndimage import minimum_filter1d, maximum_filter1d
 import logging
+
+import numpy as np
+from scipy.ndimage import maximum_filter1d, minimum_filter1d
 
 _logger = logging.getLogger(__name__)
 
@@ -72,7 +72,6 @@ def scan_blink_correction(image, axis=1):
     filt_img = minimum_filter1d(image, size=2, axis=axis, mode='constant', cval=median)
     # Apply a maximum filter along the chosen axis. Flip the previous filter result to avoid
     # translation of image features.
-    filt_img = maximum_filter1d(
-        np.flip(filt_img, axis), size=2, axis=axis, mode='constant', cval=median)
+    filt_img = maximum_filter1d(np.flip(filt_img, axis), size=2, axis=axis, mode='constant', cval=median)
     # Flip back the image to obtain original orientation and return result.
     return np.flip(filt_img, axis)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This file contains Qudi methods for handling real-world values with units.
 
@@ -23,10 +22,10 @@ __all__ = ['ScalarConstraint', 'DiscreteScalarConstraint']
 
 import warnings
 from bisect import bisect_left
-from typing import Union, Optional, Tuple, Callable, Any, Iterable
+from collections.abc import Callable, Iterable
+from typing import Any
 
 from qudi.util.helpers import is_float, is_integer
-
 
 
 class ScalarConstraint:
@@ -59,13 +58,15 @@ class ScalarConstraint:
     checker : callable, optional
         Custom checker function to accept a scalar value and raise ValueError or TypeError on fail.
     """
-    def __init__(self,
-                 default: Union[int, float],
-                 bounds: Tuple[Union[int, float], Union[int, float]],
-                 increment: Optional[Union[int, float]] = None,
-                 enforce_int: Optional[bool] = False,
-                 checker: Optional[Callable[[Union[int, float]], bool]] = None
-                 ) -> None:
+
+    def __init__(
+        self,
+        default: int | float,
+        bounds: tuple[int | float, int | float],
+        increment: int | float | None = None,
+        enforce_int: bool | None = False,
+        checker: Callable[[int | float], bool] | None = None,
+    ) -> None:
         self._enforce_int = bool(enforce_int)
         self.check_value_type(default)
         for value in bounds:
@@ -73,8 +74,10 @@ class ScalarConstraint:
         if increment is not None:
             self.check_value_type(increment)
         if checker is not None and not callable(checker):
-            raise TypeError('checker must be either None or a callable accepting a single scalar '
-                            'and returning a valid-flag bool or raising ValueError')
+            raise TypeError(
+                'checker must be either None or a callable accepting a single scalar '
+                'and returning a valid-flag bool or raising ValueError'
+            )
         self._default = default
         self._minimum, self._maximum = sorted(bounds)
         self._increment = increment
@@ -84,7 +87,7 @@ class ScalarConstraint:
             raise ValueError(f'invalid default value ({self._default}) encountered')
 
     @property
-    def bounds(self) -> Tuple[Union[int, float], Union[int, float]]:
+    def bounds(self) -> tuple[int | float, int | float]:
         """
         Interval (inclusive) for valid value range.
 
@@ -98,7 +101,7 @@ class ScalarConstraint:
         return self._minimum, self._maximum
 
     @property
-    def minimum(self) -> Union[int, float]:
+    def minimum(self) -> int | float:
         """
         Minimum allowed value.
 
@@ -109,7 +112,7 @@ class ScalarConstraint:
         return self._minimum
 
     @property
-    def maximum(self) -> Union[int, float]:
+    def maximum(self) -> int | float:
         """
         Maximum allowed value.
 
@@ -120,7 +123,7 @@ class ScalarConstraint:
         return self._maximum
 
     @property
-    def default(self) -> Union[int, float]:
+    def default(self) -> int | float:
         """
         Default fallback value.
 
@@ -131,7 +134,7 @@ class ScalarConstraint:
         return self._default
 
     @property
-    def increment(self) -> Union[None, int, float]:
+    def increment(self) -> None | int | float:
         """
         Natural increment to increase/decrease values. This is often used in a GUI, e.g. QSpinBox.
 
@@ -152,7 +155,7 @@ class ScalarConstraint:
         """
         return self._enforce_int
 
-    def check(self, value: Union[int, float]) -> None:
+    def check(self, value: int | float) -> None:
         """
         Checks whether the given value is allowed by the constraint by calling various checker
         functions. If a checker function fails it will raise an Exception, indicating what is wrong
@@ -175,7 +178,7 @@ class ScalarConstraint:
         self.check_value_range(value)
         self.check_custom(value)
 
-    def is_valid(self, value: Union[int, float]) -> bool:
+    def is_valid(self, value: int | float) -> bool:
         """
         Checks whether the given value is valid.
 
@@ -194,7 +197,7 @@ class ScalarConstraint:
             return False
         return True
 
-    def clip(self, value: Union[int, float]) -> Union[int, float]:
+    def clip(self, value: int | float) -> int | float:
         """
         Clips the given value to the nearest valid value.
 
@@ -218,13 +221,15 @@ class ScalarConstraint:
         ScalarConstraint
             Copy of this instance
         """
-        return ScalarConstraint(default=self.default,
-                                bounds=self.bounds,
-                                increment=self.increment,
-                                enforce_int=self.enforce_int,
-                                checker=self._checker)
+        return ScalarConstraint(
+            default=self.default,
+            bounds=self.bounds,
+            increment=self.increment,
+            enforce_int=self.enforce_int,
+            checker=self._checker,
+        )
 
-    def check_custom(self, value: Union[int, float]) -> None:
+    def check_custom(self, value: int | float) -> None:
         """
         Checks the given value with the supplied custom checker function.
 
@@ -243,7 +248,7 @@ class ScalarConstraint:
         if (self._checker is not None) and (not self._checker(value)):
             raise ValueError(f'Custom checker failed to validate {value}')
 
-    def check_value_range(self, value: Union[int, float]) -> None:
+    def check_value_range(self, value: int | float) -> None:
         """
         Checks the given value if it is in bounds.
 
@@ -284,12 +289,14 @@ class ScalarConstraint:
     def __repr__(self) -> str:
         cls = self.__class__.__name__
         module = self.__class__.__module__
-        return f'{module}.{cls}(' \
-               f'default={self.default}, ' \
-               f'bounds={self.bounds}, ' \
-               f'increment={self.increment}, ' \
-               f'enforce_int={self.enforce_int}, ' \
-               f'checker={self._checker})'
+        return (
+            f'{module}.{cls}('
+            f'default={self.default}, '
+            f'bounds={self.bounds}, '
+            f'increment={self.increment}, '
+            f'enforce_int={self.enforce_int}, '
+            f'checker={self._checker})'
+        )
 
     def __copy__(self):
         return self.copy()
@@ -301,88 +308,99 @@ class ScalarConstraint:
 
     # Backwards compatibility properties:
     @default.setter
-    def default(self, value: Union[int, float]):
+    def default(self, value: int | float):
         """
         .. deprecated:: 1.3.0
             constraints should be immutable. Pass all values to :py:func:`__init__` instead.
         """
-        warnings.warn('ScalarConstraint should be immutable. Pass all values to __init__ instead.',
-                      DeprecationWarning,
-                      stacklevel=2)
+        warnings.warn(
+            'ScalarConstraint should be immutable. Pass all values to __init__ instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if not self.is_valid(value):
             raise ValueError(f'invalid default value ({value}) encountered')
         self._default = value
 
     @property
-    def min(self) -> Union[int, float]:
+    def min(self) -> int | float:
         """
         .. deprecated:: 1.3.0
             ScalarConstraint.min will be removed in the near future. Use ScalarConstraint.minimum
             instead.
         """
-        warnings.warn('ScalarConstraint.min will be removed in the near future. '
-                      'Use ScalarConstraint.minimum instead.',
-                      DeprecationWarning,
-                      stacklevel=2)
+        warnings.warn(
+            'ScalarConstraint.min will be removed in the near future. Use ScalarConstraint.minimum instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._minimum
 
     @min.setter
-    def min(self, value: Union[int, float]):
+    def min(self, value: int | float):
         """
         .. deprecated:: 1.3.0
             constraints should be immutable. Pass all values to :py:func:`__init__` instead.
         """
-        warnings.warn('ScalarConstraint should be immutable. Pass all values to __init__ instead.',
-                      DeprecationWarning,
-                      stacklevel=2)
+        warnings.warn(
+            'ScalarConstraint should be immutable. Pass all values to __init__ instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self._minimum = value
 
     @property
-    def max(self) -> Union[int, float]:
+    def max(self) -> int | float:
         """
         .. deprecated:: 1.3.0
             ScalarConstraint.max will be removed in the near future. Use ScalarConstraint.maximum
             instead.
         """
-        warnings.warn('ScalarConstraint.max will be removed in the near future. '
-                      'Use ScalarConstraint.maximum instead.',
-                      DeprecationWarning,
-                      stacklevel=2)
+        warnings.warn(
+            'ScalarConstraint.max will be removed in the near future. Use ScalarConstraint.maximum instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._maximum
 
     @max.setter
-    def max(self, value: Union[int, float]):
+    def max(self, value: int | float):
         """
         .. deprecated:: 1.3.0
             constraints should be immutable. Pass all values to :py:func:`__init__` instead.
         """
-        warnings.warn('ScalarConstraint should be immutable. Pass all values to __init__ instead.',
-                      DeprecationWarning,
-                      stacklevel=2)
+        warnings.warn(
+            'ScalarConstraint should be immutable. Pass all values to __init__ instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self._maximum = value
 
     @property
-    def step(self) -> Union[None, int, float]:
+    def step(self) -> None | int | float:
         """
         .. deprecated:: 1.3.0
             ScalarConstraint.step will be removed in the near future. Use ScalarConstraint.increment
             instead.
         """
-        warnings.warn('ScalarConstraint.step will be removed in the near future. '
-                      'Use ScalarConstraint.increment instead.',
-                      DeprecationWarning,
-                      stacklevel=2)
+        warnings.warn(
+            'ScalarConstraint.step will be removed in the near future. Use ScalarConstraint.increment instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._increment
 
     @step.setter
-    def step(self, value: Union[None, int, float]):
+    def step(self, value: None | int | float):
         """
         .. deprecated:: 1.3.0
             constraints should be immutable. Pass all values to :py:func:`__init__` instead.
         """
-        warnings.warn('ScalarConstraint should be immutable. Pass all values to __init__ instead.',
-                      DeprecationWarning,
-                      stacklevel=2)
+        warnings.warn(
+            'ScalarConstraint should be immutable. Pass all values to __init__ instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self._increment = value
 
 
@@ -414,11 +432,11 @@ class DiscreteScalarConstraint(ScalarConstraint):
 
     def __init__(
         self,
-        default: Union[int, float],
-        allowed_values: Iterable[Union[int, float]],
-        precision: Optional[float] = None,
-        enforce_int: Optional[bool] = False,
-        checker: Optional[Callable[[Union[int, float]], bool]] = None,
+        default: int | float,
+        allowed_values: Iterable[int | float],
+        precision: float | None = None,
+        enforce_int: bool | None = False,
+        checker: Callable[[int | float], bool] | None = None,
     ) -> None:
         # sort tuple for efficient checking
         if enforce_int:
@@ -435,7 +453,7 @@ class DiscreteScalarConstraint(ScalarConstraint):
         )
 
     @property
-    def allowed_values(self) -> Tuple[Union[int, float], ...]:
+    def allowed_values(self) -> tuple[int | float, ...]:
         """
         Discrete collection of values that the constraint allows.
 
@@ -456,11 +474,11 @@ class DiscreteScalarConstraint(ScalarConstraint):
         """
         return self._precision
 
-    def check(self, value: Union[int, float]) -> None:
+    def check(self, value: int | float) -> None:
         super().check(value)
         self.check_allowed_values(value)
 
-    def check_allowed_values(self, value: Union[int, float]) -> None:
+    def check_allowed_values(self, value: int | float) -> None:
         """
         Method that checks whether the given value is in the set of allowed discrete values.
 
@@ -482,7 +500,7 @@ class DiscreteScalarConstraint(ScalarConstraint):
             else:
                 raise ValueError(f"Value {value} is not in allowed discrete value set.")
 
-    def clip(self, value: Union[int, float]) -> Union[int, float]:
+    def clip(self, value: int | float) -> int | float:
         return self._find_closest_value(value)
 
     def copy(self) -> 'DiscreteScalarConstraint':
@@ -522,7 +540,7 @@ class DiscreteScalarConstraint(ScalarConstraint):
             f"precision={self.precision})"
         )
 
-    def _find_closest_value(self, value: Union[int, float]) -> Union[int, float]:
+    def _find_closest_value(self, value: int | float) -> int | float:
         """Find allowed value closest to given value"""
         pos = bisect_left(self._allowed_values, value)
         if pos == 0:

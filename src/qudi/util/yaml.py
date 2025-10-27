@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This file extends the ruamel.yaml package functionality to load and dump more data types needed by
 qudi (mostly numpy array and number types).
@@ -21,29 +20,41 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['SafeRepresenter', 'SafeConstructor', 'YAML', 'yaml_load', 'yaml_dump', 'ParserError',
-           'YAMLError', 'MarkedYAMLError', 'YAMLStreamError', 'ScannerError', 'ConstructorError',
-           'DuplicateKeyError']
+__all__ = [
+    'SafeRepresenter',
+    'SafeConstructor',
+    'YAML',
+    'yaml_load',
+    'yaml_dump',
+    'ParserError',
+    'YAMLError',
+    'MarkedYAMLError',
+    'YAMLStreamError',
+    'ScannerError',
+    'ConstructorError',
+    'DuplicateKeyError',
+]
 
 import os
+from collections import OrderedDict
+from collections.abc import Mapping
+from enum import Enum, Flag, IntEnum, IntFlag
+from importlib import import_module
+from io import BytesIO, TextIOWrapper
+from typing import Any, Union
+
 import numpy as np
 import ruamel.yaml as _yaml
-from ruamel.yaml.error import YAMLError, MarkedYAMLError, YAMLStreamError
-from ruamel.yaml.parser import ParserError, ScannerError
 from ruamel.yaml.constructor import ConstructorError, DuplicateKeyError
-from enum import Enum, IntEnum, IntFlag, Flag
-from importlib import import_module
-from collections import OrderedDict
-from io import BytesIO, TextIOWrapper
-from typing import Optional, Any, Mapping, Dict, Union
-
+from ruamel.yaml.error import MarkedYAMLError, YAMLError, YAMLStreamError
+from ruamel.yaml.parser import ParserError, ScannerError
 
 _FilePath = Union[str, bytes, os.PathLike]
 
 
 class SafeRepresenter(_yaml.SafeRepresenter):
-    """Custom YAML representer for qudi config files.
-    """
+    """Custom YAML representer for qudi config files."""
+
     ndarray_max_size = 20
 
     def __init__(self, *args, **kwargs):
@@ -51,45 +62,37 @@ class SafeRepresenter(_yaml.SafeRepresenter):
         self._extndarray_count = 0
 
     def ignore_aliases(self, ignore_data):
-        """Ignore aliases and anchors. Overwrites base class implementation.
-        """
+        """Ignore aliases and anchors. Overwrites base class implementation."""
         return True
 
     def represent_numpy_int(self, data):
-        """Representer for numpy int scalars.
-        """
+        """Representer for numpy int scalars."""
         return self.represent_int(data.item())
 
     def represent_numpy_float(self, data):
-        """Representer for numpy float scalars.
-        """
+        """Representer for numpy float scalars."""
         return self.represent_float(data.item())
 
     def represent_numpy_complex(self, data):
-        """Representer for numpy complex scalars.
-        """
+        """Representer for numpy complex scalars."""
         return self.represent_complex(data.item())
 
     def represent_dict_no_sort(self, data):
-        """Representer for dict and OrderedDict to prevent ruamel.yaml from sorting keys.
-        """
+        """Representer for dict and OrderedDict to prevent ruamel.yaml from sorting keys."""
         return self.represent_dict(data.items())
 
     def represent_complex(self, data):
-        """Representer for builtin complex type.
-        """
+        """Representer for builtin complex type."""
         return self.represent_scalar(tag='tag:yaml.org,2002:complex', value=str(data))
 
     def represent_frozenset(self, data):
-        """Representer for builtin frozenset type.
-        """
+        """Representer for builtin frozenset type."""
         node = self.represent_set(data)
         node.tag = 'tag:yaml.org,2002:frozenset'
         return node
 
     def represent_enum(self, data):
-        """Representer for enum types with base class enum.
-        """
+        """Representer for enum types with base class enum."""
         class_name = data.__class__.__name__
         module = data.__class__.__module__
         try:
@@ -97,13 +100,11 @@ class SafeRepresenter(_yaml.SafeRepresenter):
             cls = getattr(mod, class_name)
             assert data == cls[data.name]
         except (AttributeError, ImportError, AssertionError):
-            raise TypeError(f'Data can not be represented as enum.Enum.')
-        return self.represent_scalar(tag='tag:yaml.org,2002:enum',
-                                     value=f'{module}.{class_name}[{data.name}]')
+            raise TypeError('Data can not be represented as enum.Enum.')
+        return self.represent_scalar(tag='tag:yaml.org,2002:enum', value=f'{module}.{class_name}[{data.name}]')
 
     def represent_flag(self, data):
-        """Representer for enum types with base class enum.
-        """
+        """Representer for enum types with base class enum."""
         class_name = data.__class__.__name__
         module = data.__class__.__module__
         try:
@@ -111,9 +112,8 @@ class SafeRepresenter(_yaml.SafeRepresenter):
             cls = getattr(mod, class_name)
             assert data == cls(data.value)
         except (AttributeError, ImportError, AssertionError):
-            raise TypeError(f'Data can not be represented as enum.Flag')
-        return self.represent_scalar(tag='tag:yaml.org,2002:flag',
-                                     value=f'{module}.{class_name}({data.value:d})')
+            raise TypeError('Data can not be represented as enum.Flag')
+        return self.represent_scalar(tag='tag:yaml.org,2002:flag', value=f'{module}.{class_name}({data.value:d})')
 
     def represent_ndarray(self, data):
         """Representer for numpy.ndarrays.
@@ -161,24 +161,20 @@ SafeRepresenter.add_multi_representer(np.complexfloating, SafeRepresenter.repres
 
 
 class SafeConstructor(_yaml.SafeConstructor):
-    """Custom YAML constructor for qudi config files.
-    """
+    """Custom YAML constructor for qudi config files."""
 
     def construct_ndarray(self, node):
-        """The constructor for a numpy array that is saved as binary string with ASCII-encoding.
-        """
+        """The constructor for a numpy array that is saved as binary string with ASCII-encoding."""
         value = self.construct_yaml_binary(node)
         with BytesIO(value) as f:
             return np.load(f)
 
     def construct_extndarray(self, node):
-        """The constructor for a numpy array that is saved in a separate file.
-        """
+        """The constructor for a numpy array that is saved in a separate file."""
         return np.load(self.construct_yaml_str(node), allow_pickle=False, fix_imports=False)
 
     def construct_frozenset(self, node):
-        """The frozenset constructor.
-        """
+        """The frozenset constructor."""
         try:
             # FIXME: The returned generator does not properly work with iteration using next()
             return frozenset(tuple(self.construct_yaml_set(node))[0])
@@ -186,13 +182,11 @@ class SafeConstructor(_yaml.SafeConstructor):
             return frozenset()
 
     def construct_complex(self, node):
-        """The complex constructor.
-        """
+        """The complex constructor."""
         return complex(self.construct_yaml_str(node))
 
     def construct_enum(self, node):
-        """The Enum constructor.
-        """
+        """The Enum constructor."""
         enum_repr_str = self.construct_yaml_str(node)
         enum_mod_cls, enum_name = enum_repr_str.rsplit(']', 1)[0].rsplit('[', 1)
         module, cls_name = enum_mod_cls.rsplit('.', 1)
@@ -200,8 +194,7 @@ class SafeConstructor(_yaml.SafeConstructor):
         return cls[enum_name]
 
     def construct_flag(self, node):
-        """The Flag constructor.
-        """
+        """The Flag constructor."""
         enum_repr_str = self.construct_yaml_str(node)
         enum_mod_cls, enum_value_str = enum_repr_str.rsplit(')', 1)[0].rsplit('(', 1)
         module, cls_name = enum_mod_cls.rsplit('.', 1)
@@ -213,8 +206,7 @@ class SafeConstructor(_yaml.SafeConstructor):
 SafeConstructor.add_constructor('tag:yaml.org,2002:frozenset', SafeConstructor.construct_frozenset)
 SafeConstructor.add_constructor('tag:yaml.org,2002:complex', SafeConstructor.construct_complex)
 SafeConstructor.add_constructor('tag:yaml.org,2002:ndarray', SafeConstructor.construct_ndarray)
-SafeConstructor.add_constructor('tag:yaml.org,2002:extndarray',
-                                SafeConstructor.construct_extndarray)
+SafeConstructor.add_constructor('tag:yaml.org,2002:extndarray', SafeConstructor.construct_extndarray)
 SafeConstructor.add_constructor('tag:yaml.org,2002:enum', SafeConstructor.construct_enum)
 SafeConstructor.add_constructor('tag:yaml.org,2002:flag', SafeConstructor.construct_flag)
 
@@ -239,7 +231,7 @@ class YAML(_yaml.YAML):
         self.Constructor = SafeConstructor
 
 
-def yaml_load(file_path: _FilePath, ignore_missing: Optional[bool] = False) -> Dict[str, Any]:
+def yaml_load(file_path: _FilePath, ignore_missing: bool | None = False) -> dict[str, Any]:
     """Loads a qudi style YAML file.
     Raises OSError if the file does not exist or can not be accessed.
 
@@ -256,7 +248,7 @@ def yaml_load(file_path: _FilePath, ignore_missing: Optional[bool] = False) -> D
         The data as python/numpy objects in a dict.
     """
     try:
-        with open(file_path, 'r') as f:
+        with open(file_path) as f:
             data = YAML().load(f)
             # yaml returns None if the stream was empty
             return dict() if data is None else data

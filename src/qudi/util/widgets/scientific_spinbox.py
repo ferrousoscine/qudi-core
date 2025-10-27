@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This file contains a wrapper to display the SpinBox in scientific way
 
@@ -22,12 +20,13 @@ If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = ['ScienDSpinBox', 'ScienSpinBox']
 
-from PySide2 import QtCore, QtGui, QtWidgets
-import numpy as np
-import re
-from decimal import Decimal as D  # Use decimal to avoid accumulating floating-point errors
-from decimal import ROUND_FLOOR
 import math
+import re
+from decimal import ROUND_FLOOR
+from decimal import Decimal as D  # Use decimal to avoid accumulating floating-point errors
+
+import numpy as np
+from PySide6 import QtCore, QtGui, QtWidgets
 
 
 class FloatValidator(QtGui.QValidator):
@@ -37,14 +36,8 @@ class FloatValidator(QtGui.QValidator):
     Also supports SI unit prefix like 'M', 'n' etc.
     """
 
-    float_re = re.compile(
-        r'(\s*([+-]?)(\d+\.\d+|\.\d+|\d+\.?)([eE][+-]?\d+)?\s?([YZEPTGMkmµunpfazy]?)\s*)'
-    )
-    group_map = {'match': 0,
-                 'sign': 1,
-                 'mantissa': 2,
-                 'exponent': 3,
-                 'si': 4}
+    float_re = re.compile(r'(\s*([+-]?)(\d+\.\d+|\.\d+|\d+\.?)([eE][+-]?\d+)?\s?([YZEPTGMkmµunpfazy]?)\s*)')
+    group_map = {'match': 0, 'sign': 1, 'mantissa': 2, 'exponent': 3, 'si': 4}
 
     def validate(self, string, position):
         """
@@ -78,8 +71,11 @@ class FloatValidator(QtGui.QValidator):
 
         """
         # Return intermediate status when empty string is passed or when incomplete "[+-]inf"
-        if string.strip() in '+.-.' or string.strip() in list('YZEPTGMkmµunpfazy') or re.match(
-                r'[+-]?(in$|i$)', string, re.IGNORECASE):
+        if (
+            string.strip() in '+.-.'
+            or string.strip() in list('YZEPTGMkmµunpfazy')
+            or re.match(r'[+-]?(in$|i$)', string, re.IGNORECASE)
+        ):
             return self.Intermediate, string, position
 
         # Accept input of [+-]inf. Not case sensitive.
@@ -94,11 +90,11 @@ class FloatValidator(QtGui.QValidator):
                 return self.Invalid, group_dict['match'], position
             if position > len(string):
                 position = len(string)
-            if string[position-1] in 'eE-+' and 'i' not in string.lower():
+            if string[position - 1] in 'eE-+' and 'i' not in string.lower():
                 return self.Intermediate, string, position
             return self.Invalid, group_dict['match'], position
         else:
-            if string[position-1] in 'eE-+.' and 'i' not in string.lower():
+            if string[position - 1] in 'eE-+.' and 'i' not in string.lower():
                 return self.Intermediate, string, position
             return self.Invalid, '', position
 
@@ -145,11 +141,7 @@ class IntegerValidator(QtGui.QValidator):
     """
 
     int_re = re.compile(r'(([+-]?\d+)([eE]\+?\d+)?\s?([YZEPTGMk])?\s*)')
-    group_map = {'match': 0,
-                 'mantissa': 1,
-                 'exponent': 2,
-                 'si': 3
-                 }
+    group_map = {'match': 0, 'mantissa': 1, 'exponent': 2, 'si': 3}
 
     def validate(self, string, position):
         """
@@ -190,7 +182,7 @@ class IntegerValidator(QtGui.QValidator):
 
             if position > len(string):
                 position = len(string)
-            if string[position-1] in 'eE-+':
+            if string[position - 1] in 'eE-+':
                 return self.Intermediate, string, position
 
             return self.Invalid, group_dict['match'], position
@@ -265,7 +257,7 @@ class ScienDSpinBox(QtWidgets.QAbstractSpinBox):
         'P': D('1e15'),
         'E': D('1e18'),
         'Z': D('1e21'),
-        'Y': D('1e24')
+        'Y': D('1e24'),
     }
 
     def __init__(self, *args, **kwargs):
@@ -759,9 +751,9 @@ class ScienDSpinBox(QtWidgets.QAbstractSpinBox):
 
         text = self.text().strip()
         if self.__prefix and text.startswith(self.__prefix):
-            text = text[len(self.__prefix):]
+            text = text[len(self.__prefix) :]
         if self.__suffix and text.endswith(self.__suffix):
-            text = text[:-len(self.__suffix)]
+            text = text[: -len(self.__suffix)]
         return text.strip()
 
     def update_display(self):
@@ -899,9 +891,9 @@ class ScienDSpinBox(QtWidgets.QAbstractSpinBox):
             position = end
 
         if self.__prefix and text.startswith(self.__prefix):
-            text = text[len(self.__prefix):]
+            text = text[len(self.__prefix) :]
         if self.__suffix and text.endswith(self.__suffix):
-            text = text[:-len(self.__suffix)]
+            text = text[: -len(self.__suffix)]
 
         state, string, position = self.validator.validate(text, position)
 
@@ -1032,13 +1024,13 @@ class ScienDSpinBox(QtWidgets.QAbstractSpinBox):
                 if prefix_index < 8:
                     si_prefix = 'kMGTPEZY'[prefix_index]
                 else:
-                    si_prefix = 'e{0:d}'.format(3 * (prefix_index + 1))
+                    si_prefix = f'e{3 * (prefix_index + 1):d}'
                 prefix_index += 1
             # Truncate and round to set number of decimals
             # Add digits from fractional if it's not already enough for set self.__decimals
             if self.__decimals < len(fractional_str):
                 round_indicator = int(fractional_str[self.__decimals])
-                fractional_str = fractional_str[:self.__decimals]
+                fractional_str = fractional_str[: self.__decimals]
                 if round_indicator >= 5:
                     if not fractional_str:
                         fractional_str = '1'
@@ -1052,7 +1044,7 @@ class ScienDSpinBox(QtWidgets.QAbstractSpinBox):
                     else:
                         fractional_str = '1'
             elif self.__decimals > len(fractional_str):
-                digits_to_add = self.__decimals - len(fractional_str) # number of digits to add
+                digits_to_add = self.__decimals - len(fractional_str)  # number of digits to add
                 fractional_tmp_str = ('{0:.' + str(digits_to_add) + 'f}').format(fractional)
                 if fractional_tmp_str.startswith('1'):
                     if fractional_str:
@@ -1075,32 +1067,29 @@ class ScienDSpinBox(QtWidgets.QAbstractSpinBox):
             si_prefix = 'm'
             while magnitude > fractional:
                 prefix_index += 1
-                magnitude = magnitude ** prefix_index
+                magnitude = magnitude**prefix_index
                 if prefix_index <= 8:
                     si_prefix = 'mµnpfazy'[prefix_index - 1]  # use si-prefix if possible
                 else:
-                    si_prefix = 'e-{0:d}'.format(3 * prefix_index)  # use engineering notation
+                    si_prefix = f'e-{3 * prefix_index:d}'  # use engineering notation
             # Get the string representation of all needed digits from the fractional part of value.
             digits_needed = 3 * prefix_index + self.__decimals
             helper_str = ('{0:.' + str(digits_needed) + 'f}').format(fractional)
             overflow = bool(int(helper_str.split('.')[0]))
             helper_str = helper_str.split('.')[1]
-            if overflow:
-                integer_str = '1000'
-                fractional_str = '0' * self.__decimals
-            elif (prefix_index - 1) > 0 and helper_str[3 * (prefix_index - 1) - 1] != '0':
+            if overflow or (prefix_index - 1) > 0 and helper_str[3 * (prefix_index - 1) - 1] != '0':
                 integer_str = '1000'
                 fractional_str = '0' * self.__decimals
             else:
-                integer_str = str(int(helper_str[:3 * prefix_index]))
-                fractional_str = helper_str[3 * prefix_index:3 * prefix_index + self.__decimals]
+                integer_str = str(int(helper_str[: 3 * prefix_index]))
+                fractional_str = helper_str[3 * prefix_index : 3 * prefix_index + self.__decimals]
 
         # Create the actual string representation of value scaled in a scientific way
         space = '' if si_prefix.startswith('e') else ' '
         if self.__decimals > 0:
-            string = '{0}{1}.{2}{3}{4}'.format(sign, integer_str, fractional_str, space, si_prefix)
+            string = f'{sign}{integer_str}.{fractional_str}{space}{si_prefix}'
         else:
-            string = '{0}{1}{2}{3}'.format(sign, integer_str, space, si_prefix)
+            string = f'{sign}{integer_str}{space}{si_prefix}'
         return string
 
     def stepEnabled(self):
@@ -1148,13 +1137,13 @@ class ScienDSpinBox(QtWidgets.QAbstractSpinBox):
                         if np.isinf(self.__minimum) or np.isinf(self.__maximum):
                             step = D('0.01')
                         else:
-                            step = D((self.__maximum - self.__minimum)/10000)
+                            step = D((self.__maximum - self.__minimum) / 10000)
                     else:
                         step = self.__minimalStep
                 else:
                     vs = [D(-1), D(1)][value >= 0]
                     fudge = D('1.01') ** (s * vs)  # fudge factor. At some places, the step size
-                                                   # depends on the step sign.
+                    # depends on the step sign.
                     exp = abs(value * fudge).log10().quantize(1, rounding=ROUND_FLOOR)
                     step = self.__singleStep * D(10) ** exp
                     if self.__minimalStep > 0:
@@ -1209,21 +1198,21 @@ class ScienSpinBox(QtWidgets.QAbstractSpinBox):
     # Dictionary mapping the si-prefix to a scaling factor as integer (exact value)
     _unit_prefix_dict = {
         '': 1,
-        'k': 10 ** 3,
-        'M': 10 ** 6,
-        'G': 10 ** 9,
-        'T': 10 ** 12,
-        'P': 10 ** 15,
-        'E': 10 ** 18,
-        'Z': 10 ** 21,
-        'Y': 10 ** 24
+        'k': 10**3,
+        'M': 10**6,
+        'G': 10**9,
+        'T': 10**12,
+        'P': 10**15,
+        'E': 10**18,
+        'Z': 10**21,
+        'Y': 10**24,
     }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.__value = 0
-        self.__minimum = -2 ** 63  # Use a 64bit integer size by default.
-        self.__maximum = 2 ** 63 - 1  # Use a 64bit integer size by default.
+        self.__minimum = -(2**63)  # Use a 64bit integer size by default.
+        self.__maximum = 2**63 - 1  # Use a 64bit integer size by default.
         self.__prefix = ''
         self.__suffix = ''
         self.__singleStep = 1
@@ -1512,9 +1501,9 @@ class ScienSpinBox(QtWidgets.QAbstractSpinBox):
         """
         text = self.text().strip()
         if self.__prefix and text.startswith(self.__prefix):
-            text = text[len(self.__prefix):]
+            text = text[len(self.__prefix) :]
         if self.__suffix and text.endswith(self.__suffix):
-            text = text[:-len(self.__suffix)]
+            text = text[: -len(self.__suffix)]
         return text.strip()
 
     def update_display(self):
@@ -1644,9 +1633,9 @@ class ScienSpinBox(QtWidgets.QAbstractSpinBox):
             position = end
 
         if self.__prefix and text.startswith(self.__prefix):
-            text = text[len(self.__prefix):]
+            text = text[len(self.__prefix) :]
         if self.__suffix and text.endswith(self.__suffix):
-            text = text[:-len(self.__suffix)]
+            text = text[: -len(self.__suffix)]
 
         state, string, position = self.validator.validate(text, position)
 
@@ -1739,14 +1728,14 @@ class ScienSpinBox(QtWidgets.QAbstractSpinBox):
         exponent = len(value_str) - digit_index - missing_zeros
 
         # the scaled integer string that is still missing the order of magnitude (si-prefix or e)
-        integer_str = value_str[:digit_index + missing_zeros]
+        integer_str = value_str[: digit_index + missing_zeros]
 
         space = ' ' if self.__suffix else ''
         # Add si-prefix or, if the exponent is too big, add e-notation
         if 2 < exponent <= 24:
             si_prefix = ' ' + 'kMGTPEZY'[exponent // 3 - 1]
         elif exponent > 24:
-            si_prefix = 'e{0:d}'.format(exponent) + space
+            si_prefix = f'e{exponent:d}' + space
         else:
             si_prefix = space
 

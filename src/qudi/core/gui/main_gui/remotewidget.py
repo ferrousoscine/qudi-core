@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 # FIXME
 
@@ -19,13 +18,12 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-from PySide2 import QtWidgets
+from PySide6 import QtWidgets
 
 
 class RemoteWidget(QtWidgets.QWidget):
-    """
+    """ """
 
-    """
     def __init__(self, parent=None, **kwargs):
         super().__init__(parent, **kwargs)
 

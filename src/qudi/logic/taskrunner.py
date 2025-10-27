@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This file contains the Qudi task runner module.
 
@@ -19,15 +18,17 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
+from collections.abc import Mapping
 from functools import partial
-from PySide2 import QtCore
-from typing import Any, Type, Mapping, List, Dict
+from typing import Any
 
-from qudi.util.mutex import Mutex
-from qudi.core.module import LogicBase
-from qudi.core.scripting.moduletask import ModuleTask
-from qudi.core.scripting.modulescript import import_module_script
+from PySide6 import QtCore
+
 from qudi.core.configoption import ConfigOption
+from qudi.core.module import LogicBase
+from qudi.core.scripting.modulescript import import_module_script
+from qudi.core.scripting.moduletask import ModuleTask
+from qudi.util.mutex import Mutex
 
 
 class TaskRunnerLogic(LogicBase):
@@ -73,12 +74,12 @@ class TaskRunnerLogic(LogicBase):
         self._configured_task_types = dict()
 
     @property
-    def running_tasks(self) -> List[str]:
+    def running_tasks(self) -> list[str]:
         with self._thread_lock:
             return list(self._running_tasks)
 
     @property
-    def task_states(self) -> Dict[str, str]:
+    def task_states(self) -> dict[str, str]:
         with self._thread_lock:
             states = dict()
             for task_name in self._configured_task_types:
@@ -89,7 +90,7 @@ class TaskRunnerLogic(LogicBase):
             return states
 
     @property
-    def configured_task_types(self) -> Dict[str, Type[ModuleTask]]:
+    def configured_task_types(self) -> dict[str, type[ModuleTask]]:
         return self._configured_task_types.copy()
 
     def run_task(self, name: str, arguments: Mapping[str, Any]) -> None:
@@ -152,7 +153,7 @@ class TaskRunnerLogic(LogicBase):
                 raise TypeError('ModuleTask kwargs must be mapping with str type keys')
             task.kwargs = arguments
         except:
-            self.log.exception(f'Exception during setting of arguments for ModuleTask:')
+            self.log.exception('Exception during setting of arguments for ModuleTask:')
             raise
 
     def __activate_connect_task_modules(self, name: str, task: ModuleTask) -> None:
@@ -184,10 +185,8 @@ class TaskRunnerLogic(LogicBase):
         thread.finished.connect(partial(self._thread_finished_callback, name=name))
 
     def __connect_task_signals(self, name: str, task: ModuleTask) -> None:
-        task.sigFinished.connect(partial(self._task_finished_callback, name=name),
-                                 QtCore.Qt.QueuedConnection)
-        task.sigStateChanged.connect(partial(self._task_state_changed_callback, name=name),
-                                     QtCore.Qt.QueuedConnection)
+        task.sigFinished.connect(partial(self._task_finished_callback, name=name), QtCore.Qt.QueuedConnection)
+        task.sigStateChanged.connect(partial(self._task_state_changed_callback, name=name), QtCore.Qt.QueuedConnection)
 
     def __start_task(self, name: str, task: ModuleTask) -> None:
         self._running_tasks[name] = task

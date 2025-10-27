@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Descriptor objects that can be used to simplify common tasks related to object attributes.
 
@@ -19,20 +18,31 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['BaseAttribute', 'DefaultAttribute', 'ReadOnlyAttribute', 'TypedAttribute',
-           'CheckedAttribute', 'DefaultMixin', 'ReadOnlyMixin', 'TypedMixin', 'ValidateMixin']
+__all__ = [
+    'BaseAttribute',
+    'DefaultAttribute',
+    'ReadOnlyAttribute',
+    'TypedAttribute',
+    'CheckedAttribute',
+    'DefaultMixin',
+    'ReadOnlyMixin',
+    'TypedMixin',
+    'ValidateMixin',
+]
 
-from typing import Any, Optional, Iterable, Type, Callable, Union
+from collections.abc import Callable, Iterable
 from inspect import isclass, isfunction
+from typing import Any
 
 
 class DefaultMixin:
     """Mixin for BaseAttribute introducing optional default value behaviour in __get__.
     If no default value is specified, fall back to raising AttributeError.
     """
+
     _no_default = object()  # unique placeholder
 
-    def __init__(self, default: Optional[Any] = _no_default, **kwargs):
+    def __init__(self, default: Any | None = _no_default, **kwargs):
         super().__init__(**kwargs)
         self.default = default
 
@@ -53,6 +63,7 @@ class DefaultMixin:
 
 class ReadOnlyMixin:
     """Mixin for BaseAttribute introducing read-only access."""
+
     def __delete__(self, instance):
         raise AttributeError('Read-only attribute can not be deleted')
 
@@ -65,7 +76,8 @@ class ReadOnlyMixin:
 
 class TypedMixin:
     """Mixin for BaseAttribute introducing optional type checking via isinstance builtin."""
-    def __init__(self, valid_types: Optional[Iterable[Type]] = None, **kwargs):
+
+    def __init__(self, valid_types: Iterable[type] | None = None, **kwargs):
         super().__init__(**kwargs)
         self.valid_types = None if valid_types is None else tuple(valid_types)
         if self.valid_types and not all(isclass(typ) for typ in self.valid_types):
@@ -77,9 +89,7 @@ class TypedMixin:
 
     def check_type(self, value: Any) -> None:
         if self.valid_types and not isinstance(value, self.valid_types):
-            raise TypeError(
-                f'Value must be of type(s) [{", ".join(t.__name__ for t in self.valid_types)}]'
-            )
+            raise TypeError(f'Value must be of type(s) [{", ".join(t.__name__ for t in self.valid_types)}]')
 
 
 class ValidateMixin:
@@ -88,9 +98,8 @@ class ValidateMixin:
     Bound methods are best registered via the "validator" decorator (cooperative with
     staticmethod/classmethod decorator).
     """
-    def __init__(self,
-                 static_validators: Optional[Iterable[Callable[[Any], None]]] = None,
-                 **kwargs):
+
+    def __init__(self, static_validators: Iterable[Callable[[Any], None]] | None = None, **kwargs):
         super().__init__(**kwargs)
         self.static_validators = list() if static_validators is None else list(static_validators)
         self.bound_validators = list()
@@ -101,9 +110,9 @@ class ValidateMixin:
         self.validate(value, instance)
         super().__set__(instance, value)
 
-    def validator(self,
-                  func: Union[staticmethod, classmethod, Callable[[Any], None]]
-                  ) -> Union[staticmethod, classmethod, Callable[[Any], None]]:
+    def validator(
+        self, func: staticmethod | classmethod | Callable[[Any], None]
+    ) -> staticmethod | classmethod | Callable[[Any], None]:
         """Decorator to register either a static or bound validator."""
         # Use function reference directly if static
         if isinstance(func, staticmethod):
@@ -130,7 +139,7 @@ class ValidateMixin:
             self.bound_validators.append(func_obj.__name__)
         return func
 
-    def validate(self, value: Any, instance: Optional[Any] = None) -> None:
+    def validate(self, value: Any, instance: Any | None = None) -> None:
         try:
             for func in self.static_validators:
                 func(value)
@@ -138,9 +147,7 @@ class ValidateMixin:
                 try:
                     func = getattr(instance, func_name)
                 except AttributeError:
-                    raise AttributeError(
-                        f'Registered bound validator "{func_name}" not found in {instance}'
-                    ) from None
+                    raise AttributeError(f'Registered bound validator "{func_name}" not found in {instance}') from None
                 func(value)
         except Exception as err:
             raise ValueError(f'Value "{value}" did not pass validation') from err
@@ -150,6 +157,7 @@ class BaseAttribute:
     """Base descriptor class implementing trivial get/set/delete behaviour for an instance
     attribute.
     """
+
     def __init__(self):
         super().__init__()
         self.attr_name = None
@@ -189,7 +197,8 @@ class DefaultAttribute(DefaultMixin, BaseAttribute):
                 assert self.variable_a == 42
                 assert self.variable_b == 0
     """
-    def __init__(self, default: Optional[Any] = DefaultMixin._no_default):
+
+    def __init__(self, default: Any | None = DefaultMixin._no_default):
         super().__init__(default=default)
 
 
@@ -209,6 +218,7 @@ class ReadOnlyAttribute(ReadOnlyMixin, DefaultAttribute):
                 # The following would raise an AttributeError
                 # self.variable_b = 0
     """
+
     pass
 
 
@@ -230,9 +240,8 @@ class TypedAttribute(TypedMixin, DefaultAttribute):
                 # The following would raise TypeError
                 # self.variable_a = self.variable_b = None
     """
-    def __init__(self,
-                 valid_types: Optional[Iterable[Type]] = None,
-                 default: Optional[Any] = DefaultAttribute._no_default):
+
+    def __init__(self, valid_types: Iterable[type] | None = None, default: Any | None = DefaultAttribute._no_default):
         super().__init__(valid_types=valid_types, default=default)
 
 
@@ -269,10 +278,11 @@ class CheckedAttribute(TypedMixin, ValidateMixin, DefaultAttribute):
                 if value not in cls._valid_strings:
                     raise ValueError(f'Invalid string. Valid strings are: {cls._valid_strings}')
     """
-    def __init__(self,
-                 static_validators: Optional[Iterable[Callable[[Any], None]]] = None,
-                 valid_types: Optional[Iterable[Type]] = None,
-                 default: Optional[Any] = DefaultAttribute._no_default):
-        super().__init__(static_validators=static_validators,
-                         valid_types=valid_types,
-                         default=default)
+
+    def __init__(
+        self,
+        static_validators: Iterable[Callable[[Any], None]] | None = None,
+        valid_types: Iterable[type] | None = None,
+        default: Any | None = DefaultAttribute._no_default,
+    ):
+        super().__init__(static_validators=static_validators, valid_types=valid_types, default=default)

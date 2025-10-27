@@ -1,22 +1,17 @@
-# -*- coding: utf-8 -*-
-"""
-
-"""
+""" """
 
 __all__ = ['AvailableModulesTreeWidget', 'SelectedModulesTreeWidget', 'ConfigModulesTreeWidget']
 
+from collections.abc import Iterable, Mapping, Sequence
 from re import compile
-from PySide2 import QtCore, QtWidgets, QtGui
-from typing import Optional, Iterable, Mapping, Tuple, Dict, List, Sequence
+
+from PySide6 import QtCore, QtGui, QtWidgets
 
 
 class AvailableModulesTreeWidget(QtWidgets.QTreeWidget):
-    """
-    """
-    def __init__(self,
-                 modules: Optional[Iterable[str]] = None,
-                 parent: Optional[QtWidgets.QWidget] = None
-                 ) -> None:
+    """ """
+
+    def __init__(self, modules: Iterable[str] | None = None, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent=parent)
 
         self.setColumnCount(2)
@@ -31,7 +26,7 @@ class AvailableModulesTreeWidget(QtWidgets.QTreeWidget):
             self.set_modules(sorted(modules))
 
     @property
-    def modules(self) -> List[str]:
+    def modules(self) -> list[str]:
         modules = list()
         for base, top_item in self.top_level_items.items():
             items = [top_item.child(index) for index in range(top_item.childCount())]
@@ -55,9 +50,7 @@ class AvailableModulesTreeWidget(QtWidgets.QTreeWidget):
         base, module_class = module.split('.', 1)
         item = QtWidgets.QTreeWidgetItem()
         item.setText(1, module_class)
-        item.setFlags(
-            QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsDragEnabled
-        )
+        item.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsDragEnabled)
         self.top_level_items[base].addChild(item)
 
     def remove_module(self, module: str) -> None:
@@ -92,8 +85,7 @@ class AvailableModulesTreeWidget(QtWidgets.QTreeWidget):
             self.resizeColumnToContents(i)
 
     def mimeData(self, items: Sequence) -> QtCore.QMimeData:
-        """ Add text to mime data. This is the quick (but not necessarily dirty) way.
-        """
+        """Add text to mime data. This is the quick (but not necessarily dirty) way."""
         texts = tuple(f'{it.parent().text(0).lower()}.{it.text(1)}' for it in items)
         mime = super().mimeData(items)
         mime.setText(';'.join(texts))
@@ -101,14 +93,14 @@ class AvailableModulesTreeWidget(QtWidgets.QTreeWidget):
 
 
 class ConfigModulesTreeWidget(QtWidgets.QTreeWidget):
-    """
-    """
+    """ """
 
-    def __init__(self,
-                 named_modules: Optional[Mapping[str, str]] = None,
-                 unnamed_modules: Optional[Iterable[str]] = None,
-                 parent: Optional[QtWidgets.QWidget] = None
-                 ) -> None:
+    def __init__(
+        self,
+        named_modules: Mapping[str, str] | None = None,
+        unnamed_modules: Iterable[str] | None = None,
+        parent: QtWidgets.QWidget | None = None,
+    ) -> None:
         super().__init__(parent=parent)
 
         self.setDragEnabled(False)
@@ -126,7 +118,7 @@ class ConfigModulesTreeWidget(QtWidgets.QTreeWidget):
         self._name_regex = compile(r'^[a-zA-Z_]+[a-zA-Z0-9_]*$')
 
     @property
-    def modules(self) -> Tuple[Dict[str, str], List[str]]:
+    def modules(self) -> tuple[dict[str, str], list[str]]:
         named_modules = dict()
         unnamed_modules = list()
         for base, top_item in self.top_level_items.items():
@@ -140,10 +132,9 @@ class ConfigModulesTreeWidget(QtWidgets.QTreeWidget):
                     unnamed_modules.append(module)
         return named_modules, unnamed_modules
 
-    def set_modules(self,
-                    named_modules: Optional[Mapping[str, str]] = None,
-                    unnamed_modules: Optional[Iterable[str]] = None
-                    ) -> None:
+    def set_modules(
+        self, named_modules: Mapping[str, str] | None = None, unnamed_modules: Iterable[str] | None = None
+    ) -> None:
         if named_modules is None:
             named_modules = dict()
         if unnamed_modules is None:
@@ -158,18 +149,16 @@ class ConfigModulesTreeWidget(QtWidgets.QTreeWidget):
         # Resize columns
         self.resize_columns_to_content()
 
-    def add_module(self, module: str, name: Optional[str] = None) -> None:
+    def add_module(self, module: str, name: str | None = None) -> None:
         self._add_module(module, name)
         self.resize_columns_to_content()
 
-    def _add_module(self, module: str, name: Optional[str] = None) -> None:
+    def _add_module(self, module: str, name: str | None = None) -> None:
         base, module_class = module.split('.', 1)
         item = QtWidgets.QTreeWidgetItem()
         item.setText(1, '<enter unique name>' if name is None else name)
         item.setText(2, module_class)
-        item.setFlags(
-            QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable
-        )
+        item.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable)
         self.top_level_items[base].addChild(item)
 
     def remove_module(self, name: str) -> None:
@@ -220,8 +209,8 @@ class ConfigModulesTreeWidget(QtWidgets.QTreeWidget):
 
 
 class SelectedModulesTreeWidget(ConfigModulesTreeWidget):
-    """
-    """
+    """ """
+
     def dropEvent(self, event: QtGui.QDropEvent) -> None:
         if isinstance(event.source(), AvailableModulesTreeWidget):
             full_text = event.mimeData().text()

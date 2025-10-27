@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This file contains unit tests for all qudi fit routines for Lorentzian peak/dip models.
 
@@ -21,6 +19,7 @@ If not, see <https://www.gnu.org/licenses/>.
 """
 
 import unittest
+
 import numpy as np
 
 from qudi.util.fit_models.lorentzian import Lorentzian
@@ -31,7 +30,7 @@ class TestLorentzianMethods(unittest.TestCase):
 
     @staticmethod
     def lorentzian(x, offset, amplitude, center, sigma):
-        return offset + amplitude * sigma ** 2 / ((x - center) ** 2 + sigma ** 2)
+        return offset + amplitude * sigma**2 / ((x - center) ** 2 + sigma**2)
 
     def setUp(self):
         self.offset = (np.random.rand() - 0.5) * 2e6
@@ -48,48 +47,29 @@ class TestLorentzianMethods(unittest.TestCase):
 
     def test_gaussian(self):
         # Test for lorentzian peak
-        y_values = self.noise + self.lorentzian(self.x_values,
-                                                self.offset,
-                                                self.amplitude,
-                                                self.center,
-                                                self.sigma)
+        y_values = self.noise + self.lorentzian(self.x_values, self.offset, self.amplitude, self.center, self.sigma)
 
         fit_model = Lorentzian()
-        fit_result = fit_model.fit(data=y_values,
-                                   x=self.x_values,
-                                   **fit_model.guess(y_values, self.x_values))
+        fit_result = fit_model.fit(data=y_values, x=self.x_values, **fit_model.guess(y_values, self.x_values))
 
-        params_ideal = {'offset': self.offset,
-                        'amplitude': self.amplitude,
-                        'center': self.center,
-                        'sigma': self.sigma}
+        params_ideal = {'offset': self.offset, 'amplitude': self.amplitude, 'center': self.center, 'sigma': self.sigma}
         for name, fit_param in fit_result.best_values.items():
             diff = abs(fit_param - params_ideal[name])
             tolerance = abs(params_ideal[name] * self._fit_param_tolerance)
-            msg = 'Lorentzian peak fit parameter "{0}" not within {1:.2%} tolerance'.format(
-                name, self._fit_param_tolerance
-            )
+            msg = f'Lorentzian peak fit parameter "{name}" not within {self._fit_param_tolerance:.2%} tolerance'
             self.assertLessEqual(diff, tolerance, msg)
 
         # Test for lorentzian dip
-        y_values = self.noise + self.lorentzian(self.x_values,
-                                                self.offset,
-                                                -self.amplitude,
-                                                self.center,
-                                                self.sigma)
+        y_values = self.noise + self.lorentzian(self.x_values, self.offset, -self.amplitude, self.center, self.sigma)
 
         fit_model = Lorentzian()
-        fit_result = fit_model.fit(data=y_values,
-                                   x=self.x_values,
-                                   **fit_model.guess(y_values, self.x_values))
+        fit_result = fit_model.fit(data=y_values, x=self.x_values, **fit_model.guess(y_values, self.x_values))
 
         params_ideal['amplitude'] = -self.amplitude
         for name, fit_param in fit_result.best_values.items():
             diff = abs(fit_param - params_ideal[name])
             tolerance = abs(params_ideal[name] * self._fit_param_tolerance)
-            msg = 'Lorentzian dip fit parameter "{0}" not within {1:.2%} tolerance'.format(
-                name, self._fit_param_tolerance
-            )
+            msg = f'Lorentzian dip fit parameter "{name}" not within {self._fit_param_tolerance:.2%} tolerance'
             self.assertLessEqual(diff, tolerance, msg)
 
 

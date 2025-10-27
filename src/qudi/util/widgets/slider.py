@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This file contains a wrapper to display the SpinBox in scientific way
 
@@ -22,13 +20,12 @@ If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = ['DoubleSlider']
 
-from PySide2 import QtCore, QtWidgets
+from PySide6 import QtCore, QtWidgets
 
 
 class DoubleSlider(QtWidgets.QSlider):
-    """
+    """ """
 
-    """
     doubleValueChanged = QtCore.Signal(float)
     doubleSliderMoved = QtCore.Signal(float)
     doubleRangeChanged = QtCore.Signal(float, float)
@@ -96,14 +93,12 @@ class DoubleSlider(QtWidgets.QSlider):
 
     @QtCore.Slot(int)
     def __translate_value_changed(self, int_val):
-        self.doubleValueChanged.emit(
-            self.minimum() + (self.maximum() - self.minimum()) * (int_val / self._step_number))
+        self.doubleValueChanged.emit(self.minimum() + (self.maximum() - self.minimum()) * (int_val / self._step_number))
         return
 
     @QtCore.Slot(int)
     def __translate_slider_moved(self, int_val):
-        self.doubleSliderMoved.emit(
-            self.minimum() + (self.maximum() - self.minimum()) * (int_val / self._step_number))
+        self.doubleSliderMoved.emit(self.minimum() + (self.maximum() - self.minimum()) * (int_val / self._step_number))
         return
 
     @QtCore.Slot()

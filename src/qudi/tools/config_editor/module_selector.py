@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Copyright (c) 2021, the qudi developers. See the AUTHORS.md file at the top-level directory of this
 distribution and on <https://github.com/Ulm-IQO/qudi-core/>
@@ -20,24 +18,24 @@ If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = ['ModuleSelector']
 
-from PySide2 import QtWidgets, QtCore
-from typing import Optional, Iterable, List, Mapping, Tuple, Dict
+from collections.abc import Iterable, Mapping
 
-from qudi.tools.config_editor.tree_widgets import AvailableModulesTreeWidget
-from qudi.tools.config_editor.tree_widgets import SelectedModulesTreeWidget
+from PySide6 import QtCore, QtWidgets
+
+from qudi.tools.config_editor.tree_widgets import AvailableModulesTreeWidget, SelectedModulesTreeWidget
 from qudi.util.widgets.separator_lines import HorizontalLine
 
 
 class ModuleSelector(QtWidgets.QDialog):
-    """QDialog representing a selection editor for qudi modules to configure.
-    """
+    """QDialog representing a selection editor for qudi modules to configure."""
 
-    def __init__(self,
-                 available_modules: Iterable[str],
-                 named_modules: Optional[Mapping[str, str]] = None,
-                 unnamed_modules: Optional[Iterable[str]] = None,
-                 parent: Optional[QtWidgets.QWidget] = None
-                 ) -> None:
+    def __init__(
+        self,
+        available_modules: Iterable[str],
+        named_modules: Mapping[str, str] | None = None,
+        unnamed_modules: Iterable[str] | None = None,
+        parent: QtWidgets.QWidget | None = None,
+    ) -> None:
         super().__init__(parent=parent)
 
         self.setWindowTitle('Qudi Config Editor: Module Selection')
@@ -47,8 +45,9 @@ class ModuleSelector(QtWidgets.QDialog):
         # Create two customized QTreeWidgets. One for all available modules to select from and one
         # for the selected modules.
         self.available_treewidget = AvailableModulesTreeWidget(modules=available_modules)
-        self.selected_treewidget = SelectedModulesTreeWidget(named_modules=named_modules,
-                                                             unnamed_modules=unnamed_modules)
+        self.selected_treewidget = SelectedModulesTreeWidget(
+            named_modules=named_modules, unnamed_modules=unnamed_modules
+        )
 
         # Create left side of splitter widget
         left_widget = QtWidgets.QWidget()
@@ -97,16 +96,12 @@ class ModuleSelector(QtWidgets.QDialog):
 
         # Create buttonbox for this dialog
 
-        label = QtWidgets.QLabel(
-            'Include qudi modules by dragging them into the right field (press DEL to remove).'
-        )
+        label = QtWidgets.QLabel('Include qudi modules by dragging them into the right field (press DEL to remove).')
         label.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
         font = label.font()
         font.setBold(True)
         label.setFont(font)
-        self.button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
-        )
+        self.button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
         sub_layout = QtWidgets.QHBoxLayout()
@@ -123,7 +118,7 @@ class ModuleSelector(QtWidgets.QDialog):
         self.setLayout(layout)
 
     @property
-    def selected_modules(self) -> Tuple[Dict[str, str], List[str]]:
+    def selected_modules(self) -> tuple[dict[str, str], list[str]]:
         return self.selected_treewidget.modules
 
     @QtCore.Slot()

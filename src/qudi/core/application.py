@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This file contains the qudi Manager class.
 
@@ -19,33 +18,40 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-import gc
-import sys
-import os
-import weakref
-import inspect
-import traceback
 import faulthandler
+import gc
+import inspect
+import os
+import sys
+import traceback
+import weakref
 from logging import DEBUG, INFO
-from PySide2 import QtCore, QtWidgets
 
-from qudi.core.logger import init_rotating_file_handler, init_record_model_handler, clear_handlers
-from qudi.core.logger import get_logger, set_log_level
-from qudi.util.paths import get_main_dir, get_default_log_dir
-from qudi.util.mutex import Mutex
-from qudi.util.colordefs import QudiMatplotlibStyle
+from PySide6 import QtCore, QtWidgets
+
 from qudi.core.config import Configuration, ValidationError, YAMLError
-from qudi.core.watchdog import AppWatchdog
-from qudi.core.modulemanager import ModuleManager
-from qudi.core.threadmanager import ThreadManager
 from qudi.core.gui.gui import Gui
-from qudi.core.servers import RemoteModulesServer, QudiNamespaceServer
+from qudi.core.logger import (
+    clear_handlers,
+    get_logger,
+    init_record_model_handler,
+    init_rotating_file_handler,
+    set_log_level,
+)
+from qudi.core.modulemanager import ModuleManager
+from qudi.core.servers import QudiNamespaceServer, RemoteModulesServer
+from qudi.core.threadmanager import ThreadManager
+from qudi.core.watchdog import AppWatchdog
+from qudi.util.colordefs import QudiMatplotlibStyle
+from qudi.util.mutex import Mutex
+from qudi.util.paths import get_default_log_dir
 
 # Use non-GUI "Agg" backend for matplotlib by default since it is reasonably thread-safe. Otherwise
 # you can only plot from main thread and not e.g. in a logic module.
 # This causes qudi to not be able to spawn matplotlib GUIs (by calling matplotlib.pyplot.show())
 try:
     import matplotlib as _mpl
+
     _mpl.use('Agg')
 except ImportError:
     pass
@@ -67,13 +73,13 @@ else:
 if sys.platform == 'win32':
     try:
         import ctypes
+
         myappid = 'qudicore-app'  # arbitrary string
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
     except ImportError:
         raise
     except:
-        print('SetCurrentProcessExplicitAppUserModelID failed! This is probably not Microsoft '
-              'Windows!')
+        print('SetCurrentProcessExplicitAppUserModelID failed! This is probably not Microsoft Windows!')
 
 # Set default Qt locale to "C" in order to avoid surprises with number formats and other things
 # QtCore.QLocale.setDefault(QtCore.QLocale('en_US'))
@@ -81,9 +87,8 @@ QtCore.QLocale.setDefault(QtCore.QLocale.c())
 
 
 class Qudi(QtCore.QObject):
-    """
+    """ """
 
-    """
     _instance = None
     _run_lock = Mutex()
     _quit_lock = Mutex()
@@ -104,12 +109,12 @@ class Qudi(QtCore.QObject):
         # CLI arguments
         self.no_gui = bool(no_gui)
         self.debug_mode = bool(debug)
-        self.log_dir = str(log_dir) if os.path.isdir(log_dir) else get_default_log_dir(
-            create_missing=True)
+        self.log_dir = str(log_dir) if os.path.isdir(log_dir) else get_default_log_dir(create_missing=True)
 
         # Disable pyqtgraph "application exit workarounds" because they cause errors on exit
         try:
             import pyqtgraph
+
             pyqtgraph.setConfigOption('exitCleanup', False)
         except ImportError:
             pass
@@ -135,8 +140,7 @@ class Qudi(QtCore.QObject):
         except ValueError:
             self.log.info('No qudi configuration file specified. Using empty default config.')
         except (ValidationError, YAMLError):
-            self.log.exception('Invalid qudi configuration file specified. '
-                               'Falling back to default config.')
+            self.log.exception('Invalid qudi configuration file specified. Falling back to default config.')
 
         # initialize thread manager and module manager
         self.thread_manager = ThreadManager(parent=self)
@@ -157,7 +161,7 @@ class Qudi(QtCore.QObject):
                 ssl_version=remote_server_config.get('ssl_version', None),
                 cert_reqs=remote_server_config.get('cert_reqs', None),
                 ciphers=remote_server_config.get('ciphers', None),
-                force_remote_calls_by_value=self.configuration['force_remote_calls_by_value']
+                force_remote_calls_by_value=self.configuration['force_remote_calls_by_value'],
             )
         else:
             self.remote_modules_server = None
@@ -166,7 +170,7 @@ class Qudi(QtCore.QObject):
             qudi=self,
             name='local-namespace-server',
             port=self.configuration['namespace_server_port'],
-            force_remote_calls_by_value=self.configuration['force_remote_calls_by_value']
+            force_remote_calls_by_value=self.configuration['force_remote_calls_by_value'],
         )
         self.watchdog = None
         self.gui = None
@@ -178,6 +182,7 @@ class Qudi(QtCore.QObject):
         # Set qudi style for matplotlib
         try:
             import matplotlib.pyplot as plt
+
             plt.style.use(QudiMatplotlibStyle.style)
         except ImportError:
             pass
@@ -244,8 +249,7 @@ class Qudi(QtCore.QObject):
 
     @QtCore.Slot()
     def _configure_qudi(self):
-        """
-        """
+        """ """
         if self.configuration.file_path is None:
             print('> Applying default configuration...')
             self.log.info('Applying default configuration...')
@@ -265,13 +269,10 @@ class Qudi(QtCore.QObject):
             # Create ManagedModule instance by adding each module to ModuleManager
             for module_name, module_cfg in self.configuration[base].items():
                 try:
-                    self.module_manager.add_module(name=module_name,
-                                                   base=base,
-                                                   configuration=module_cfg)
+                    self.module_manager.add_module(name=module_name, base=base, configuration=module_cfg)
                 except:
                     self.module_manager.remove_module(module_name, ignore_missing=True)
-                    self.log.exception(f'Unable to create ManagedModule instance for {base} '
-                                       f'module "{module_name}"')
+                    self.log.exception(f'Unable to create ManagedModule instance for {base} module "{module_name}"')
 
         print('> Qudi configuration complete!')
         self.log.info('Qudi configuration complete!')
@@ -294,8 +295,7 @@ class Qudi(QtCore.QObject):
                 self.log.exception(f'Unable to activate autostart module "{module}":')
 
     def run(self):
-        """
-        """
+        """ """
         with self._run_lock:
             if self._is_running:
                 raise RuntimeError('Qudi is already running!')

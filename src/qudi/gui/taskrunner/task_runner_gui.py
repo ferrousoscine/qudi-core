@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This file contains the qudi task runner GUI.
 
@@ -19,7 +18,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-from PySide2 import QtCore
+from PySide6 import QtCore
 
 from qudi.core.connector import Connector
 from qudi.core.module import GuiBase
@@ -40,8 +39,7 @@ class TaskRunnerGui(GuiBase):
         self._mw = None
 
     def on_activate(self):
-        """Create all UI objects and show the window.
-        """
+        """Create all UI objects and show the window."""
         # Initialize main window and connect task widgets
         taskrunner = self._task_runner()
         self._mw = TaskMainWindow(tasks=taskrunner.configured_task_types)
@@ -49,8 +47,7 @@ class TaskRunnerGui(GuiBase):
         self._mw.sigInterruptTask.connect(taskrunner.interrupt_task, QtCore.Qt.QueuedConnection)
         self._mw.sigClosed.connect(self._deactivate_self)
         taskrunner.sigTaskStarted.connect(self._mw.task_started, QtCore.Qt.QueuedConnection)
-        taskrunner.sigTaskStateChanged.connect(self._mw.task_state_changed,
-                                               QtCore.Qt.QueuedConnection)
+        taskrunner.sigTaskStateChanged.connect(self._mw.task_state_changed, QtCore.Qt.QueuedConnection)
         taskrunner.sigTaskFinished.connect(self._mw.task_finished, QtCore.Qt.QueuedConnection)
 
         # Set current task states
@@ -66,8 +63,7 @@ class TaskRunnerGui(GuiBase):
         self.show()
 
     def show(self):
-        """Make sure that the window is visible and at the top.
-        """
+        """Make sure that the window is visible and at the top."""
         self._mw.show()
 
     @QtCore.Slot()
@@ -75,8 +71,7 @@ class TaskRunnerGui(GuiBase):
         self._qudi_main.module_manager.deactivate_module(self._meta['name'])
 
     def on_deactivate(self):
-        """Hide window and stop ipython console.
-        """
+        """Hide window and stop ipython console."""
         self._save_window_geometry(self._mw)
         self._mw.close()
         self._mw.sigStartTask.disconnect()
@@ -84,7 +79,6 @@ class TaskRunnerGui(GuiBase):
         self._mw.sigClosed.disconnect()
         taskrunner = self._task_runner()
         taskrunner.sigTaskStarted.disconnect(self._mw.task_started, QtCore.Qt.QueuedConnection)
-        taskrunner.sigTaskStateChanged.disconnect(self._mw.task_state_changed,
-                                               QtCore.Qt.QueuedConnection)
+        taskrunner.sigTaskStateChanged.disconnect(self._mw.task_state_changed, QtCore.Qt.QueuedConnection)
         taskrunner.sigTaskFinished.disconnect(self._mw.task_finished, QtCore.Qt.QueuedConnection)
         self._mw = None

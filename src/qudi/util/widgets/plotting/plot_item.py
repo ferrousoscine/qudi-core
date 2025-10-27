@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This file contains modified pyqtgraph.ImageItem subclasses for data visualization.
 
@@ -22,18 +20,19 @@ If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = ['DataImageItem', 'XYPlotItem']
 
+
 import numpy as np
-from typing import Union, Optional, Tuple
-from PySide2 import QtCore
 from pyqtgraph import ImageItem as _ImageItem
 from pyqtgraph import PlotDataItem as _PlotDataItem
+from PySide6 import QtCore
 
 from qudi.util.colordefs import ColorScaleInferno as _Colorscale
 from qudi.util.colordefs import QudiPalette as _QudiPalette
 
 
 class XYPlotItem(_PlotDataItem):
-    """ Extension of pg.PlotDataItem with default qudi style plot options """
+    """Extension of pg.PlotDataItem with default qudi style plot options"""
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__()
         self.opts['pen'] = _QudiPalette.c1
@@ -43,22 +42,21 @@ class XYPlotItem(_PlotDataItem):
 
 
 class DataImageItem(_ImageItem):
-    """ Extension of pg.ImageItem with percentile level scaling and image size adjustment """
+    """Extension of pg.ImageItem with percentile level scaling and image size adjustment"""
 
     def __init__(self, image=None, **kwargs):
         # Change default color scale to qudi default
-        if kwargs.get('lut', None) is None:
+        if kwargs.get('lut') is None:
             kwargs['lut'] = _Colorscale().lut
         super().__init__(image, **kwargs)
         self._percentiles = None
 
     @property
-    def percentiles(self) -> Union[None, Tuple[float, float]]:
+    def percentiles(self) -> None | tuple[float, float]:
         return self._percentiles
 
-    def set_percentiles(self, percentiles: Union[None, Tuple[float, float]]) -> None:
-        """ Set percentile range to clip image color level scaling.
-        """
+    def set_percentiles(self, percentiles: None | tuple[float, float]) -> None:
+        """Set percentile range to clip image color level scaling."""
         if percentiles is not None:
             percentiles = (min(percentiles), max(percentiles))
         if percentiles != self._percentiles:
@@ -68,11 +66,10 @@ class DataImageItem(_ImageItem):
                 if masked_image.size > 0:
                     self.setLevels(self._get_percentile_levels(masked_image))
 
-    def set_image_extent(self,
-                         extent: Tuple[Tuple[float, float], Tuple[float, float]],
-                         adjust_for_px_size: Optional[bool] = True
-                         ) -> None:
-        """ Scales the image to a certain value range. By default, the resulting extent will be a
+    def set_image_extent(
+        self, extent: tuple[tuple[float, float], tuple[float, float]], adjust_for_px_size: bool | None = True
+    ) -> None:
+        """Scales the image to a certain value range. By default, the resulting extent will be a
         bit larger, so that each pixel center corresponds to the respective xy coordinate.
         """
         if adjust_for_px_size is None:
@@ -96,8 +93,7 @@ class DataImageItem(_ImageItem):
             self.setRect(QtCore.QRectF(x_min, y_min, x_max - x_min, y_max - y_min))
 
     def set_image(self, image=None, **kwargs):
-        """ vpg.ImageItem method override to apply optional filter when setting image data.
-        """
+        """vpg.ImageItem method override to apply optional filter when setting image data."""
         if image is None:
             self.clear()
         else:
@@ -108,7 +104,7 @@ class DataImageItem(_ImageItem):
             else:
                 self.clear()
 
-    def _get_percentile_levels(self, image) -> Tuple[float, float]:
+    def _get_percentile_levels(self, image) -> tuple[float, float]:
         if self._percentiles is None:
             min_value = np.min(image)
             max_value = np.max(image)

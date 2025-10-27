@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This file contains custom QWidgets to show (animated) loading indicators.
 
@@ -20,11 +18,11 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-from PySide2 import QtWidgets, QtCore, QtGui
+from PySide6 import QtCore, QtGui, QtWidgets
 
 
 class CircleLoadingIndicator(QtWidgets.QWidget):
-    """ Simple circular loading indicator.
+    """Simple circular loading indicator.
     You can customize cycle period, indicator arc length and width.
     Animation will automatically start (stop) upon showing (hiding) the widget.
     The widget can be arbitrarily resized but the actual indicator will always maintain 1:1 aspect
@@ -35,8 +33,7 @@ class CircleLoadingIndicator(QtWidgets.QWidget):
     Indicator width ratio can be any value 0 < x <= 0.5
     """
 
-    def __init__(self, *args, cycle_time=1.2, indicator_length=960, indicator_width_ratio=0.2,
-                 **kwargs):
+    def __init__(self, *args, cycle_time=1.2, indicator_length=960, indicator_width_ratio=0.2, **kwargs):
         """
         Parameters
         ----------
@@ -140,5 +137,4 @@ class CircleLoadingIndicator(QtWidgets.QWidget):
         self.__pen.setWidth(line_width)
 
     def __update_size_hint(self):
-        self.__size_hint = QtCore.QSize(min(self.width(), self.height()),
-                                        min(self.width(), self.height()))
+        self.__size_hint = QtCore.QSize(min(self.width(), self.height()), min(self.width(), self.height()))

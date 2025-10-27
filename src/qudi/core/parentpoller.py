@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Parent poller mechanism from IPython.
 
@@ -24,11 +23,11 @@ If not, see <https://www.gnu.org/licenses/>.
 __all__ = ['ParentPollerUnix', 'ParentPollerWindows']
 
 import ctypes
+import logging
 import os
 import platform
 import time
 from threading import Thread
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -55,10 +54,10 @@ class ParentPollerUnix(Thread):
         self.quit_function = quit_function
 
     def run(self):
-        """Run the parentpoller.
-        """
+        """Run the parentpoller."""
         # We cannot use os.waitpid because it works only for child processes.
         from errno import EINTR
+
         while True:
             try:
                 if os.getppid() == 1:
@@ -81,7 +80,7 @@ class ParentPollerWindows(Thread):
     """
 
     def __init__(self, parent_handle, quit_function=None):
-        """ Create the parent poller.
+        """Create the parent poller.
 
         Parameters
         ----------
@@ -101,12 +100,11 @@ class ParentPollerWindows(Thread):
         self._stop_requested = False
 
     def run(self):
-        """Run the poll loop. This method never returns.
-        """
+        """Run the poll loop. This method never returns."""
         try:
-            from _winapi import WAIT_OBJECT_0, INFINITE
+            from _winapi import INFINITE, WAIT_OBJECT_0
         except ImportError:
-            from _subprocess import WAIT_OBJECT_0, INFINITE
+            from _subprocess import WAIT_OBJECT_0
 
         # Build the list of handle to listen on.
         handle_list = [self.parent_handle]
@@ -120,10 +118,11 @@ class ParentPollerWindows(Thread):
                 return
 
             result = ctypes.windll.kernel32.WaitForMultipleObjects(
-                len(handle_list),                           # nCount
-                (c_int * len(handle_list))(*handle_list),   # lpHandles
-                False,                                      # bWaitAll
-                1000)                                       # dwMilliseconds
+                len(handle_list),  # nCount
+                (c_int * len(handle_list))(*handle_list),  # lpHandles
+                False,  # bWaitAll
+                1000,
+            )  # dwMilliseconds
 
             if result >= len(handle_list):
                 # Nothing happened. Probably timed out.

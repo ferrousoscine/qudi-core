@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This file contains a QWidget very similar to QLineEdit that can also open a file dialog to select
 directories and files and display them in the QLineEdit.
@@ -24,14 +22,15 @@ If not, see <https://www.gnu.org/licenses/>.
 __all__ = ['PathLineEdit']
 
 import os
-from PySide2 import QtCore, QtWidgets, QtGui
-from typing import Optional, Any, List
+from typing import Any
+
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from qudi.util.paths import get_artwork_dir as _get_artwork_dir
 
 
 class PathLineEdit(QtWidgets.QWidget):
-    """ QLineEdit for editing file system paths directly or via QFileDialog.
+    """QLineEdit for editing file system paths directly or via QFileDialog.
     No validation is performed on the entered string.
     Multiple paths are separated by single semicolon, e.g. '<path1>;<path2>;<path3>'
 
@@ -39,21 +38,20 @@ class PathLineEdit(QtWidgets.QWidget):
     Images (*.png *.xpm *.jpg);;Text files (*.txt);;XML files (*.xml)
     """
 
-    def __init__(self,
-                 text: Optional[str] = None,
-                 parent: Optional[QtWidgets.QWidget] = None,
-                 dialog_caption: Optional[str] = None,
-                 root_directory: Optional[str] = None,
-                 filters: Optional[str] = None,
-                 select_directory: Optional[bool] = False,
-                 follow_symlinks: Optional[bool] = False,
-                 ) -> None:
+    def __init__(
+        self,
+        text: str | None = None,
+        parent: QtWidgets.QWidget | None = None,
+        dialog_caption: str | None = None,
+        root_directory: str | None = None,
+        filters: str | None = None,
+        select_directory: bool | None = False,
+        follow_symlinks: bool | None = False,
+    ) -> None:
         super().__init__(parent=parent)
         self._line_edit = QtWidgets.QLineEdit(text)
         self._tool_button = QtWidgets.QToolButton()
-        self._tool_button.setIcon(
-            QtGui.QIcon(os.path.join(os.path.join(_get_artwork_dir(), 'icons', 'document-open')))
-        )
+        self._tool_button.setIcon(QtGui.QIcon(os.path.join(os.path.join(_get_artwork_dir(), 'icons', 'document-open'))))
         self._tool_button.setToolTip('Open file dialog')
         self._tool_button.clicked.connect(self._exec_file_dialog)
 
@@ -81,17 +79,16 @@ class PathLineEdit(QtWidgets.QWidget):
         raise AttributeError(f"'{self.__class__.__name__}' object has not attribute '{item}'")
 
     @property
-    def paths(self) -> List[str]:
+    def paths(self) -> list[str]:
         paths = (p.strip() for p in self._line_edit.text().split(';'))
         return [p for p in paths if p]
 
     @QtCore.Slot()
     def _exec_file_dialog(self) -> None:
         self._line_edit.clearFocus()
-        dialog = QtWidgets.QFileDialog(parent=self,
-                                       caption=self._dialog_caption,
-                                       directory=self._root_directory,
-                                       filter=self._filters)
+        dialog = QtWidgets.QFileDialog(
+            parent=self, caption=self._dialog_caption, directory=self._root_directory, filter=self._filters
+        )
         options = QtWidgets.QFileDialog.Option.ReadOnly
         if not self._follow_symlinks:
             options |= QtWidgets.QFileDialog.Option.DontResolveSymlinks

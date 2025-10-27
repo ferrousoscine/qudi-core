@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This file contains the Qudi error dialog class.
 
@@ -20,24 +19,24 @@ If not, see <https://www.gnu.org/licenses/>.
 """
 
 import traceback
-from datetime import datetime
 from collections import deque
+from datetime import datetime
+
+from PySide6 import QtCore, QtWidgets
+
 from qudi.util.mutex import RecursiveMutex
-from PySide2 import QtWidgets, QtCore
 
 
 class ErrorDialog(QtWidgets.QDialog):
     """This class provides a popup window for notification with the option to
-      show the next error popup in the queue and to show the log window where
-      you can see the traceback for an exception.
+    show the next error popup in the queue and to show the log window where
+    you can see the traceback for an exception.
     """
 
-    _stylesheet_map = {'error'   : 'font-weight: bold; color: #F11000;',
-                       'critical': 'font-weight: bold; color: #FF00FF;'}
+    _stylesheet_map = {'error': 'font-weight: bold; color: #F11000;', 'critical': 'font-weight: bold; color: #FF00FF;'}
 
     def __init__(self, *args, **kwargs):
-        """Create an ErrorDialog object.
-        """
+        """Create an ErrorDialog object."""
         super().__init__(*args, **kwargs)
 
         self._thread_lock = RecursiveMutex()
@@ -45,29 +44,28 @@ class ErrorDialog(QtWidgets.QDialog):
 
         # Set up dialog window
         self.setWindowTitle('Qudi Error')
-        self.setWindowFlags((QtCore.Qt.Dialog |
-                             QtCore.Qt.CustomizeWindowHint |
-                             QtCore.Qt.WindowSystemMenuHint |
-                             QtCore.Qt.WindowTitleHint) & (~QtCore.Qt.WindowCloseButtonHint))
+        self.setWindowFlags(
+            (
+                QtCore.Qt.Dialog
+                | QtCore.Qt.CustomizeWindowHint
+                | QtCore.Qt.WindowSystemMenuHint
+                | QtCore.Qt.WindowTitleHint
+            )
+            & (~QtCore.Qt.WindowCloseButtonHint)
+        )
         self.setModal(True)
         screen_size = QtWidgets.QApplication.instance().primaryScreen().availableSize()
         screen_width = screen_size.width()
         screen_height = screen_size.height()
-        self._default_size = ((screen_width * 3) // 8,
-                              (screen_height * 3) // 8,
-                              screen_width // 4,
-                              screen_height // 4)
+        self._default_size = ((screen_width * 3) // 8, (screen_height * 3) // 8, screen_width // 4, screen_height // 4)
         self.setGeometry(*self._default_size)
         self.setMinimumSize(screen_width // 6, screen_height // 8)
 
         # Set up header label widget
         self.header_label = QtWidgets.QLabel()
         self.header_label.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.header_label.setTextInteractionFlags(
-            QtCore.Qt.TextSelectableByMouse | QtCore.Qt.LinksAccessibleByMouse
-        )
-        self.header_label.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
-                                     QtWidgets.QSizePolicy.Preferred)
+        self.header_label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse | QtCore.Qt.LinksAccessibleByMouse)
+        self.header_label.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
 
         # Set up scrollable message label widget
         scroll_area = QtWidgets.QScrollArea()
@@ -75,13 +73,10 @@ class ErrorDialog(QtWidgets.QDialog):
         scroll_area.setFocusPolicy(QtCore.Qt.NoFocus)
         self.msg_label = QtWidgets.QLabel()
         self.msg_label.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.msg_label.setTextInteractionFlags(
-            QtCore.Qt.TextSelectableByMouse | QtCore.Qt.LinksAccessibleByMouse
-        )
+        self.msg_label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse | QtCore.Qt.LinksAccessibleByMouse)
         self.msg_label.setWordWrap(True)
         self.msg_label.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
-        self.msg_label.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
-                                     QtWidgets.QSizePolicy.Expanding)
+        self.msg_label.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         scroll_area.setWidget(self.msg_label)
 
         # Set up disable checkbox
@@ -136,13 +131,13 @@ class ErrorDialog(QtWidgets.QDialog):
                 time_str = datetime.fromtimestamp(err.created).strftime('%Y-%m-%d %H:%M:%S')
                 message = err.message if hasattr(err, 'message') else err.msg
                 if err.exc_info is not None:
-                    message += '\n\n{0}'.format(traceback.format_exception(*err.exc_info)[-1][:-1])
+                    message += f'\n\n{traceback.format_exception(*err.exc_info)[-1][:-1]}'
                     tb = '\n'.join(traceback.format_exception(*err.exc_info)[:-1])
                     if tb:
-                        message += '\n{0}'.format(tb)
+                        message += f'\n{tb}'
 
                 self.header_label.setStyleSheet(self._stylesheet_map[err.levelname])
-                self.header_label.setText('Error in {0} ({1}):'.format(err.name, time_str))
+                self.header_label.setText(f'Error in {err.name} ({time_str}):')
                 self.msg_label.setText(message)
                 if self.enabled:
                     self.show()
@@ -174,7 +169,7 @@ class ErrorDialog(QtWidgets.QDialog):
         with self._thread_lock:
             msg_number = len(self._error_queue)
             btn_enabled = self.next_button.isEnabled()
-            self.next_button.setText('Show next error ({0:d} more)'.format(msg_number))
+            self.next_button.setText(f'Show next error ({msg_number:d} more)')
             if msg_number == 0 and btn_enabled:
                 self.next_button.setEnabled(False)
                 self.dismiss_button.setFocus()
@@ -184,8 +179,6 @@ class ErrorDialog(QtWidgets.QDialog):
 
     @QtCore.Slot()
     def reject(self):
-        """Override reject slot in order to prevent rejection of this QDialog.
-        """
+        """Override reject slot in order to prevent rejection of this QDialog."""
         if not self.dismiss_button.hasFocus():
             self.dismiss_button.setFocus()
-

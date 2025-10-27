@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Static file handler and mixin for handling qudi configuration files.
 
@@ -20,25 +18,24 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['FileHandler', 'FileHandlerBase', 'ParserError', 'ValidationError', 'YAMLError',
-           'DuplicateKeyError']
+__all__ = ['FileHandler', 'FileHandlerBase', 'ParserError', 'ValidationError', 'YAMLError', 'DuplicateKeyError']
 
 
 import os
-from typing import Any, Dict, Mapping
+from collections.abc import Mapping
+from typing import Any
 
-from qudi.util.paths import get_default_config_dir, get_appdata_dir
-from qudi.util.yaml import yaml_dump, yaml_load, ParserError, YAMLError, DuplicateKeyError
+from qudi.util.paths import get_appdata_dir, get_default_config_dir
+from qudi.util.yaml import DuplicateKeyError, ParserError, YAMLError, yaml_dump, yaml_load
 
-from .validator import validate_config, ValidationError
+from .validator import ValidationError, validate_config
 
 
 class FileHandlerBase:
-    """File handler base class providing static methods for handling raw qudi configuration files.
-    """
+    """File handler base class providing static methods for handling raw qudi configuration files."""
 
     @classmethod
-    def _load(cls, path: str) -> Dict[str, Any]:
+    def _load(cls, path: str) -> dict[str, Any]:
         return yaml_load(cls._relative_to_absolute_path(path))
 
     @classmethod
@@ -56,7 +53,7 @@ class FileHandlerBase:
         # Write current config file path to load.cfg
         yaml_dump(
             os.path.join(get_appdata_dir(create_missing=True), 'load.cfg'),
-            {'load_config_path': cls._relative_to_absolute_path(path)}
+            {'load_config_path': cls._relative_to_absolute_path(path)},
         )
 
     @staticmethod
@@ -116,9 +113,7 @@ class FileHandlerBase:
                 return new_path
 
         # Raise exception if no existing path can be determined
-        raise FileNotFoundError(
-            f'Qudi relative path "{path}" can not be resolved or does not exist.'
-        )
+        raise FileNotFoundError(f'Qudi relative path "{path}" can not be resolved or does not exist.')
 
 
 class FileHandler(FileHandlerBase):
@@ -128,7 +123,7 @@ class FileHandler(FileHandlerBase):
     """
 
     @classmethod
-    def load(cls, path: str) -> Dict[str, Any]:
+    def load(cls, path: str) -> dict[str, Any]:
         """Load and validate a qudi configuration file from disk.
         Raises jsonschema.ValidationError if validation fails.
         """
@@ -137,7 +132,7 @@ class FileHandler(FileHandlerBase):
         return config
 
     @classmethod
-    def dump(cls, path: str, config: Dict[str, Any]) -> None:
+    def dump(cls, path: str, config: dict[str, Any]) -> None:
         """Validate and dump a qudi configuration file to disk.
         Raises jsonschema.ValidationError if validation fails.
         """

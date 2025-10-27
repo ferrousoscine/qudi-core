@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This module contains the QTreeWidget object to display qudi configurations.
 
@@ -22,23 +20,23 @@ If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = ['ConfigQTreeWidget']
 
-from typing import Any, Mapping
-from collections.abc import Sequence as AbstractSequence
+from collections.abc import Mapping
 from collections.abc import Mapping as AbstractMapping
-from PySide2 import QtWidgets
+from collections.abc import Sequence as AbstractSequence
+from typing import Any
+
+from PySide6 import QtWidgets
 
 
 class ConfigQTreeWidget(QtWidgets.QTreeWidget):
-    """Specialized QTreeWidget to display qudi configurations.
-    """
+    """Specialized QTreeWidget to display qudi configurations."""
 
     def set_config(self, config: Mapping[str, Any]) -> None:
         self.clear()
         self._insert_value(self.invisibleRootItem(), config)
 
     def _insert_value(self, root: QtWidgets.QTreeWidgetItem, value: Any) -> None:
-        """Recursively fill the QTreeWidgeItem.
-        """
+        """Recursively fill the QTreeWidgeItem."""
         # if value is a mapping, open up a new sub-tree and recursively fill it
         if isinstance(value, AbstractMapping):
             if len(value) == 0:

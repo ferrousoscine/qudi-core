@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This file contains Qt models for Python data structures.
 
@@ -21,15 +20,18 @@ If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = ['DictTableModel', 'ListTableModel']
 
-from PySide2 import QtCore
-from typing import Any, Optional, Union, Sequence
+from collections.abc import Sequence
+from typing import Any
+
+from PySide6 import QtCore
+
 from qudi.util.mutex import RecursiveMutex
 
 
 class DictTableModel(QtCore.QAbstractTableModel):
-    """Qt model storing a table in dictionaries.
-    """
-    def __init__(self, headers: Union[str, Sequence[str]]):
+    """Qt model storing a table in dictionaries."""
+
+    def __init__(self, headers: str | Sequence[str]):
         super().__init__()
         self._lock = RecursiveMutex()
         if isinstance(headers, str):
@@ -40,21 +42,18 @@ class DictTableModel(QtCore.QAbstractTableModel):
             self._headers = list(headers)
         self._storage = dict()
 
-    def rowCount(self, parent: Optional[QtCore.QModelIndex] = None) -> int:
-        """Returns the number of stored items (rows).
-        """
+    def rowCount(self, parent: QtCore.QModelIndex | None = None) -> int:
+        """Returns the number of stored items (rows)."""
         with self._lock:
             return len(self._storage)
 
-    def columnCount(self, parent: Optional[QtCore.QModelIndex] = None) -> int:
-        """Returns the number of data fields (columns).
-        """
+    def columnCount(self, parent: QtCore.QModelIndex | None = None) -> int:
+        """Returns the number of data fields (columns)."""
         with self._lock:
             return len(self._headers)
 
-    def flags(self, index: Optional[QtCore.QModelIndex] = None) -> QtCore.Qt.ItemFlags:
-        """Determines what can be done with the given indexed cell.
-        """
+    def flags(self, index: QtCore.QModelIndex | None = None) -> QtCore.Qt.ItemFlags:
+        """Determines what can be done with the given indexed cell."""
         return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
 
     def data(self, index: QtCore.QModelIndex, role: QtCore.Qt.ItemDataRole) -> Any:
@@ -70,8 +69,12 @@ class DictTableModel(QtCore.QAbstractTableModel):
                     return self._storage[key]
             return None
 
-    def headerData(self, section: int, orientation: QtCore.Qt.Orientation,
-                   role: Optional[QtCore.Qt.ItemDataRole] = QtCore.Qt.DisplayRole) -> Any:
+    def headerData(
+        self,
+        section: int,
+        orientation: QtCore.Qt.Orientation,
+        role: QtCore.Qt.ItemDataRole | None = QtCore.Qt.DisplayRole,
+    ) -> Any:
         """Data for the table view headers."""
         with self._lock:
             if role == QtCore.Qt.DisplayRole:
@@ -84,11 +87,12 @@ class DictTableModel(QtCore.QAbstractTableModel):
         with self._lock:
             it = iter(self._storage)
             try:
-                for _ in range(n+1):
+                for _ in range(n + 1):
                     key = next(it)
             except StopIteration:
-                raise IndexError(f'Index {n:d} out of bounds for table model with '
-                                 f'{len(self._storage):d} rows') from None
+                raise IndexError(
+                    f'Index {n:d} out of bounds for table model with {len(self._storage):d} rows'
+                ) from None
             return key
 
     def get_index_by_key(self, key: Any) -> int:
@@ -173,7 +177,7 @@ class DictTableModel(QtCore.QAbstractTableModel):
         Returns
         -------
         value
-            The value associated with the removed key. If the key is not found and a default 
+            The value associated with the removed key. If the key is not found and a default
             value is provided, the default value is returned. Otherwise, a `KeyError` is raised.
         """
         with self._lock:
@@ -201,7 +205,7 @@ class DictTableModel(QtCore.QAbstractTableModel):
         Returns
         -------
         value
-            The value associated with the key in the dictionary. If the key is not found 
+            The value associated with the key in the dictionary. If the key is not found
             and a default value is provided, the default value is returned.
         """
         with self._lock:
@@ -221,10 +225,9 @@ class DictTableModel(QtCore.QAbstractTableModel):
 
 
 class ListTableModel(QtCore.QAbstractTableModel):
-    """Qt model storing a table in lists.
-    """
+    """Qt model storing a table in lists."""
 
-    def __init__(self, headers: Union[str, Sequence[str]]):
+    def __init__(self, headers: str | Sequence[str]):
         super().__init__()
         self._lock = RecursiveMutex()
         if isinstance(headers, str):
@@ -235,34 +238,33 @@ class ListTableModel(QtCore.QAbstractTableModel):
             self._headers = list(headers)
         self._storage = list()
 
-    def rowCount(self, parent: Optional[QtCore.QModelIndex] = None):
-        """Gives the number of stored items (rows).
-        """
+    def rowCount(self, parent: QtCore.QModelIndex | None = None):
+        """Gives the number of stored items (rows)."""
         with self._lock:
             return len(self._storage)
 
-    def columnCount(self, parent: Optional[QtCore.QModelIndex] = None):
-        """Gives the number of data fields (columns).
-        """
+    def columnCount(self, parent: QtCore.QModelIndex | None = None):
+        """Gives the number of data fields (columns)."""
         return len(self._headers)
 
     def flags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
-        """Determines what can be done with entry cells in the table view.
-        """
+        """Determines what can be done with entry cells in the table view."""
         return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
 
     def data(self, index: QtCore.QModelIndex, role: QtCore.Qt.ItemDataRole) -> Any:
-        """Get data from model for a given cell. Data can have a role that affects display.
-        """
+        """Get data from model for a given cell. Data can have a role that affects display."""
         with self._lock:
             if index.isValid() and role == QtCore.Qt.DisplayRole:
                 return self._storage[index.row()]
             return None
 
-    def headerData(self, section: int, orientation: QtCore.Qt.Orientation,
-                   role: Optional[QtCore.Qt.ItemDataRole] = QtCore.Qt.DisplayRole) -> Any:
-        """Data for the table view headers.
-        """
+    def headerData(
+        self,
+        section: int,
+        orientation: QtCore.Qt.Orientation,
+        role: QtCore.Qt.ItemDataRole | None = QtCore.Qt.DisplayRole,
+    ) -> Any:
+        """Data for the table view headers."""
         if role == QtCore.Qt.DisplayRole:
             if orientation == QtCore.Qt.Horizontal:
                 return self._headers[section]

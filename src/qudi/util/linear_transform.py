@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This module provides functionality for linear transformations of cartesian coordinate systems.
 
@@ -21,19 +20,18 @@ If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = ['LinearTransformation', 'LinearTransformation3D', 'LinearTransformation2D']
 
+from collections.abc import Sequence
+
 import numpy as np
-from typing import Sequence, Optional, Union, Tuple
 
 from qudi.util.helpers import is_integer
 from qudi.util.math import normalize
 
+
 class LinearTransformation:
     """Linear transformation for N-dimensional cartesian coordinates."""
 
-    def __init__(self,
-                 matrix: Optional[Sequence[Sequence[float]]] = None,
-                 dimensions: Optional[int] = None
-                 ) -> None:
+    def __init__(self, matrix: Sequence[Sequence[float]] | None = None, dimensions: int | None = None) -> None:
         super().__init__()
 
         if matrix is not None:
@@ -44,20 +42,16 @@ class LinearTransformation:
                 raise ValueError('LinearTransformation matrix must be square')
         elif dimensions is not None:
             if not is_integer(dimensions):
-                raise TypeError(f'LinearTransformation dimensions must be integer type. '
-                                f'Received {type(dimensions)} instead.')
+                raise TypeError(
+                    f'LinearTransformation dimensions must be integer type. Received {type(dimensions)} instead.'
+                )
             if dimensions < 1:
-                raise ValueError(f'LinearTransformation dimensions must >= 1. '
-                                 f'Received {dimensions:d} instead.')
+                raise ValueError(f'LinearTransformation dimensions must >= 1. Received {dimensions:d} instead.')
             self._matrix = np.eye(dimensions + 1, dimensions + 1)
         else:
-            raise ValueError('Must either provide homogenous transformation matrix or number of '
-                             'dimensions')
+            raise ValueError('Must either provide homogenous transformation matrix or number of dimensions')
 
-    def __call__(self,
-                 nodes: Union[Sequence[float], Sequence[Sequence[float]]],
-                 invert: Optional[bool] = False
-                 ) -> np.ndarray:
+    def __call__(self, nodes: Sequence[float] | Sequence[Sequence[float]], invert: bool | None = False) -> np.ndarray:
         """Transforms any single node (vector) or sequence of nodes according to the
         preconfigured matrix.
         Tries to perform the inverse transform if the optional argument invert is True.
@@ -67,10 +61,10 @@ class LinearTransformation:
         matrix = self.inverse if invert else self._matrix
         if node_dim == 2:
             nodes = np.vstack([nodes.T, np.full(nodes.shape[0], 1)])
-            return np.matmul(matrix, nodes)[:self.dimensions, :].T
+            return np.matmul(matrix, nodes)[: self.dimensions, :].T
         elif node_dim == 1:
             nodes = np.append(nodes, 1)
-            return np.matmul(matrix, nodes)[:self.dimensions]
+            return np.matmul(matrix, nodes)[: self.dimensions]
         raise ValueError('nodes to transform must either be 1D or 2D array')
 
     @property
@@ -100,10 +94,12 @@ class LinearTransformation:
         """
         matrix = np.asarray(matrix, dtype=float)
         if matrix.shape != self._matrix.shape:
-            raise ValueError(f'LinearTransformation.add_transform expects a homogenious '
-                             f'transformation matrix with the same shape as '
-                             f'LinearTransformation.matrix {self._matrix.shape}. '
-                             f'Received {matrix.shape} instead.')
+            raise ValueError(
+                f'LinearTransformation.add_transform expects a homogenious '
+                f'transformation matrix with the same shape as '
+                f'LinearTransformation.matrix {self._matrix.shape}. '
+                f'Received {matrix.shape} instead.'
+            )
         self._matrix = np.matmul(matrix, self._matrix)
 
     def translate(self, *args: float) -> None:
@@ -112,9 +108,10 @@ class LinearTransformation:
         """
         dim = self.dimensions
         if len(args) != dim:
-            raise ValueError(f'LinearTransformation.translate requires as many arguments as '
-                             f'number of dimensions ({dim:d})')
-        translate_matrix = np.asarray(np.diag([1]*(dim+1)), dtype=float)
+            raise ValueError(
+                f'LinearTransformation.translate requires as many arguments as number of dimensions ({dim:d})'
+            )
+        translate_matrix = np.asarray(np.diag([1] * (dim + 1)), dtype=float)
         translate_matrix[:-1, -1] = args
         self.add_transform(translate_matrix)
 
@@ -128,8 +125,10 @@ class LinearTransformation:
         elif len(args) == self.dimensions:
             diagonal[:-1] *= args
         else:
-            raise ValueError(f'LinearTransformation.scale requires either a single argument or as '
-                             f'many arguments as number of dimensions ({self.dimensions:d})')
+            raise ValueError(
+                f'LinearTransformation.scale requires either a single argument or as '
+                f'many arguments as number of dimensions ({self.dimensions:d})'
+            )
         scale_matrix = np.diag(diagonal)
         self.add_transform(scale_matrix)
 
@@ -143,20 +142,17 @@ class LinearTransformation:
         # todo
         pass
 
+
 class LinearTransformation3D(LinearTransformation):
     """Linear transformation for 3D cartesian coordinates."""
 
-    _Vector = Tuple[float, float, float, float]
-    _TransformationMatrix = Tuple[_Vector, _Vector, _Vector, _Vector]
+    _Vector = tuple[float, float, float, float]
+    _TransformationMatrix = tuple[_Vector, _Vector, _Vector, _Vector]
 
-    def __init__(self, matrix: Optional[_TransformationMatrix] = None) -> None:
+    def __init__(self, matrix: _TransformationMatrix | None = None) -> None:
         super().__init__(matrix=matrix, dimensions=3)
 
-    def rotate(self,
-               x_angle: Optional[float] = 0,
-               y_angle: Optional[float] = 0,
-               z_angle: Optional[float] = 0
-               ) -> None:
+    def rotate(self, x_angle: float | None = 0, y_angle: float | None = 0, z_angle: float | None = 0) -> None:
         """Adds a rotation to the transformation. Can provide a rotation angle (in rad) around
         each of the 3 axes (x, y, z).
         """
@@ -166,29 +162,23 @@ class LinearTransformation3D(LinearTransformation):
         cos_b = np.cos(y_angle)
         sin_c = np.sin(z_angle)
         cos_c = np.cos(z_angle)
-        rot_matrix = np.array([
-            [cos_b * cos_c, sin_a * sin_b * cos_c - cos_a * sin_c, cos_a * sin_b * cos_c + sin_a * sin_c, 0],
-            [cos_b * sin_c, sin_a * sin_b * sin_c + cos_a * cos_c, cos_a * sin_b * sin_c - sin_a * cos_c, 0],
-            [-sin_b,        sin_a * cos_b,                         cos_a * cos_b,                         0],
-            [0,             0,                                     0,                                     1]
-        ])
+        rot_matrix = np.array(
+            [
+                [cos_b * cos_c, sin_a * sin_b * cos_c - cos_a * sin_c, cos_a * sin_b * cos_c + sin_a * sin_c, 0],
+                [cos_b * sin_c, sin_a * sin_b * sin_c + cos_a * cos_c, cos_a * sin_b * sin_c - sin_a * cos_c, 0],
+                [-sin_b, sin_a * cos_b, cos_a * cos_b, 0],
+                [0, 0, 0, 1],
+            ]
+        )
         self.add_transform(rot_matrix)
 
-    def translate(self,
-                  dx: Optional[float] = 0,
-                  dy: Optional[float] = 0,
-                  dz: Optional[float] = 0
-                  ) -> None:
+    def translate(self, dx: float | None = 0, dy: float | None = 0, dz: float | None = 0) -> None:
         """Adds a translation to the transformation. Can provide a displacement for each of the 3
         axes (x, y, z).
         """
         return super().translate(dx, dy, dz)
 
-    def scale(self,
-              sx: Optional[float] = 1,
-              sy: Optional[float] = 1,
-              sz: Optional[float] = 1
-              ) -> None:
+    def scale(self, sx: float | None = 1, sy: float | None = 1, sz: float | None = 1) -> None:
         """Adds scaling to the transformation. Can provide a scale factor for each of the 3 axes
         (x, y, z).
         """
@@ -197,13 +187,13 @@ class LinearTransformation3D(LinearTransformation):
     def add_rotation(self, matrix) -> None:
         """
         Add a rotation given by 3x3 matrix. Pad the array to represent this rotation plus a zero translation.
-        
+
         Parameters
         ----------
         matrix
         """
         rot_matrix = np.pad(matrix, [(0, 1), (0, 1)])
-        rot_matrix[-1,-1] = 1
+        rot_matrix[-1, -1] = 1
 
         self.add_transform(rot_matrix)
 
@@ -211,38 +201,36 @@ class LinearTransformation3D(LinearTransformation):
 class LinearTransformation2D(LinearTransformation):
     """Linear transformation for 2D cartesian coordinates."""
 
-    _Vector = Tuple[float, float, float]
-    _TransformationMatrix = Tuple[_Vector, _Vector, _Vector]
+    _Vector = tuple[float, float, float]
+    _TransformationMatrix = tuple[_Vector, _Vector, _Vector]
 
-    def __init__(self, matrix: Optional[_TransformationMatrix] = None) -> None:
+    def __init__(self, matrix: _TransformationMatrix | None = None) -> None:
         super().__init__(matrix=matrix, dimensions=2)
 
     def rotate(self, angle: float) -> None:
-        """ Adds a rotation to the transformation. Given angle (in rad) will rotate around origin
+        """Adds a rotation to the transformation. Given angle (in rad) will rotate around origin
         counter-clockwise.
         """
         cos = np.cos(angle)
         sin = np.sin(angle)
-        rot_matrix = np.array([
-            [cos, -sin, 0],
-            [sin,  cos, 0],
-            [0  ,    0, 1]
-        ])
+        rot_matrix = np.array([[cos, -sin, 0], [sin, cos, 0], [0, 0, 1]])
         self.add_transform(rot_matrix)
 
-    def translate(self, dx: Optional[float] = 0, dy: Optional[float] = 0) -> None:
+    def translate(self, dx: float | None = 0, dy: float | None = 0) -> None:
         """Adds a translation to the transformation. Can provide a displacement for each of the 2
         axes (x, y).
         """
         return super().translate(dx, dy)
 
-    def scale(self, sx: Optional[float] = 1, sy: Optional[float] = 1) -> None:
+    def scale(self, sx: float | None = 1, sy: float | None = 1) -> None:
         """Adds scaling to the transformation. Can provide a scale factor for each of the 2 axes
         (x, y).
         """
         return super().scale(sx, sy)
 
+
 # todo: integrate in math.py or linear_transform.py
+
 
 def find_changing_axes(points: np.ndarray) -> np.ndarray:
     """
@@ -264,11 +252,12 @@ def find_changing_axes(points: np.ndarray) -> np.ndarray:
     for axis in range(num_axes):
         elements = points[:, axis]
         for ii, element in enumerate(points[:, axis]):
-            d_elements = np.abs(element - elements[ii+1:])
+            d_elements = np.abs(element - elements[ii + 1 :])
             if np.any(d_elements > 0):
                 axes_changing_p[axis] = True
                 break
     return axes_changing_p
+
 
 def compute_reduced_vectors(points: np.ndarray) -> np.ndarray:
     """
@@ -288,7 +277,8 @@ def compute_reduced_vectors(points: np.ndarray) -> np.ndarray:
     axes_changing_p = find_changing_axes(points)
     return points[:, axes_changing_p]
 
-def compute_rotation_matrix_to_plane(v0: np.ndarray, v1: np.ndarray, v2: np.ndarray, ez=[0,0,1]) -> np.ndarray:
+
+def compute_rotation_matrix_to_plane(v0: np.ndarray, v1: np.ndarray, v2: np.ndarray, ez=[0, 0, 1]) -> np.ndarray:
     """
     Find the rotation matrix that transforms a plane given by three support vectors onto the z plane.
     This rotation is around the origin of the coordinate system.
@@ -327,7 +317,7 @@ def compute_rotation_matrix_to_plane(v0: np.ndarray, v1: np.ndarray, v2: np.ndar
     k_mat = np.array([[0.0, -kz, ky], [kz, 0.0, -kx], [-ky, kx, 0.0]])
 
     theta = -np.arccos(np.dot(normal_plane_vec, ez))
-    if theta > np.pi/2 or theta < -np.pi/2:
-        theta = -(np.pi-theta)
+    if theta > np.pi / 2 or theta < -np.pi / 2:
+        theta = -(np.pi - theta)
 
     return np.eye(3) + np.sin(theta) * k_mat + (1 - np.cos(theta)) * np.matmul(k_mat, k_mat)

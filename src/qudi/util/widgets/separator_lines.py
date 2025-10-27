@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Convenience classes to get vertical and horizontal separator lines in a QLayout as one-liner.
 
@@ -22,19 +20,19 @@ If not, see <https://www.gnu.org/licenses/>.
 
 __all__ = ['VerticalLine', 'HorizontalLine']
 
-from PySide2 import QtWidgets
-from typing import Optional
+
+from PySide6 import QtWidgets
 
 
 class VerticalLine(QtWidgets.QFrame):
-    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent=parent)
         self.setFrameShape(QtWidgets.QFrame.VLine)
         self.setFrameShadow(QtWidgets.QFrame.Sunken)
 
 
 class HorizontalLine(QtWidgets.QFrame):
-    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent=parent)
         self.setFrameShape(QtWidgets.QFrame.HLine)
         self.setFrameShadow(QtWidgets.QFrame.Sunken)

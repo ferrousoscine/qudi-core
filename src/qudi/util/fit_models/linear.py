@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This file contains models for linear fitting routines for qudi based on the lmfit package.
 
@@ -23,6 +21,7 @@ If not, see <https://www.gnu.org/licenses/>.
 __all__ = ('Linear',)
 
 import numpy as np
+
 from qudi.util.fit_models.model import FitModelBase, estimator
 
 

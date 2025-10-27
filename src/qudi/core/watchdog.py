@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This file contains the qudi application watchdog.
 Derived from the ACQ4 project.
@@ -26,18 +24,19 @@ If not, see <https://www.gnu.org/licenses/>.
 __all__ = ['AppWatchdog']
 
 import os
-import sys
 import signal
-from PySide2 import QtCore
-from qudi.core.parentpoller import ParentPollerWindows, ParentPollerUnix
+import sys
+
+from PySide6 import QtCore
+
 from qudi.core.logger import get_logger
+from qudi.core.parentpoller import ParentPollerUnix, ParentPollerWindows
 
 logger = get_logger(__name__)
 
 
 class AppWatchdog(QtCore.QObject):
-    """This class periodically runs a function for debugging and handles application exit.
-    """
+    """This class periodically runs a function for debugging and handles application exit."""
 
     def __init__(self, quit_function):
         super().__init__()
@@ -53,8 +52,7 @@ class AppWatchdog(QtCore.QObject):
         if 'QUDI_PARENT_PID' not in os.environ:
             self.parent_handle = None
             self.parent_poller = None
-            logger.warning('Qudi running unsupervised. Restart will not work. Instead Qudi will '
-                           'exit with exitcode 42.')
+            logger.warning('Qudi running unsupervised. Restart will not work. Instead Qudi will exit with exitcode 42.')
         else:
             self.parent_handle = int(os.environ['QUDI_PARENT_PID'])
             if sys.platform == 'win32':
@@ -66,8 +64,7 @@ class AppWatchdog(QtCore.QObject):
 
     @QtCore.Slot()
     def do_nothing(self):
-        """This function does nothing for debugging purposes.
-        """
+        """This function does nothing for debugging purposes."""
         x = 0
         for i in range(100):
             x += i
@@ -88,4 +85,3 @@ class AppWatchdog(QtCore.QObject):
             self.__timer.stop()
         finally:
             self.__timer = None
-

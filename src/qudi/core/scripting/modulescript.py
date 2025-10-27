@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This file contains a basic script class to run with qudi module dependencies as well as various
 helper classes to run and manage these scripts.
@@ -21,27 +19,28 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['import_module_script', 'ModuleScript', 'ModuleScriptsDictTableModel',
-           'ModuleScriptInterrupted']
+__all__ = ['import_module_script', 'ModuleScript', 'ModuleScriptsDictTableModel', 'ModuleScriptInterrupted']
 
-import importlib
 import copy
+import importlib
 import inspect
 from abc import abstractmethod
-from PySide2 import QtCore
+from collections.abc import Mapping
 from logging import Logger
-from typing import Mapping, Any, Type, Optional, Union, Dict
+from typing import Any
 
+from PySide6 import QtCore
+
+from qudi.core.logger import get_logger
 from qudi.core.meta import QudiObjectMeta
 from qudi.core.module import Base
-from qudi.core.logger import get_logger
 from qudi.util.models import DictTableModel
 from qudi.util.mutex import Mutex
 
 
 class ModuleScriptInterrupted(Exception):
-    """Custom exception class to indicate that a ModuleScript execution has been interrupted.
-    """
+    """Custom exception class to indicate that a ModuleScript execution has been interrupted."""
+
     pass
 
 
@@ -51,6 +50,7 @@ class ModuleScript(QtCore.QObject, metaclass=QudiObjectMeta):
     The implementations must occasionally call _check_interrupt() to raise an exception at that
     point if an interrupt is requested.
     """
+
     # Declare all module connectors used in this script here
 
     sigFinished = QtCore.Signal()
@@ -60,8 +60,7 @@ class ModuleScript(QtCore.QObject, metaclass=QudiObjectMeta):
     def __new__(cls, *args, **kwargs):
         abstract = getattr(cls, '__abstractmethods__', frozenset())
         if abstract:
-            raise TypeError(f'Can\'t instantiate abstract class "{cls.__name__}" '
-                            f'with abstract methods {set(abstract)}')
+            raise TypeError(f'Can\'t instantiate abstract class "{cls.__name__}" with abstract methods {set(abstract)}')
         return super().__new__(cls, *args, **kwargs)
 
     def __init__(self):
@@ -115,15 +114,14 @@ class ModuleScript(QtCore.QObject, metaclass=QudiObjectMeta):
             return self._success
 
     @property
-    def connected_modules(self) -> Mapping[str, Union[str, None]]:
+    def connected_modules(self) -> Mapping[str, str | None]:
         """Mapping of Connector names (keys) to connected module target names (values).
         Unconnected Connectors are indicated by None target.
         """
-        return {conn.name: None if conn() is None else conn().module_name for conn in
-                self._meta['connectors']}
+        return {conn.name: None if conn() is None else conn().module_name for conn in self._meta['connectors']}
 
     @classmethod
-    def call_parameters(cls) -> Dict[str, inspect.Parameter]:
+    def call_parameters(cls) -> dict[str, inspect.Parameter]:
         """Call parameters of the _run method implementation.
 
         Override in subclass if you want anything else than this default implementation.
@@ -139,7 +137,7 @@ class ModuleScript(QtCore.QObject, metaclass=QudiObjectMeta):
         return parameters
 
     @classmethod
-    def result_annotation(cls) -> Union[Any, inspect.Signature.empty]:
+    def result_annotation(cls) -> Any | inspect.Signature.empty:
         """Return type annotation for the _run method implementation.
         Will return inspect.Signature.empty if _run return value is not annotated.
         """
@@ -182,7 +180,7 @@ class ModuleScript(QtCore.QObject, metaclass=QudiObjectMeta):
             with self._thread_lock:
                 self._success = True
         except ModuleScriptInterrupted:
-            self.log.info(f'Main run method interrupted')
+            self.log.info('Main run method interrupted')
         except:
             self.log.exception('Exception during main run method:')
             raise
@@ -198,16 +196,14 @@ class ModuleScript(QtCore.QObject, metaclass=QudiObjectMeta):
         """
         # Sanity checks
         conn_names = set(conn.name for conn in self._meta['connectors'].values())
-        mandatory_conn = set(
-            conn.name for conn in self._meta['connectors'].values() if not conn.optional
-        )
+        mandatory_conn = set(conn.name for conn in self._meta['connectors'].values() if not conn.optional)
         configured_conn = set(connector_targets)
         if not configured_conn.issubset(conn_names):
-            raise KeyError(f'Mismatch of connectors in configuration {configured_conn} and '
-                           f'Connector meta objects {conn_names}.')
+            raise KeyError(
+                f'Mismatch of connectors in configuration {configured_conn} and Connector meta objects {conn_names}.'
+            )
         if not mandatory_conn.issubset(configured_conn):
-            raise ValueError(f'Not all mandatory connectors are specified.\n'
-                             f'Mandatory connectors are: {mandatory_conn}')
+            raise ValueError(f'Not all mandatory connectors are specified.\nMandatory connectors are: {mandatory_conn}')
 
         # Iterate through module connectors and connect them if possible
         for conn in self._meta['connectors'].values():
@@ -215,8 +211,10 @@ class ModuleScript(QtCore.QObject, metaclass=QudiObjectMeta):
             if target is None:
                 continue
             if conn.is_connected:
-                raise RuntimeError(f'Connector "{conn.name}" already connected.\n'
-                                   f'Call "disconnect_modules()" before trying to reconnect.')
+                raise RuntimeError(
+                    f'Connector "{conn.name}" already connected.\n'
+                    f'Call "disconnect_modules()" before trying to reconnect.'
+                )
             conn.connect(target)
 
     def disconnect_modules(self) -> None:
@@ -228,7 +226,7 @@ class ModuleScript(QtCore.QObject, metaclass=QudiObjectMeta):
             conn.disconnect()
 
     def _check_interrupt(self) -> None:
-        """ Implementations of _run should occasionally call this method in order to break
+        """Implementations of _run should occasionally call this method in order to break
         execution early if another thread has interrupted this script in the meantime.
         """
         if self.interrupted:
@@ -236,13 +234,11 @@ class ModuleScript(QtCore.QObject, metaclass=QudiObjectMeta):
 
     @abstractmethod
     def _run(self, *args, **kwargs) -> Any:
-        """The actual script to be run. Implement only this method in a subclass.
-        """
+        """The actual script to be run. Implement only this method in a subclass."""
         raise NotImplementedError(f'No _run() method implemented for "{self.__class__.__name__}".')
 
 
-def import_module_script(module: str, cls: str,
-                         reload: Optional[bool] = True) -> Type[ModuleScript]:
+def import_module_script(module: str, cls: str, reload: bool | None = True) -> type[ModuleScript]:
     """Helper function to import ModuleScript sub-classes by name from a given module.
     Reloads the module to import from by default.
     """
@@ -256,9 +252,9 @@ def import_module_script(module: str, cls: str,
 
 
 class ModuleScriptsDictTableModel(DictTableModel):
-    """Qt compatible table model holding all configured and available ModuleScript subclasses.
-    """
-    def __init__(self, scripts_config: Optional[Mapping[str, dict]] = None):
+    """Qt compatible table model holding all configured and available ModuleScript subclasses."""
+
+    def __init__(self, scripts_config: Mapping[str, dict] | None = None):
         super().__init__(headers=['Name', 'Class'])
         if scripts_config is None:
             scripts_config = dict()
