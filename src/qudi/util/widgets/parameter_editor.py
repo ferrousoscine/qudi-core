@@ -16,8 +16,9 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['ParameterEditor', 'ParameterEditorDialog']
+__all__ = ["ParameterEditor", "ParameterEditorDialog"]
 
+import contextlib
 import inspect
 from collections.abc import Callable, Mapping
 from typing import Any
@@ -38,16 +39,16 @@ class ParameterEditor(QtWidgets.QWidget):
     def __init__(self, *args, func: Callable, values: Mapping[str, Any] | None = None, **kwargs):
         super().__init__(*args, **kwargs)
         if values is None:
-            values = dict()
-        self.parameter_editors = dict()
+            values = {}
+        self.parameter_editors = {}
         layout = QtWidgets.QGridLayout()
         parameters = inspect.signature(func).parameters
         for row, (name, param) in enumerate(parameters.items()):
-            label = QtWidgets.QLabel(f'{name}:')
+            label = QtWidgets.QLabel(f"{name}:")
             label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
             editor = ParameterWidgetMapper.widget_for_parameter(param)
             if editor is None:
-                editor = QtWidgets.QLabel('Unknown argument type!')
+                editor = QtWidgets.QLabel("Unknown argument type!")
                 editor.setAlignment(QtCore.Qt.AlignCenter)
             else:
                 editor = editor()
@@ -64,10 +65,8 @@ class ParameterEditor(QtWidgets.QWidget):
                         try:
                             editor.setChecked(init_value)
                         except AttributeError:
-                            try:
+                            with contextlib.suppress(AttributeError):
                                 editor.setText(init_value)
-                            except AttributeError:
-                                pass
 
             layout.addWidget(label, row, 0)
             layout.addWidget(editor, row, 1)
@@ -76,7 +75,7 @@ class ParameterEditor(QtWidgets.QWidget):
 
     def get_parameter_values(self) -> dict[str, Any]:
         """Returns the current parameter values entered into the editor"""
-        values = dict()
+        values = {}
         for name, editor in self.parameter_editors.items():
             if isinstance(editor, QtWidgets.QLabel):
                 values[name] = self.INVALID
@@ -87,10 +86,8 @@ class ParameterEditor(QtWidgets.QWidget):
                     try:
                         values[name] = editor.isChecked()
                     except AttributeError:
-                        try:
+                        with contextlib.suppress(AttributeError):
                             values[name] = editor.text()
-                        except AttributeError:
-                            pass
         return values
 
 

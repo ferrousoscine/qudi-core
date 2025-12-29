@@ -21,26 +21,26 @@ import argparse
 from qudi.core.application import Qudi
 
 # parse commandline parameters
-parser = argparse.ArgumentParser(prog='python -m qudi.core')
+parser = argparse.ArgumentParser(prog="python -m qudi.core")
 parser.add_argument(
-    '-g',
-    '--no-gui',
-    action='store_true',
+    "-g",
+    "--no-gui",
+    action="store_true",
     help='Run qudi "headless", i.e. without GUI. User interaction only possible via IPython kernel.',
 )
 parser.add_argument(
-    '-d',
-    '--debug',
-    action='store_true',
-    help='Run qudi in debug mode to log all debug messages. Can affect performance.',
+    "-d",
+    "--debug",
+    action="store_true",
+    help="Run qudi in debug mode to log all debug messages. Can affect performance.",
 )
 parser.add_argument(
-    '-c', '--config', default=None, help='Path to the configuration file to use for for this qudi session.'
+    "-c", "--config", default=None, help="Path to the configuration file to use for for this qudi session."
 )
 parser.add_argument(
-    '-l',
-    '--logdir',
-    default='',
+    "-l",
+    "--logdir",
+    default="",
     help='Absolute path to log directory to use instead of the default one "<user_home>/qudi/log/"',
 )
 args = parser.parse_args()

@@ -103,27 +103,87 @@ skip-magic-trailing-comma = true
 
 [tool.ruff.lint]
 select = [
-    "E",   # pycodestyle errors
-    "W",   # pycodestyle warnings
-    "F",   # pyflakes
-    "I",   # isort
-    "UP",  # pyupgrade
-    "B",   # flake8-bugbear
-    "SIM", # flake8-simplify
-    "NPY", # numpy-specific rules
+    "ALL",
 ]
 ignore = [
-    "E501",  # line too long (handled by formatter)
-    "ERA001",  # Commented-out code
-    "SLF001",  # Private member accessed
-    "N803",  # Argument name should be lowercase
-    "N806",  # Variable in function should be lowercase
-    "C901",  # Init method too complex
-    "B905",  # zip strict parameter (Python 3.10+)
+    # Style preferences
+    "E501",    # line too long (handled by formatter)
+    "D",       # pydocstyle (too noisy for scientific code)
+    "ANN",     # flake8-annotations (gradual typing)
+    "COM812",  # trailing comma (conflicts with formatter)
+    "ISC001",  # implicit string concat (conflicts with formatter)
+
+    # Scientific code conventions
+    "N803",    # argument name lowercase (physics uses capitals)
+    "N806",    # variable lowercase (physics uses capitals)
+    "N802",    # function name lowercase (Qt uses camelCase)
+    "N815",    # mixedCase in class scope (Qt convention)
+    "N816",    # mixedCase in global scope
+    "N817",    # CamelCase imported as acronym (common in scientific code)
+    "NPY002",  # legacy np.random (scientific code)
+
+    # Practical exceptions
+    "PLR0913", # too many arguments (scientific functions need them)
+    "PLR0912", # too many branches
+    "PLR0915", # too many statements
+    "PLR2004", # magic values (physics constants)
+    "C901",    # too complex
+    "ERA001",  # commented-out code (keep for reference)
+    "FBT",     # boolean trap (Qt signals use bools)
+    "TD",      # TODO format
+    "FIX",     # fixme comments
+
+    # GUI code
+    "SLF001",  # private member access (Qt internals)
+    "ARG002",  # unused method argument (Qt signal signatures)
+
+    # Exceptions for legacy compatibility
+    "TRY003",  # long exception messages
+    "EM",      # exception message style
+
+    # Framework error handling
+    "BLE001",  # blind exception (framework needs broad error handling)
+    "S110",    # try-except-pass (intentional error suppression)
+    "TRY300",  # else block in try (style preference)
+    "TRY004",  # prefer TypeError (style preference)
+
+    # Scientific code patterns
+    "PLW0603", # global statement (necessary for some patterns)
+    "PLW0602", # global without assignment (necessary for some patterns)
+    "DTZ005",  # datetime.now without tz (local time intentional)
+    "DTZ006",  # datetime.fromtimestamp without tz (local time intentional)
+    "PLW2901", # loop variable overwritten (intentional in numerical code)
+    "PLR0911", # too many return statements
+    "S102",    # exec detected (needed for dynamic UI loading)
+    "S603",    # subprocess call security (framework code)
+    "S607",    # partial path in subprocess (framework code)
+    "LOG015",  # warning on root logger (Qt handlers)
+    "SIM102",  # nested if statements (readability preference)
+    "SIM108",  # ternary operator (readability preference)
+    "TRY301",  # raise to inner function (style)
+    "EXE001",  # shebang without executable (packaging handles this)
 ]
 
-[tool.ruff.lint.extend-per-file-ignores]
-"__init__.py" = ["F401"]  # unused imports in __init__.py
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]
+"tests/**" = ["S101", "PLR2004", "ARG001", "ARG002"]
+"tests/notebooks/**" = ["F821"]  # cell dependencies in notebooks
+"src/qudi/tools/**" = ["T201"]
+"src/qudi/core/parentpoller.py" = ["PLC0415"]  # platform-specific imports
+"src/qudi/core/qudikernel.py" = ["PLC0415"]  # deferred imports
+"src/qudi/core/gui/main_gui/main_gui.py" = ["PLC0415"]  # optional version import
+"src/qudi/core/logger/handlers.py" = ["PLC0415"]  # deferred traceback import
+"src/qudi/runnable.py" = ["PLC0415"]  # platform-specific imports
+"src/qudi/tools/config_editor/module_finder.py" = ["PLC0415"]  # optional module imports
+"src/qudi/util/widgets/plotting/view_box.py" = ["PLC0415"]  # version check import
+
+[tool.ruff.lint.isort]
+known-first-party = ["qudi"]
+force-single-line = false
+combine-as-imports = true
+
+[tool.ruff.lint.pylint]
+max-args = 10
 
 [tool.pytest.ini_options]
 minversion = "8.0"
@@ -138,7 +198,16 @@ filterwarnings = [
 python_version = "3.13"
 warn_return_any = true
 warn_unused_configs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
+strict_equality = true
+extra_checks = true
+check_untyped_defs = true
 disallow_untyped_defs = false
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
 ignore_missing_imports = true
 
 [tool.coverage.run]

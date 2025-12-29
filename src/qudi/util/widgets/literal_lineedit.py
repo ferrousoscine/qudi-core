@@ -20,20 +20,21 @@ If not, see <https://www.gnu.org/licenses/>.
 """
 
 __all__ = [
-    'ComplexLineEdit',
-    'ComplexValidator',
-    'DictLineEdit',
-    'DictValidator',
-    'ListLineEdit',
-    'ListValidator',
-    'LiteralLineEdit',
-    'LiteralValidator',
-    'SetLineEdit',
-    'SetValidator',
-    'TupleLineEdit',
-    'TupleValidator',
+    "ComplexLineEdit",
+    "ComplexValidator",
+    "DictLineEdit",
+    "DictValidator",
+    "ListLineEdit",
+    "ListValidator",
+    "LiteralLineEdit",
+    "LiteralValidator",
+    "SetLineEdit",
+    "SetValidator",
+    "TupleLineEdit",
+    "TupleValidator",
 ]
 
+from ast import literal_eval
 from collections.abc import Mapping, MutableSequence, Sequence
 from typing import Any
 
@@ -51,14 +52,14 @@ class LiteralValidator(QtGui.QValidator):
         try:
             self.value_from_text(text)
             return self.Acceptable
-        except:
+        except Exception:
             return self.Intermediate
 
     def fixup(self, text: str) -> str:
         return text
 
     def value_from_text(self, text: str) -> Any:
-        return eval(text)
+        return literal_eval(text)
 
     def text_from_value(self, value: Any) -> str:
         return repr(value)
@@ -101,21 +102,21 @@ class ListValidator(QtGui.QValidator):
         try:
             self.value_from_text(text)
             return self.Acceptable
-        except:
+        except Exception:
             return self.Intermediate
 
     def fixup(self, text: str) -> str:
         return text
 
     def value_from_text(self, text: str) -> list[Any]:
-        tmp = eval(text)
+        tmp = literal_eval(text)
         if isinstance(tmp, (list, tuple)):
             return list(tmp)
         raise ValueError
 
     def text_from_value(self, value: MutableSequence[Any]) -> str:
         if value is None:
-            value = list()
+            value = []
         return repr(list(value))
 
 
@@ -130,21 +131,21 @@ class TupleValidator(QtGui.QValidator):
         try:
             self.value_from_text(text)
             return self.Acceptable
-        except:
+        except Exception:
             return self.Intermediate
 
     def fixup(self, text: str) -> str:
         return text
 
     def value_from_text(self, text: str) -> tuple[Any, ...]:
-        tmp = eval(text)
+        tmp = literal_eval(text)
         if isinstance(tmp, tuple):
             return tmp
         raise ValueError
 
     def text_from_value(self, value: Sequence[Any]) -> str:
         if value is None:
-            value = tuple()
+            value = ()
         return repr(tuple(value))
 
 
@@ -159,14 +160,14 @@ class SetValidator(QtGui.QValidator):
         try:
             self.value_from_text(text)
             return self.Acceptable
-        except:
+        except Exception:
             return self.Intermediate
 
     def fixup(self, text: str) -> str:
         return text
 
     def value_from_text(self, text: str) -> set[Any]:
-        tmp = eval(text)
+        tmp = literal_eval(text)
         if isinstance(tmp, (tuple, set, frozenset)):
             return set(tmp)
         raise ValueError
@@ -188,23 +189,23 @@ class DictValidator(QtGui.QValidator):
         try:
             self.value_from_text(text)
             return self.Acceptable
-        except:
+        except Exception:
             return self.Intermediate
 
     def fixup(self, text: str) -> str:
         return text
 
     def value_from_text(self, text: str) -> dict[Any, Any]:
-        tmp = eval(text)
+        tmp = literal_eval(text)
         if isinstance(tmp, dict):
             return tmp
-        elif isinstance(tmp, tuple):
+        if isinstance(tmp, tuple):
             return dict(tmp)
         raise ValueError
 
     def text_from_value(self, value: Mapping[Any, Any]) -> str:
         if value is None:
-            value = dict()
+            value = {}
         return repr(dict(value))
 
 
@@ -222,7 +223,7 @@ class LiteralLineEdit(QtWidgets.QLineEdit):
         super().__init__(parent=parent)
         if validator is None:
             validator = LiteralValidator()
-        self._last_valid_text = ''
+        self._last_valid_text = ""
         self.setValidator(validator)
         self.setValue(value)
 
@@ -291,7 +292,7 @@ class ListLineEdit(LiteralLineEdit):
 
     def __init__(self, value: MutableSequence | None = None, parent: QtWidgets.QWidget | None = None):
         if value is None:
-            value = list()
+            value = []
         super().__init__(value=value, parent=parent, validator=ListValidator())
 
 
@@ -302,7 +303,7 @@ class TupleLineEdit(LiteralLineEdit):
 
     def __init__(self, value: Sequence | None = None, parent: QtWidgets.QWidget | None = None):
         if value is None:
-            value = tuple()
+            value = ()
         super().__init__(value=value, parent=parent, validator=TupleValidator())
 
 
@@ -324,5 +325,5 @@ class DictLineEdit(LiteralLineEdit):
 
     def __init__(self, value: Mapping | None = None, parent: QtWidgets.QWidget | None = None):
         if value is None:
-            value = dict()
+            value = {}
         super().__init__(value=value, parent=parent, validator=DictValidator())

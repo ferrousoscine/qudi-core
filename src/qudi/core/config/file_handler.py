@@ -18,11 +18,11 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['FileHandler', 'FileHandlerBase', 'ParserError', 'ValidationError', 'YAMLError', 'DuplicateKeyError']
+__all__ = ["DuplicateKeyError", "FileHandler", "FileHandlerBase", "ParserError", "ValidationError", "YAMLError"]
 
 
-import os
 from collections.abc import Mapping
+from pathlib import Path
 from typing import Any
 
 from qudi.util.paths import get_appdata_dir, get_default_config_dir
@@ -40,20 +40,19 @@ class FileHandlerBase:
 
     @classmethod
     def _dump(cls, path: str, config: Mapping[str, Any]) -> None:
-        if not path.endswith('.cfg'):
+        if not path.endswith(".cfg"):
             raise ValueError('Configuration file must have ".cfg" file extension.')
-        path = cls._relative_to_absolute_path(path)
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        return yaml_dump(path, config)
+        resolved = Path(cls._relative_to_absolute_path(path))
+        resolved.parent.mkdir(parents=True, exist_ok=True)
+        return yaml_dump(str(resolved), config)
 
     @classmethod
     def set_default_path(cls, path: str) -> None:
         """Writes the given config file path to "<AppData>/qudi/load.cfg" to be used as default
         config at the next start of qudi."""
-        # Write current config file path to load.cfg
         yaml_dump(
-            os.path.join(get_appdata_dir(create_missing=True), 'load.cfg'),
-            {'load_config_path': cls._relative_to_absolute_path(path)},
+            str(Path(get_appdata_dir(create_missing=True)) / "load.cfg"),
+            {"load_config_path": cls._relative_to_absolute_path(path)},
         )
 
     @staticmethod
@@ -61,14 +60,12 @@ class FileHandlerBase:
         """Tries to parse "<AppData>/qudi/load.cfg" and return the stored config file path.
         Raises FileNotFoundError if unsuccessful or if the recovered file path does not exist.
         """
-        # Try loading config file path from last session
-        load_cfg = yaml_load(os.path.join(get_appdata_dir(), 'load.cfg'), ignore_missing=True)
-        file_path = load_cfg.get('load_config_path', '')
-        if os.path.exists(file_path) and file_path.endswith('.cfg'):
+        load_cfg = yaml_load(str(Path(get_appdata_dir()) / "load.cfg"), ignore_missing=True)
+        file_path = load_cfg.get("load_config_path", "")
+        if Path(file_path).exists() and file_path.endswith(".cfg"):
             return file_path
 
-        # Raise error if no last run config file could be found
-        raise FileNotFoundError('No config file path saved from previous qudi sessions')
+        raise FileNotFoundError("No config file path saved from previous qudi sessions")
 
     @staticmethod
     def get_default_path() -> str:
@@ -79,21 +76,18 @@ class FileHandlerBase:
 
         Raises FileNotFoundError if no "default.cfg" file could be found in the above locations.
         """
-        # Try default.cfg in user home directory
-        file_path = os.path.join(get_default_config_dir(create_missing=False), 'default.cfg')
-        if os.path.exists(file_path):
-            return file_path
+        file_path = Path(get_default_config_dir(create_missing=False)) / "default.cfg"
+        if file_path.exists():
+            return str(file_path)
 
-        # Fall back to default.cfg in qudi AppData directory if possible
-        file_path = os.path.join(get_appdata_dir(create_missing=False), 'default.cfg')
-        if os.path.exists(file_path):
-            return file_path
+        file_path = Path(get_appdata_dir(create_missing=False)) / "default.cfg"
+        if file_path.exists():
+            return str(file_path)
 
-        # Raise error if no config file could be found
-        raise FileNotFoundError('No config file could be found in default directories')
+        raise FileNotFoundError("No config file could be found in default directories")
 
     @staticmethod
-    def _relative_to_absolute_path(path):
+    def _relative_to_absolute_path(path: str) -> str:
         """Helper method converting given relative path to an existing absolute path.
         Prepends directories to given path with the following priority until an existing path has
         been created:
@@ -102,17 +96,15 @@ class FileHandlerBase:
 
         Raises FileNotFoundError if no existing path could be reconstructed by the above algorithm.
         """
-        # absolute or relative path? Existing?
-        if os.path.isabs(path) and os.path.exists(path):
+        p = Path(path)
+        if p.is_absolute() and p.exists():
             return path
 
-        # relative path? Try relative to userdata dir, user home dir and relative to main dir
         for search_dir in [get_default_config_dir(), get_appdata_dir()]:
-            new_path = os.path.abspath(os.path.join(search_dir, path))
-            if os.path.exists(new_path):
-                return new_path
+            new_path = (Path(search_dir) / path).resolve()
+            if new_path.exists():
+                return str(new_path)
 
-        # Raise exception if no existing path can be determined
         raise FileNotFoundError(f'Qudi relative path "{path}" can not be resolved or does not exist.')
 
 

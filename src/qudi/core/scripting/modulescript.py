@@ -19,8 +19,9 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['import_module_script', 'ModuleScript', 'ModuleScriptsDictTableModel', 'ModuleScriptInterrupted']
+__all__ = ["ModuleScript", "ModuleScriptInterruptedError", "ModuleScriptsDictTableModel", "import_module_script"]
 
+import contextlib
 import copy
 import importlib
 import inspect
@@ -38,10 +39,8 @@ from qudi.util.models import DictTableModel
 from qudi.util.mutex import Mutex
 
 
-class ModuleScriptInterrupted(Exception):
+class ModuleScriptInterruptedError(Exception):
     """Custom exception class to indicate that a ModuleScript execution has been interrupted."""
-
-    pass
 
 
 class ModuleScript(QtCore.QObject, metaclass=QudiObjectMeta):
@@ -58,7 +57,7 @@ class ModuleScript(QtCore.QObject, metaclass=QudiObjectMeta):
     # FIXME: This __new__ implementation has the sole purpose to circumvent a known PySide2(6) bug.
     #  See https://bugreports.qt.io/browse/PYSIDE-1434 for more details.
     def __new__(cls, *args, **kwargs):
-        abstract = getattr(cls, '__abstractmethods__', frozenset())
+        abstract = getattr(cls, "__abstractmethods__", frozenset())
         if abstract:
             raise TypeError(f'Can\'t instantiate abstract class "{cls.__name__}" with abstract methods {set(abstract)}')
         return super().__new__(cls, *args, **kwargs)
@@ -70,15 +69,15 @@ class ModuleScript(QtCore.QObject, metaclass=QudiObjectMeta):
         # Create a copy of the _meta class dict and attach it to this instance
         self._meta = copy.deepcopy(self._meta)
         # set instance attributes according to connector meta objects
-        for attr_name, conn in self._meta['connectors'].items():
+        for attr_name, conn in self._meta["connectors"].items():
             setattr(self, attr_name, conn)
 
         self._thread_lock = Mutex()
-        self.__logger = get_logger(f'{self.__module__}.{self.__class__.__name__}')
+        self.__logger = get_logger(f"{self.__module__}.{self.__class__.__name__}")
 
         # script arguments and result cache
-        self.args = tuple()
-        self.kwargs = dict()
+        self.args = ()
+        self.kwargs = {}
         self.result = None
 
         # Status flags
@@ -118,7 +117,7 @@ class ModuleScript(QtCore.QObject, metaclass=QudiObjectMeta):
         """Mapping of Connector names (keys) to connected module target names (values).
         Unconnected Connectors are indicated by None target.
         """
-        return {conn.name: None if conn() is None else conn().module_name for conn in self._meta['connectors']}
+        return {conn.name: None if conn() is None else conn().module_name for conn in self._meta["connectors"]}
 
     @classmethod
     def call_parameters(cls) -> dict[str, inspect.Parameter]:
@@ -129,11 +128,9 @@ class ModuleScript(QtCore.QObject, metaclass=QudiObjectMeta):
         """
         parameters = dict(inspect.signature(cls._run).parameters)
         # Remove first parameter if it is a bound instance method
-        if not isinstance(inspect.getattr_static(cls, '_run'), (classmethod, staticmethod)):
-            try:
+        if not isinstance(inspect.getattr_static(cls, "_run"), (classmethod, staticmethod)):
+            with contextlib.suppress(StopIteration):
                 del parameters[next(iter(parameters))]
-            except StopIteration:
-                pass
         return parameters
 
     @classmethod
@@ -173,16 +170,16 @@ class ModuleScript(QtCore.QObject, metaclass=QudiObjectMeta):
             self._interrupted = False
             self._success = False
             self._running = True
-        self.log.debug(f'Running main method with\n\targs: {self.args}\n\tkwargs: {self.kwargs}.')
+        self.log.debug("Running main method with\n\targs: %s\n\tkwargs: %s.", self.args, self.kwargs)
         # Emit finished signal even if script execution fails. Check success flag.
         try:
             self.result = self._run(*self.args, **self.kwargs)
             with self._thread_lock:
                 self._success = True
-        except ModuleScriptInterrupted:
-            self.log.info('Main run method interrupted')
+        except ModuleScriptInterruptedError:
+            self.log.info("Main run method interrupted")
         except:
-            self.log.exception('Exception during main run method:')
+            self.log.exception("Exception during main run method:")
             raise
         finally:
             with self._thread_lock:
@@ -195,18 +192,18 @@ class ModuleScript(QtCore.QObject, metaclass=QudiObjectMeta):
         DO NOT CALL THIS METHOD UNLESS YOU KNOW WHAT YOU ARE DOING!
         """
         # Sanity checks
-        conn_names = set(conn.name for conn in self._meta['connectors'].values())
-        mandatory_conn = set(conn.name for conn in self._meta['connectors'].values() if not conn.optional)
+        conn_names = {conn.name for conn in self._meta["connectors"].values()}
+        mandatory_conn = {conn.name for conn in self._meta["connectors"].values() if not conn.optional}
         configured_conn = set(connector_targets)
         if not configured_conn.issubset(conn_names):
             raise KeyError(
-                f'Mismatch of connectors in configuration {configured_conn} and Connector meta objects {conn_names}.'
+                f"Mismatch of connectors in configuration {configured_conn} and Connector meta objects {conn_names}."
             )
         if not mandatory_conn.issubset(configured_conn):
-            raise ValueError(f'Not all mandatory connectors are specified.\nMandatory connectors are: {mandatory_conn}')
+            raise ValueError(f"Not all mandatory connectors are specified.\nMandatory connectors are: {mandatory_conn}")
 
         # Iterate through module connectors and connect them if possible
-        for conn in self._meta['connectors'].values():
+        for conn in self._meta["connectors"].values():
             target = connector_targets.get(conn.name, None)
             if target is None:
                 continue
@@ -222,7 +219,7 @@ class ModuleScript(QtCore.QObject, metaclass=QudiObjectMeta):
 
         DO NOT CALL THIS METHOD UNLESS YOU KNOW WHAT YOU ARE DOING!
         """
-        for conn in self._meta['connectors'].values():
+        for conn in self._meta["connectors"].values():
             conn.disconnect()
 
     def _check_interrupt(self) -> None:
@@ -230,7 +227,7 @@ class ModuleScript(QtCore.QObject, metaclass=QudiObjectMeta):
         execution early if another thread has interrupted this script in the meantime.
         """
         if self.interrupted:
-            raise ModuleScriptInterrupted
+            raise ModuleScriptInterruptedError
 
     @abstractmethod
     def _run(self, *args, **kwargs) -> Any:
@@ -247,7 +244,7 @@ def import_module_script(module: str, cls: str, reload: bool | None = True) -> t
         importlib.reload(mod)
     script = getattr(mod, cls)
     if not issubclass(script, ModuleScript):
-        raise TypeError(f'Module script to import must be a subclass of {__name__}.ModuleScript')
+        raise TypeError(f"Module script to import must be a subclass of {__name__}.ModuleScript")
     return script
 
 
@@ -255,14 +252,14 @@ class ModuleScriptsDictTableModel(DictTableModel):
     """Qt compatible table model holding all configured and available ModuleScript subclasses."""
 
     def __init__(self, scripts_config: Mapping[str, dict] | None = None):
-        super().__init__(headers=['Name', 'Class'])
+        super().__init__(headers=["Name", "Class"])
         if scripts_config is None:
-            scripts_config = dict()
+            scripts_config = {}
         for name, config in scripts_config.items():
             self.register_script(name, config)
 
     def register_script(self, name: str, config: dict) -> None:
         if name in self:
             raise KeyError(f'Multiple module script with name "{name}" configured.')
-        module, cls = config['module.Class'].rsplit('.', 1)
+        module, cls = config["module.Class"].rsplit(".", 1)
         self[name] = import_module_script(module, cls, reload=False)

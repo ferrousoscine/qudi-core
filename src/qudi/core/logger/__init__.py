@@ -24,24 +24,24 @@ If not, see <https://www.gnu.org/licenses/>.
 """
 
 __all__ = (
-    'clear_handlers',
-    'get_handler',
-    'get_file_handler',
-    'get_logger',
-    'get_record_table_model',
-    'get_signal_handler',
-    'get_stderr_handler',
-    'init_record_model_handler',
-    'init_rotating_file_handler',
-    'register_handler',
-    'set_log_level',
-    'unregister_handler',
+    "clear_handlers",
+    "get_file_handler",
+    "get_handler",
+    "get_logger",
+    "get_record_table_model",
+    "get_signal_handler",
+    "get_stderr_handler",
+    "init_record_model_handler",
+    "init_rotating_file_handler",
+    "register_handler",
+    "set_log_level",
+    "unregister_handler",
 )
 
 import logging
-import os
 import warnings
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
 
 from PySide6.QtCore import qInstallMessageHandler
 
@@ -49,7 +49,7 @@ from .handlers import LogSignalHandler, LogTableModelHandler, qt_message_handler
 
 # global variables
 # Keep track of all handlers that have been registered to the qudi
-_handlers = dict()
+_handlers = {}
 # default handlers for qudi root logger
 _signal_handler = None
 _file_handler = None
@@ -63,12 +63,12 @@ qInstallMessageHandler(qt_message_handler)
 
 # initialize logging module
 logging.basicConfig(format="%(message)s", level=logging.WARNING)
-logging.addLevelName(logging.CRITICAL, 'critical')
-logging.addLevelName(logging.ERROR, 'error')
-logging.addLevelName(logging.WARNING, 'warning')
-logging.addLevelName(logging.INFO, 'info')
-logging.addLevelName(logging.DEBUG, 'debug')
-logging.addLevelName(logging.NOTSET, 'not set')
+logging.addLevelName(logging.CRITICAL, "critical")
+logging.addLevelName(logging.ERROR, "error")
+logging.addLevelName(logging.WARNING, "warning")
+logging.addLevelName(logging.INFO, "info")
+logging.addLevelName(logging.DEBUG, "debug")
+logging.addLevelName(logging.NOTSET, "not set")
 logging.captureWarnings(True)
 
 # set level of stream handler which logs to stderr
@@ -80,7 +80,7 @@ else:
 _stream_handler.setLevel(logging.WARNING)
 
 # Create qudi root logger
-_qudi_root_logger = logging.getLogger('qudi')
+_qudi_root_logger = logging.getLogger("qudi")
 _qudi_root_logger.setLevel(logging.INFO)
 # _qudi_root_logger.propagate = False
 
@@ -122,7 +122,7 @@ def get_handler(name):
 
 
 def get_logger(name):
-    return _qudi_root_logger.getChild(name.split('qudi.', 1)[-1])
+    return _qudi_root_logger.getChild(name.split("qudi.", 1)[-1])
 
 
 def set_log_level(level):
@@ -161,7 +161,7 @@ def init_record_model_handler(max_records=10000):
     logging.getLogger().addHandler(_table_model_handler)
 
 
-def init_rotating_file_handler(path='', filename='qudi.log', max_bytes=1024**3, backup_count=5):
+def init_rotating_file_handler(path="", filename="qudi.log", max_bytes=1024**3, backup_count=5):
     global _file_handler
 
     # Remove file handler if it has already been registered
@@ -170,16 +170,16 @@ def init_rotating_file_handler(path='', filename='qudi.log', max_bytes=1024**3, 
         logging.getLogger().removeHandler(_file_handler)
         _file_handler = None
 
-    filepath = os.path.join(path, filename)
+    filepath = Path(path) / filename
     session_limit = 1000
     session_count = 1
     while session_count <= session_limit:
         try:
             # Start new file if old logfiles exist
-            do_rollover = os.path.exists(filepath) and os.stat(filepath).st_size > 0
+            do_rollover = filepath.exists() and filepath.stat().st_size > 0
             _file_handler = RotatingFileHandler(filepath, maxBytes=max_bytes, backupCount=backup_count)
             _file_handler.setFormatter(
-                logging.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s', datefmt="%Y-%m-%d %H:%M:%S")
+                logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
             )
             _file_handler.setLevel(_qudi_root_logger.level)
             if do_rollover:
@@ -188,17 +188,18 @@ def init_rotating_file_handler(path='', filename='qudi.log', max_bytes=1024**3, 
             session_count += 1
             if session_count > session_limit:
                 warnings.warn(
-                    f'Unable to initialize logger rotating file handler. OS denied '
-                    f'access to log file or there are more than {session_limit:d} qudi '
-                    f'sessions running.'
+                    f"Unable to initialize logger rotating file handler. OS denied "
+                    f"access to log file or there are more than {session_limit:d} qudi "
+                    f"sessions running.",
+                    stacklevel=2,
                 )
                 return
-            split_filename = filename.rsplit('.', 1)
+            split_filename = filename.rsplit(".", 1)
             if len(split_filename) == 2:
-                new_filename = f'{split_filename[0]}_session{session_count:d}.{split_filename[1]}'
+                new_filename = f"{split_filename[0]}_session{session_count:d}.{split_filename[1]}"
             else:
-                new_filename = f'{filename}_session{session_count:d}'
-            filepath = os.path.join(path, new_filename)
+                new_filename = f"{filename}_session{session_count:d}"
+            filepath = Path(path) / new_filename
         else:
             logging.getLogger().addHandler(_file_handler)
             break

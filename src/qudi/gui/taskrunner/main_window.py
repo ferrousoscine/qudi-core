@@ -18,8 +18,8 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-import os
 from collections.abc import Callable, Mapping
+from pathlib import Path
 from typing import Any
 
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -42,26 +42,26 @@ class TaskMainWindow(QtWidgets.QMainWindow):
     def __init__(self, *args, tasks: Mapping[str, type[ModuleTask]], **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.setWindowTitle('qudi: Taskrunner')
+        self.setWindowTitle("qudi: Taskrunner")
 
         # Create actions
-        icon_path = os.path.join(get_artwork_dir(), 'icons')
+        icon_path = Path(get_artwork_dir()) / "icons"
         self.action_quit = QtGui.QAction()
-        self.action_quit.setIcon(QtGui.QIcon(os.path.join(icon_path, 'application-exit')))
-        self.action_quit.setText('Close')
-        self.action_quit.setToolTip('Close')
+        self.action_quit.setIcon(QtGui.QIcon(str(icon_path / "application-exit")))
+        self.action_quit.setText("Close")
+        self.action_quit.setToolTip("Close")
         self.action_quit.triggered.connect(self.close)
 
         # Create menu bar
         self.menubar = QtWidgets.QMenuBar()
-        menu = QtWidgets.QMenu('File')
+        menu = QtWidgets.QMenu("File")
         menu.addAction(self.action_quit)
         self.menubar.addMenu(menu)
         self.setMenuBar(self.menubar)
 
         # Create central container widget for ModuleTask widgets
         # self.scroll_area = QtWidgets.QScrollArea()
-        self.task_widgets = dict()
+        self.task_widgets = {}
         self.tasks_layout = QtWidgets.QVBoxLayout()
         widget = QtWidgets.QWidget()
         widget.setLayout(self.tasks_layout)
@@ -97,7 +97,7 @@ class TaskMainWindow(QtWidgets.QMainWindow):
         self.task_widgets[name].task_finished(result, success)
 
     def _initialize_task_widgets(self, tasks: Mapping[str, type[ModuleTask]]) -> None:
-        for ii, (task_name, task_type) in enumerate(tasks.items()):
+        for _ii, (task_name, task_type) in enumerate(tasks.items()):
             groupbox = QtWidgets.QGroupBox(task_name)
             font = groupbox.font()
             font.setBold(True)
@@ -121,7 +121,7 @@ class TaskMainWindow(QtWidgets.QMainWindow):
             self.tasks_layout.removeWidget(groupbox)
             groupbox.setParent(None)
             groupbox.deleteLater()
-        self.task_widgets = dict()
+        self.task_widgets = {}
 
     def _get_start_task_callback(self, task_name: str) -> Callable[[dict[str, Any]], None]:
         def callback(parameters: dict[str, Any]) -> None:

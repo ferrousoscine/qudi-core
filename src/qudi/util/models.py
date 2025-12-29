@@ -18,7 +18,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['DictTableModel', 'ListTableModel']
+__all__ = ["DictTableModel", "ListTableModel"]
 
 from collections.abc import Sequence
 from typing import Any
@@ -37,10 +37,10 @@ class DictTableModel(QtCore.QAbstractTableModel):
         if isinstance(headers, str):
             self._headers = [headers]
         elif not all(isinstance(h, str) for h in headers):
-            raise TypeError('DictTableModel header entries must be str type.')
+            raise TypeError("DictTableModel header entries must be str type.")
         else:
             self._headers = list(headers)
-        self._storage = dict()
+        self._storage = {}
 
     def rowCount(self, parent: QtCore.QModelIndex | None = None) -> int:
         """Returns the number of stored items (rows)."""
@@ -65,7 +65,7 @@ class DictTableModel(QtCore.QAbstractTableModel):
                 key = self.get_key_by_index(index.row())
                 if index.column() == 0:
                     return key
-                elif index.column() == 1:
+                if index.column() == 1:
                     return self._storage[key]
             return None
 
@@ -77,9 +77,8 @@ class DictTableModel(QtCore.QAbstractTableModel):
     ) -> Any:
         """Data for the table view headers."""
         with self._lock:
-            if role == QtCore.Qt.DisplayRole:
-                if orientation == QtCore.Qt.Horizontal:
-                    return self._headers[section]
+            if role == QtCore.Qt.DisplayRole and orientation == QtCore.Qt.Horizontal:
+                return self._headers[section]
             return None
 
     def get_key_by_index(self, n: int) -> Any:
@@ -91,7 +90,7 @@ class DictTableModel(QtCore.QAbstractTableModel):
                     key = next(it)
             except StopIteration:
                 raise IndexError(
-                    f'Index {n:d} out of bounds for table model with {len(self._storage):d} rows'
+                    f"Index {n:d} out of bounds for table model with {len(self._storage):d} rows"
                 ) from None
             return key
 
@@ -187,8 +186,9 @@ class DictTableModel(QtCore.QAbstractTableModel):
                 ret = self._storage.pop(args[0])
                 self.endRemoveRows()
                 return ret
-            elif len(args) > 1:
+            if len(args) > 1:
                 return args[1]
+        return None
 
     def get(self, *args):
         """
@@ -233,10 +233,10 @@ class ListTableModel(QtCore.QAbstractTableModel):
         if isinstance(headers, str):
             self._headers = headers
         elif not all(isinstance(h, str) for h in headers):
-            raise TypeError('DictTableModel header entries must be str type.')
+            raise TypeError("DictTableModel header entries must be str type.")
         else:
             self._headers = list(headers)
-        self._storage = list()
+        self._storage = []
 
     def rowCount(self, parent: QtCore.QModelIndex | None = None):
         """Gives the number of stored items (rows)."""
@@ -265,9 +265,8 @@ class ListTableModel(QtCore.QAbstractTableModel):
         role: QtCore.Qt.ItemDataRole | None = QtCore.Qt.DisplayRole,
     ) -> Any:
         """Data for the table view headers."""
-        if role == QtCore.Qt.DisplayRole:
-            if orientation == QtCore.Qt.Horizontal:
-                return self._headers[section]
+        if role == QtCore.Qt.DisplayRole and orientation == QtCore.Qt.Horizontal:
+            return self._headers[section]
         return None
 
     def __setitem__(self, key, value):
@@ -360,8 +359,7 @@ class ListTableModel(QtCore.QAbstractTableModel):
                 ret = self._storage.pop(n)
                 self.endRemoveRows()
                 return ret
-            else:
-                raise IndexError
+            raise IndexError
 
     def extend(self, seq):
         with self._lock:

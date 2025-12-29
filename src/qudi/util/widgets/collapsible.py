@@ -18,7 +18,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['CollapsibleWidget']
+__all__ = ["CollapsibleWidget"]
 
 
 from PySide6 import QtCore, QtWidgets
@@ -32,7 +32,7 @@ class CollapsibleWidget(QtWidgets.QWidget):
     def __init__(
         self,
         widget: QtWidgets.QWidget,
-        title: str | None = '',
+        title: str | None = "",
         animation_duration: float | None = 0.2,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -43,10 +43,10 @@ class CollapsibleWidget(QtWidgets.QWidget):
         self._last_collapsed = True
 
         self.expand_collapse_button = QtWidgets.QToolButton()
-        self.expand_collapse_button.setStyleSheet('QToolButton { border: none; background-color: none; }')
+        self.expand_collapse_button.setStyleSheet("QToolButton { border: none; background-color: none; }")
         self.expand_collapse_button.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
         self.expand_collapse_button.setArrowType(QtCore.Qt.RightArrow)
-        self.expand_collapse_button.setText(title if title else '')
+        self.expand_collapse_button.setText(title if title else "")
         self.expand_collapse_button.setCheckable(True)
 
         widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
@@ -98,7 +98,7 @@ class CollapsibleWidget(QtWidgets.QWidget):
         self.expand_collapse_button.setChecked(not collapse)
 
     def set_animation_duration(self, duration: float) -> None:
-        duration_ms = int(round(1000 * duration))
+        duration_ms = round(1000 * duration)
         self._min_height_animation.setDuration(duration_ms)
         self._max_height_animation.setDuration(duration_ms)
         self._widget_max_height_animation.setDuration(duration_ms)

@@ -18,7 +18,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-import os
+from pathlib import Path
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -41,35 +41,35 @@ class ModuleFrameWidget(QtWidgets.QWidget):
 
         # Create QToolButtons
         self.cleanup_button = QtWidgets.QToolButton()
-        self.cleanup_button.setObjectName('cleanupButton')
+        self.cleanup_button.setObjectName("cleanupButton")
         self.deactivate_button = QtWidgets.QToolButton()
-        self.deactivate_button.setObjectName('deactivateButton')
+        self.deactivate_button.setObjectName("deactivateButton")
         self.reload_button = QtWidgets.QToolButton()
-        self.reload_button.setObjectName('reloadButton')
+        self.reload_button.setObjectName("reloadButton")
 
         # Set icons for QToolButtons
-        icon_path = os.path.join(get_artwork_dir(), 'icons')
-        self.cleanup_button.setIcon(QtGui.QIcon(os.path.join(icon_path, 'edit-clear')))
-        self.deactivate_button.setIcon(QtGui.QIcon(os.path.join(icon_path, 'edit-delete')))
-        self.reload_button.setIcon(QtGui.QIcon(os.path.join(icon_path, 'view-refresh')))
+        icon_path = Path(get_artwork_dir()) / "icons"
+        self.cleanup_button.setIcon(QtGui.QIcon(str(icon_path / "edit-clear")))
+        self.deactivate_button.setIcon(QtGui.QIcon(str(icon_path / "edit-delete")))
+        self.reload_button.setIcon(QtGui.QIcon(str(icon_path / "view-refresh")))
 
         # Create activation pushbutton
-        self.activate_button = QtWidgets.QPushButton('load/activate <module_name>')
-        self.activate_button.setObjectName('loadButton')
+        self.activate_button = QtWidgets.QPushButton("load/activate <module_name>")
+        self.activate_button.setObjectName("loadButton")
         self.activate_button.setCheckable(True)
         self.activate_button.setMinimumWidth(200)
         self.activate_button.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)
 
         # Create status label
-        self.status_label = QtWidgets.QLabel('Module status goes here...')
-        self.status_label.setObjectName('statusLabel')
+        self.status_label = QtWidgets.QLabel("Module status goes here...")
+        self.status_label.setObjectName("statusLabel")
 
         # Set tooltips
-        self.cleanup_button.setToolTip('Clean up module status file')
-        self.deactivate_button.setToolTip('Deactivate module')
-        self.reload_button.setToolTip('Reload module')
-        self.activate_button.setToolTip('Load this module and all its dependencies')
-        self.status_label.setToolTip('Displays module status information')
+        self.cleanup_button.setToolTip("Clean up module status file")
+        self.deactivate_button.setToolTip("Deactivate module")
+        self.reload_button.setToolTip("Reload module")
+        self.activate_button.setToolTip("Load this module and all its dependencies")
+        self.status_label.setToolTip("Displays module status information")
 
         # Combine all widgets in a layout and set as main layout
         layout = QtWidgets.QGridLayout()
@@ -80,7 +80,7 @@ class ModuleFrameWidget(QtWidgets.QWidget):
         layout.addWidget(self.status_label, 1, 0, 1, 4)
         self.setLayout(layout)
 
-        self._module_name = ''
+        self._module_name = ""
         if module_name:
             self.set_module_name(module_name)
 
@@ -88,23 +88,22 @@ class ModuleFrameWidget(QtWidgets.QWidget):
         self.deactivate_button.clicked.connect(self.deactivate_clicked)
         self.reload_button.clicked.connect(self.reload_clicked)
         self.cleanup_button.clicked.connect(self.cleanup_clicked)
-        return
 
     def set_module_name(self, name):
         if name:
-            self.activate_button.setText(f'Load {name}')
+            self.activate_button.setText(f"Load {name}")
             self._module_name = name
 
     def set_module_state(self, state):
-        if state == 'not loaded':
-            self.activate_button.setText(f'Load {self._module_name}')
+        if state == "not loaded":
+            self.activate_button.setText(f"Load {self._module_name}")
             self.cleanup_button.setEnabled(True)
             self.deactivate_button.setEnabled(False)
             self.reload_button.setEnabled(False)
             if self.activate_button.isChecked():
                 self.activate_button.setChecked(False)
-        elif state == 'deactivated':
-            self.activate_button.setText(f'Activate {self._module_name}')
+        elif state == "deactivated":
+            self.activate_button.setText(f"Activate {self._module_name}")
             self.cleanup_button.setEnabled(True)
             self.deactivate_button.setEnabled(False)
             self.reload_button.setEnabled(True)
@@ -117,7 +116,7 @@ class ModuleFrameWidget(QtWidgets.QWidget):
             self.reload_button.setEnabled(True)
             if not self.activate_button.isChecked():
                 self.activate_button.setChecked(True)
-        self.status_label.setText(f'Module is {state}')
+        self.status_label.setText(f"Module is {state}")
 
     def set_module_app_data(self, exists):
         self.cleanup_button.setEnabled(exists)
@@ -145,24 +144,25 @@ class ModuleListModel(QtCore.QAbstractListModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._lock = Mutex()
-        self._module_states = dict()
-        self._module_app_data = dict()
-        self._module_names = list()
+        self._module_states = {}
+        self._module_app_data = {}
+        self._module_names = []
 
     def rowCount(self, parent):
         return len(self._module_names)
 
     def data(self, index, role):
         if not index.isValid():
-            return
+            return None
         row = index.row()
         if row >= len(self._module_names):
-            return
+            return None
         name = self._module_names[row]
         state = self._module_states[name]
         app_data = self._module_app_data[name]
         if role == QtCore.Qt.DisplayRole:
             return name, state, app_data
+        return None
 
     def flags(self, index):
         return QtCore.Qt.ItemNeverHasChildren | QtCore.Qt.ItemIsEnabled
@@ -190,7 +190,7 @@ class ModuleListModel(QtCore.QAbstractListModel):
 
     def reset_modules(self, state_dict, app_data_dict):
         if set(state_dict) != set(app_data_dict):
-            raise RuntimeError('state_dict and app_data_dict must contain exactly the same keys.')
+            raise RuntimeError("state_dict and app_data_dict must contain exactly the same keys.")
         with self._lock:
             self.beginResetModel()
             self._module_states = state_dict.copy()
@@ -308,11 +308,11 @@ class ModuleWidget(QtWidgets.QTabWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
-        self.list_models = {'gui': ModuleListModel(), 'logic': ModuleListModel(), 'hardware': ModuleListModel()}
-        self.list_views = {'gui': ModuleListView(), 'logic': ModuleListView(), 'hardware': ModuleListView()}
-        self.addTab(self.list_views['gui'], 'GUI')
-        self.addTab(self.list_views['logic'], 'Logic')
-        self.addTab(self.list_views['hardware'], 'Hardware')
+        self.list_models = {"gui": ModuleListModel(), "logic": ModuleListModel(), "hardware": ModuleListModel()}
+        self.list_views = {"gui": ModuleListView(), "logic": ModuleListView(), "hardware": ModuleListView()}
+        self.addTab(self.list_views["gui"], "GUI")
+        self.addTab(self.list_views["logic"], "Logic")
+        self.addTab(self.list_views["hardware"], "Hardware")
         for base, view in self.list_views.items():
             view.setModel(self.list_models[base])
             delegate = view.itemDelegate()
@@ -328,7 +328,6 @@ class ModuleWidget(QtWidgets.QTabWidget):
                 {name: mod.state for name, mod in modules_dict.items() if mod.module_base == base},
                 {name: mod.has_app_data for name, mod in modules_dict.items() if mod.module_base == base},
             )
-        return
 
     @QtCore.Slot(str, str, str)
     def update_module_state(self, base, name, state):

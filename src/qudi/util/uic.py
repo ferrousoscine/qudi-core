@@ -25,18 +25,19 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['loadUi']
+__all__ = ["loadUi"]
 
 import os
 import re
 import subprocess
 import tempfile
 from importlib.util import module_from_spec, spec_from_loader
+from pathlib import Path
 
 from qudi.util.paths import get_artwork_dir
 
-__ui_class_pattern = re.compile(r'class (Ui_.*?)\(')
-__artwork_path_pattern = re.compile(r'>(.*?/artwork/.*?)</')
+__ui_class_pattern = re.compile(r"class (Ui_.*?)\(")
+__artwork_path_pattern = re.compile(r">(.*?/artwork/.*?)</")
 
 
 def loadUi(file_path, base_widget):
@@ -68,36 +69,36 @@ def loadUi(file_path, base_widget):
     if converted is not None:
         fd, file_path = tempfile.mkstemp(text=True)
         try:
-            with open(fd, mode='w', closefd=True) as tmp_file:
+            with os.fdopen(fd, mode="w") as tmp_file:
                 tmp_file.write(converted)
         except:
-            os.remove(file_path)
+            Path(file_path).unlink()
             raise
     try:
-        result = subprocess.run(['pyside2-uic', file_path], capture_output=True, text=True, check=True)
+        result = subprocess.run(["pyside2-uic", file_path], capture_output=True, text=True, check=True)
         compiled = result.stdout
     finally:
         if converted is not None:
-            os.remove(file_path)
+            Path(file_path).unlink()
 
     # Find class name
     match = __ui_class_pattern.search(compiled)
     if match is None:
-        raise RuntimeError('Failed to match regex for finding class name in generated python code.')
+        raise RuntimeError("Failed to match regex for finding class name in generated python code.")
     class_name = match.groups()[0]
     # Workaround (again) because pyside2-uic forgot to include objects from PySide6 that can be
     # used by Qt Designer. So we inject import statements here just before the class declaration.
     insert = match.start()
-    compiled = compiled[:insert] + 'from PySide6.QtCore import QLocale\n\n' + compiled[insert:]
+    compiled = compiled[:insert] + "from PySide6.QtCore import QLocale\n\n" + compiled[insert:]
 
     # Execute python code in order to obtain a module object from it
-    spec = spec_from_loader('ui_module', loader=None)
+    spec = spec_from_loader("ui_module", loader=None)
     ui_module = module_from_spec(spec)
     exec(compiled, ui_module.__dict__)
 
     loader = getattr(ui_module, class_name, None)()
     if loader is None:
-        raise RuntimeError('Unable to locate generated Ui_... class')
+        raise RuntimeError("Unable to locate generated Ui_... class")
     loader.setupUi(base_widget)
     # Merge namespaces manually since this is not done by setupUi.
     to_merge = vars(loader)
@@ -122,16 +123,16 @@ def _convert_ui_to_absolute_paths(file_path):
         Converted file content of the .ui file, None if conversion is not needed.
     """
     path_prefix = get_artwork_dir()
-    with open(file_path) as file:
+    with Path(file_path).open() as file:
         ui_content = file.read()
     chunks = __artwork_path_pattern.split(ui_content)
     # Iterate over odd indices. Remember if changes were needed
     has_changed = False
     for ii in range(1, len(chunks), 2):
-        path_suffix = chunks[ii].split('/artwork/', 1)[-1]
-        chunks[ii] = '>{0}</'.format(os.path.join(path_prefix, path_suffix).replace('\\', '/'))
+        path_suffix = chunks[ii].split("/artwork/", 1)[-1]
+        chunks[ii] = ">{}</".format(str(Path(path_prefix) / path_suffix).replace("\\", "/"))
         has_changed = True
     # Join into single string and return if something has changed
     if has_changed:
-        return ''.join(chunks)
+        return "".join(chunks)
     return None

@@ -56,16 +56,16 @@ class TestSineMethods(unittest.TestCase):
         fit_result = fit_model.fit(data=y_values, x=self.x_values, **fit_model.guess(y_values, self.x_values))
 
         params_ideal = {
-            'offset': self.offset,
-            'amplitude': self.amplitudes[0],
-            'frequency': self.frequencies[0],
-            'phase': self.phases[0],
+            "offset": self.offset,
+            "amplitude": self.amplitudes[0],
+            "frequency": self.frequencies[0],
+            "phase": self.phases[0],
         }
         for name, ideal_val in params_ideal.items():
             diff = abs(fit_result.best_values[name] - ideal_val)
             tolerance = abs(ideal_val * self._fit_param_tolerance)
             msg = f'Sine fit parameter "{name}" not within {self._fit_param_tolerance:.2%} tolerance'
-            self.assertLessEqual(diff, tolerance, msg)
+            assert diff <= tolerance, msg
 
     def test_double_sine(self):
         # Test for sine fit
@@ -78,20 +78,20 @@ class TestSineMethods(unittest.TestCase):
         fit_result = fit_model.fit(data=y_values, x=self.x_values, **fit_model.guess(y_values, self.x_values))
 
         params_ideal = {
-            'offset': self.offset,
-            'amplitude_1': self.amplitudes[0],
-            'amplitude_2': self.amplitudes[1],
-            'frequency_1': self.frequencies[0],
-            'frequency_2': self.frequencies[0],
-            'phase_1': self.phases[0],
-            'phase_2': self.phases[1],
+            "offset": self.offset,
+            "amplitude_1": self.amplitudes[0],
+            "amplitude_2": self.amplitudes[1],
+            "frequency_1": self.frequencies[0],
+            "frequency_2": self.frequencies[0],
+            "phase_1": self.phases[0],
+            "phase_2": self.phases[1],
         }
         for name, ideal_val in params_ideal.items():
             diff = abs(fit_result.best_values[name] - ideal_val)
             tolerance = abs(ideal_val * self._fit_param_tolerance)
             msg = f'Double sine fit parameter "{name}" not within {self._fit_param_tolerance:.2%} tolerance'
-            self.assertLessEqual(diff, tolerance, msg)
+            assert diff <= tolerance, msg
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

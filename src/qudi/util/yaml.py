@@ -21,18 +21,18 @@ If not, see <https://www.gnu.org/licenses/>.
 """
 
 __all__ = [
-    'SafeRepresenter',
-    'SafeConstructor',
-    'YAML',
-    'yaml_load',
-    'yaml_dump',
-    'ParserError',
-    'YAMLError',
-    'MarkedYAMLError',
-    'YAMLStreamError',
-    'ScannerError',
-    'ConstructorError',
-    'DuplicateKeyError',
+    "YAML",
+    "ConstructorError",
+    "DuplicateKeyError",
+    "MarkedYAMLError",
+    "ParserError",
+    "SafeConstructor",
+    "SafeRepresenter",
+    "ScannerError",
+    "YAMLError",
+    "YAMLStreamError",
+    "yaml_dump",
+    "yaml_load",
 ]
 
 import os
@@ -41,7 +41,8 @@ from collections.abc import Mapping
 from enum import Enum, Flag, IntEnum, IntFlag
 from importlib import import_module
 from io import BytesIO, TextIOWrapper
-from typing import Any, Union
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 import ruamel.yaml as _yaml
@@ -49,7 +50,7 @@ from ruamel.yaml.constructor import ConstructorError, DuplicateKeyError
 from ruamel.yaml.error import MarkedYAMLError, YAMLError, YAMLStreamError
 from ruamel.yaml.parser import ParserError, ScannerError
 
-_FilePath = Union[str, bytes, os.PathLike]
+_FilePath = str | bytes | os.PathLike
 
 
 class SafeRepresenter(_yaml.SafeRepresenter):
@@ -83,12 +84,12 @@ class SafeRepresenter(_yaml.SafeRepresenter):
 
     def represent_complex(self, data):
         """Representer for builtin complex type."""
-        return self.represent_scalar(tag='tag:yaml.org,2002:complex', value=str(data))
+        return self.represent_scalar(tag="tag:yaml.org,2002:complex", value=str(data))
 
     def represent_frozenset(self, data):
         """Representer for builtin frozenset type."""
         node = self.represent_set(data)
-        node.tag = 'tag:yaml.org,2002:frozenset'
+        node.tag = "tag:yaml.org,2002:frozenset"
         return node
 
     def represent_enum(self, data):
@@ -98,10 +99,11 @@ class SafeRepresenter(_yaml.SafeRepresenter):
         try:
             mod = import_module(module)
             cls = getattr(mod, class_name)
-            assert data == cls[data.name]
-        except (AttributeError, ImportError, AssertionError):
-            raise TypeError('Data can not be represented as enum.Enum.')
-        return self.represent_scalar(tag='tag:yaml.org,2002:enum', value=f'{module}.{class_name}[{data.name}]')
+            if data != cls[data.name]:
+                raise TypeError("Data can not be represented as enum.Enum.")
+        except (AttributeError, ImportError) as err:
+            raise TypeError("Data can not be represented as enum.Enum.") from err
+        return self.represent_scalar(tag="tag:yaml.org,2002:enum", value=f"{module}.{class_name}[{data.name}]")
 
     def represent_flag(self, data):
         """Representer for enum types with base class enum."""
@@ -110,10 +112,11 @@ class SafeRepresenter(_yaml.SafeRepresenter):
         try:
             mod = import_module(module)
             cls = getattr(mod, class_name)
-            assert data == cls(data.value)
-        except (AttributeError, ImportError, AssertionError):
-            raise TypeError('Data can not be represented as enum.Flag')
-        return self.represent_scalar(tag='tag:yaml.org,2002:flag', value=f'{module}.{class_name}({data.value:d})')
+            if data != cls(data.value):
+                raise TypeError("Data can not be represented as enum.Flag")
+        except (AttributeError, ImportError) as err:
+            raise TypeError("Data can not be represented as enum.Flag") from err
+        return self.represent_scalar(tag="tag:yaml.org,2002:flag", value=f"{module}.{class_name}({data.value:d})")
 
     def represent_ndarray(self, data):
         """Representer for numpy.ndarrays.
@@ -126,14 +129,12 @@ class SafeRepresenter(_yaml.SafeRepresenter):
         # FIXME: Find a better way... this is a mean hack to get the file path to dump,
         if isinstance(self.dumper._output, TextIOWrapper) and data.size > self.ndarray_max_size:
             try:
-                out_stream_path = self.dumper._output.name
-                dir_path = os.path.dirname(out_stream_path)
-                file_name = os.path.splitext(os.path.basename(out_stream_path))[0]
-                file_path = f'{os.path.join(dir_path, file_name)}-{self._extndarray_count:06}.npy'
+                out_path = Path(self.dumper._output.name)
+                file_path = out_path.parent / f"{out_path.stem}-{self._extndarray_count:06}.npy"
                 np.save(file_path, data, allow_pickle=False, fix_imports=False)
                 self._extndarray_count += 1
-                return self.represent_scalar(tag='tag:yaml.org,2002:extndarray', value=file_path)
-            except:
+                return self.represent_scalar(tag="tag:yaml.org,2002:extndarray", value=str(file_path))
+            except Exception:
                 pass
 
         # Represent as binary stream (ASCII-encoded) by default
@@ -141,7 +142,7 @@ class SafeRepresenter(_yaml.SafeRepresenter):
             np.save(f, data, allow_pickle=False, fix_imports=False)
             binary_repr = f.getvalue()
         node = self.represent_binary(binary_repr)
-        node.tag = 'tag:yaml.org,2002:ndarray'
+        node.tag = "tag:yaml.org,2002:ndarray"
         return node
 
 
@@ -177,7 +178,7 @@ class SafeConstructor(_yaml.SafeConstructor):
         """The frozenset constructor."""
         try:
             # FIXME: The returned generator does not properly work with iteration using next()
-            return frozenset(tuple(self.construct_yaml_set(node))[0])
+            return frozenset(next(iter(self.construct_yaml_set(node))))
         except IndexError:
             return frozenset()
 
@@ -188,27 +189,27 @@ class SafeConstructor(_yaml.SafeConstructor):
     def construct_enum(self, node):
         """The Enum constructor."""
         enum_repr_str = self.construct_yaml_str(node)
-        enum_mod_cls, enum_name = enum_repr_str.rsplit(']', 1)[0].rsplit('[', 1)
-        module, cls_name = enum_mod_cls.rsplit('.', 1)
+        enum_mod_cls, enum_name = enum_repr_str.rsplit("]", 1)[0].rsplit("[", 1)
+        module, cls_name = enum_mod_cls.rsplit(".", 1)
         cls = getattr(import_module(module), cls_name)
         return cls[enum_name]
 
     def construct_flag(self, node):
         """The Flag constructor."""
         enum_repr_str = self.construct_yaml_str(node)
-        enum_mod_cls, enum_value_str = enum_repr_str.rsplit(')', 1)[0].rsplit('(', 1)
-        module, cls_name = enum_mod_cls.rsplit('.', 1)
+        enum_mod_cls, enum_value_str = enum_repr_str.rsplit(")", 1)[0].rsplit("(", 1)
+        module, cls_name = enum_mod_cls.rsplit(".", 1)
         cls = getattr(import_module(module), cls_name)
         return cls(int(enum_value_str))
 
 
 # register custom constructors
-SafeConstructor.add_constructor('tag:yaml.org,2002:frozenset', SafeConstructor.construct_frozenset)
-SafeConstructor.add_constructor('tag:yaml.org,2002:complex', SafeConstructor.construct_complex)
-SafeConstructor.add_constructor('tag:yaml.org,2002:ndarray', SafeConstructor.construct_ndarray)
-SafeConstructor.add_constructor('tag:yaml.org,2002:extndarray', SafeConstructor.construct_extndarray)
-SafeConstructor.add_constructor('tag:yaml.org,2002:enum', SafeConstructor.construct_enum)
-SafeConstructor.add_constructor('tag:yaml.org,2002:flag', SafeConstructor.construct_flag)
+SafeConstructor.add_constructor("tag:yaml.org,2002:frozenset", SafeConstructor.construct_frozenset)
+SafeConstructor.add_constructor("tag:yaml.org,2002:complex", SafeConstructor.construct_complex)
+SafeConstructor.add_constructor("tag:yaml.org,2002:ndarray", SafeConstructor.construct_ndarray)
+SafeConstructor.add_constructor("tag:yaml.org,2002:extndarray", SafeConstructor.construct_extndarray)
+SafeConstructor.add_constructor("tag:yaml.org,2002:enum", SafeConstructor.construct_enum)
+SafeConstructor.add_constructor("tag:yaml.org,2002:flag", SafeConstructor.construct_flag)
 
 
 class YAML(_yaml.YAML):
@@ -224,7 +225,7 @@ class YAML(_yaml.YAML):
         kwargs
             Keyword arguments accepted by ruamel.yaml.YAML(), excluding "typ".
         """
-        kwargs['typ'] = 'safe'
+        kwargs["typ"] = "safe"
         super().__init__(**kwargs)
         self.default_flow_style = False
         self.Representer = SafeRepresenter
@@ -248,15 +249,13 @@ def yaml_load(file_path: _FilePath, ignore_missing: bool | None = False) -> dict
         The data as python/numpy objects in a dict.
     """
     try:
-        with open(file_path) as f:
+        with Path(file_path).open() as f:
             data = YAML().load(f)
-            # yaml returns None if the stream was empty
-            return dict() if data is None else data
+            return {} if data is None else data
     except OSError:
         if ignore_missing:
-            return dict()
-        else:
-            raise
+            return {}
+        raise
 
 
 def yaml_dump(file_path: _FilePath, data: Mapping[str, Any]) -> None:
@@ -267,8 +266,8 @@ def yaml_dump(file_path: _FilePath, data: Mapping[str, Any]) -> None:
     data : dict
         Dict containing the data to save to file.
     """
-    file_dir = os.path.dirname(file_path)
-    if file_dir:
-        os.makedirs(file_dir, exist_ok=True)
-    with open(file_path, 'w') as f:
+    p = Path(file_path)
+    if p.parent != Path():
+        p.parent.mkdir(parents=True, exist_ok=True)
+    with p.open("w") as f:
         YAML().dump(data, f)

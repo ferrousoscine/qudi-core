@@ -18,7 +18,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['VerticalLine', 'HorizontalLine']
+__all__ = ["HorizontalLine", "VerticalLine"]
 
 
 from PySide6 import QtWidgets

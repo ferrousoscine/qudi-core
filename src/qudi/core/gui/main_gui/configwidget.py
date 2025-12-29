@@ -18,11 +18,9 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['ConfigQTreeWidget']
+__all__ = ["ConfigQTreeWidget"]
 
-from collections.abc import Mapping
-from collections.abc import Mapping as AbstractMapping
-from collections.abc import Sequence as AbstractSequence
+from collections.abc import Mapping, Mapping as AbstractMapping, Sequence as AbstractSequence
 from typing import Any
 
 from PySide6 import QtWidgets
@@ -40,32 +38,32 @@ class ConfigQTreeWidget(QtWidgets.QTreeWidget):
         # if value is a mapping, open up a new sub-tree and recursively fill it
         if isinstance(value, AbstractMapping):
             if len(value) == 0:
-                root.setText(0, f'{root.text(0)} {{}}')
+                root.setText(0, f"{root.text(0)} {{}}")
             else:
                 for key, val in value.items():
                     child = QtWidgets.QTreeWidgetItem()
-                    child.setText(0, f'{key}:')
+                    child.setText(0, f"{key}:")
                     root.addChild(child)
                     self._insert_value(child, val)
                 root.setExpanded(True)
         # if value is any string (or similar) type, e.g. str, bytes, bytearray, just add it to root
         elif isinstance(value, (str, bytearray, bytes)):
             try:
-                text = value.decode('utf8')
+                text = value.decode("utf8")
             except (UnicodeDecodeError, AttributeError):
                 text = str(value)
             root.setText(0, f'{root.text(0)} "{text}"')
         # If the value is a sequence of values itself, open up a new sub-tree and fill it
         elif isinstance(value, AbstractSequence):
             if len(value) == 0:
-                root.setText(0, f'{root.text(0)} []')
+                root.setText(0, f"{root.text(0)} []")
             else:
                 for val in value:
                     child = QtWidgets.QTreeWidgetItem()
-                    child.setText(0, '-')
+                    child.setText(0, "-")
                     root.addChild(child)
                     self._insert_value(child, val)
                 root.setExpanded(True)
         # If the value is anything else, just convert to str
         else:
-            root.setText(0, f'{root.text(0)} {str(value)}')
+            root.setText(0, f"{root.text(0)} {value!s}")

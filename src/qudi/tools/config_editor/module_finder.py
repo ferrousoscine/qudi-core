@@ -1,6 +1,6 @@
 """ """
 
-__all__ = ['ModuleFinder', 'QudiModules']
+__all__ = ["ModuleFinder", "QudiModules"]
 
 import importlib
 import inspect
@@ -25,7 +25,7 @@ class ModuleFinder:
     @staticmethod
     def get_module_names_from_ns(namespace: object) -> list[str]:
         module_names = [
-            mod_finder.name for mod_finder in iter_modules_recursive(namespace.__path__, f'{namespace.__name__}.')
+            mod_finder.name for mod_finder in iter_modules_recursive(namespace.__path__, f"{namespace.__name__}.")
         ]
         # Remove duplicates
         return list(dict.fromkeys(module_names))
@@ -33,16 +33,16 @@ class ModuleFinder:
     @classmethod
     def get_qudi_classes_in_module(cls, module: object) -> dict[str, type[Base]]:
         members = inspect.getmembers(module, cls.is_qudi_module)
-        return {f'{module.__name__}.{name}': obj for name, obj in members if obj.__module__ == module.__name__}
+        return {f"{module.__name__}.{name}": obj for name, obj in members if obj.__module__ == module.__name__}
 
     @classmethod
     def get_qudi_modules_from_ns(cls, namespace: object) -> dict[str, type[Base]]:
-        qudi_modules = dict()
+        qudi_modules = {}
         for module_name in cls.get_module_names_from_ns(namespace):
             try:
                 module = importlib.import_module(module_name)
-            except:
-                log.warning(f'Error during import of module "{module_name}"')
+            except Exception:
+                log.warning('Error during import of module "%s"', module_name)
                 continue
             qudi_modules.update(cls.get_qudi_classes_in_module(module))
         return qudi_modules
@@ -61,7 +61,7 @@ class ModuleFinder:
             import qudi.hardware as _hardware_ns
         except ImportError:
             _hardware_ns = None
-        modules = dict()
+        modules = {}
         if _gui_ns is not None:
             modules.update(cls.get_qudi_modules_from_ns(_gui_ns))
         if _logic_ns is not None:
@@ -76,12 +76,10 @@ class QudiModules:
 
     def __init__(self):
         # import all qudi module classes if possible (log all errors upon import)
-        self._qudi_modules = {
-            mod[5:] if mod.startswith('qudi.') else mod: cls for mod, cls in ModuleFinder.get_qudi_modules().items()
-        }
+        self._qudi_modules = {mod.removeprefix("qudi."): cls for mod, cls in ModuleFinder.get_qudi_modules().items()}
         # Collect all connectors for all modules
         self._module_connectors = {
-            mod: list(cls._meta['connectors'].values()) for mod, cls in self._qudi_modules.items()
+            mod: list(cls._meta["connectors"].values()) for mod, cls in self._qudi_modules.items()
         }
         # Get for each connector in each module compatible modules to connect to
         self._module_connectors_compatible_modules = {
@@ -89,7 +87,7 @@ class QudiModules:
         }
         # Get all ConfigOptions for all modules
         self._module_config_options = {
-            mod: list(cls._meta['config_options'].values()) for mod, cls in self._qudi_modules.items()
+            mod: list(cls._meta["config_options"].values()) for mod, cls in self._qudi_modules.items()
         }
 
     def _modules_for_connectors(self, connectors: Iterable[Connector]) -> dict[str, list[str]]:
@@ -98,7 +96,7 @@ class QudiModules:
     def _modules_for_connector(self, connector: Connector) -> list[str]:
         interface = connector.interface
         bases = {mod: {c.__name__ for c in cls.mro()} for mod, cls in self._qudi_modules.items()}
-        return list(mod for mod, base_names in bases.items() if interface in base_names)
+        return [mod for mod, base_names in bases.items() if interface in base_names]
 
     @property
     def available_modules(self) -> list[str]:

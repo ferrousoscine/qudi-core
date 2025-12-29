@@ -19,9 +19,9 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['PathLineEdit']
+__all__ = ["PathLineEdit"]
 
-import os
+from pathlib import Path
 from typing import Any
 
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -51,8 +51,8 @@ class PathLineEdit(QtWidgets.QWidget):
         super().__init__(parent=parent)
         self._line_edit = QtWidgets.QLineEdit(text)
         self._tool_button = QtWidgets.QToolButton()
-        self._tool_button.setIcon(QtGui.QIcon(os.path.join(os.path.join(_get_artwork_dir(), 'icons', 'document-open'))))
-        self._tool_button.setToolTip('Open file dialog')
+        self._tool_button.setIcon(QtGui.QIcon(str(Path(_get_artwork_dir()) / "icons" / "document-open")))
+        self._tool_button.setToolTip("Open file dialog")
         self._tool_button.clicked.connect(self._exec_file_dialog)
 
         layout = QtWidgets.QHBoxLayout()
@@ -62,12 +62,12 @@ class PathLineEdit(QtWidgets.QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
-        self._filters = '' if filters is None else filters
+        self._filters = "" if filters is None else filters
         self._select_directory = bool(select_directory)
         self._follow_symlinks = bool(follow_symlinks)
-        self._root_directory = os.path.abspath(os.sep) if root_directory is None else root_directory
+        self._root_directory = str(Path("/").resolve()) if root_directory is None else root_directory
         if dialog_caption is None:
-            self._dialog_caption = 'Select Directory' if self._select_directory else 'Select Files'
+            self._dialog_caption = "Select Directory" if self._select_directory else "Select Files"
         else:
             self._dialog_caption = dialog_caption
 
@@ -80,7 +80,7 @@ class PathLineEdit(QtWidgets.QWidget):
 
     @property
     def paths(self) -> list[str]:
-        paths = (p.strip() for p in self._line_edit.text().split(';'))
+        paths = (p.strip() for p in self._line_edit.text().split(";"))
         return [p for p in paths if p]
 
     @QtCore.Slot()
@@ -101,7 +101,7 @@ class PathLineEdit(QtWidgets.QWidget):
         if dialog.exec_() == QtWidgets.QFileDialog.Accepted:
             paths = dialog.selectedFiles()
             if paths:
-                text = ';'.join(p for p in paths if p)
+                text = ";".join(p for p in paths if p)
                 if text and text != self._line_edit.text():
                     self._line_edit.setText(text)
                     self._line_edit.textEdited.emit(text)

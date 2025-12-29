@@ -20,22 +20,29 @@ If not, see <https://www.gnu.org/licenses/>.
 """
 
 __all__ = [
-    'MouseTrackingViewBox',
-    'DataSelectionViewBox',
-    'RubberbandZoomViewBox',
-    'RubberbandZoomSelectionViewBox',
-    'RubberbandZoomMixin',
-    'DataSelectionMixin',
-    'MouseTrackingMixin',
-    'SelectionMode',
+    "DataSelectionMixin",
+    "DataSelectionViewBox",
+    "MouseTrackingMixin",
+    "MouseTrackingViewBox",
+    "RubberbandZoomMixin",
+    "RubberbandZoomSelectionViewBox",
+    "RubberbandZoomViewBox",
+    "SelectionMode",
 ]
 
+import contextlib
 from collections.abc import Sequence
 from enum import IntEnum
 from typing import Any
 
-from pyqtgraph import ImageItem, PlotCurveItem, PlotDataItem, ScatterPlotItem, ViewBox
-from pyqtgraph import LinearRegionItem as _LinearRegionItem
+from pyqtgraph import (
+    ImageItem,
+    LinearRegionItem as _LinearRegionItem,
+    PlotCurveItem,
+    PlotDataItem,
+    ScatterPlotItem,
+    ViewBox,
+)
 from pyqtgraph.GraphicsScene.mouseEvents import MouseClickEvent, MouseDragEvent
 from PySide6 import QtCore
 
@@ -140,8 +147,8 @@ class DataSelectionMixin:
         else:
             self._xy_region_min_size_percentile = None
 
-        self.__regions = list()
-        self.__markers = list()
+        self.__regions = []
+        self.__markers = []
 
     def _update_xy_region_min_size(self, viewbox, new_range, changed) -> None:
         min_size = [self._xy_region_min_size_percentile * abs(rang[1] - rang[0]) for rang in new_range]
@@ -171,10 +178,8 @@ class DataSelectionMixin:
                 if ev.isStart():
                     self._add_region_selection(span)
                 else:
-                    try:
+                    with contextlib.suppress(IndexError):
                         self._move_region_selection(span, index=-1)
-                    except IndexError:
-                        pass
                 if ev.isFinish():
                     self._emit_region_change()
         return super().mouseDragEvent(ev, axis)
@@ -204,10 +209,8 @@ class DataSelectionMixin:
                 m.set_movable(mutable)
             for r in self.__regions:
                 r.set_movable(mutable)
-                try:
+                with contextlib.suppress(AttributeError):
                     r.set_resizable(mutable)
-                except AttributeError:
-                    pass
             self._selection_mutable = mutable
 
     @property
@@ -244,10 +247,7 @@ class DataSelectionMixin:
             y_min, y_max = sorted(span[1])
             x_span = x_max - x_min
             y_span = y_max - y_min
-            if self._xy_region_selection_crosshair:
-                item_type = InfiniteCrosshairRectangle
-            else:
-                item_type = Rectangle
+            item_type = InfiniteCrosshairRectangle if self._xy_region_selection_crosshair else Rectangle
             item = item_type(
                 viewbox=self,
                 position=(x_min + x_span / 2, y_min + y_span / 2),
@@ -292,7 +292,7 @@ class DataSelectionMixin:
         mode = self._marker_selection_mode if mode is None else self.SelectionMode(mode)
         if mode == self.SelectionMode.Disabled:
             return
-        elif mode == self.SelectionMode.XY:
+        if mode == self.SelectionMode.XY:
             item = InfiniteCrosshair(
                 viewbox=self,
                 position=position,
@@ -485,10 +485,10 @@ class RubberbandZoomMixin:
     try:
         from pyqtgraph import __version__ as __pyqtgraph_version
 
-        if __pyqtgraph_version == '0.12.4':
+        if __pyqtgraph_version == "0.12.4":
             raise RuntimeError(
-                'You are using an unupported version of pyqtgraph. Please re-install qudi-core '
-                'using pip or update pyqtgraph to a version != 0.12.4 manually.'
+                "You are using an unupported version of pyqtgraph. Please re-install qudi-core "
+                "using pip or update pyqtgraph to a version != 0.12.4 manually."
             )
     except ImportError:
         pass
@@ -497,19 +497,19 @@ class RubberbandZoomMixin:
         super().__init__(**kwargs)
         self._rubberband_zoom_selection_mode = self.SelectionMode.Disabled
         self._x_zoom_region = _LinearRegionItem(
-            orientation='vertical',
-            brush=kwargs.get('brush'),
-            pen=kwargs.get('pen'),
-            hoverBrush=kwargs.get('hover_brush'),
-            hoverPen=kwargs.get('hover_pen'),
+            orientation="vertical",
+            brush=kwargs.get("brush"),
+            pen=kwargs.get("pen"),
+            hoverBrush=kwargs.get("hover_brush"),
+            hoverPen=kwargs.get("hover_pen"),
             movable=False,
         )
         self._y_zoom_region = _LinearRegionItem(
-            orientation='horizontal',
-            brush=kwargs.get('brush'),
-            pen=kwargs.get('pen'),
-            hoverBrush=kwargs.get('hover_brush'),
-            hoverPen=kwargs.get('hover_pen'),
+            orientation="horizontal",
+            brush=kwargs.get("brush"),
+            pen=kwargs.get("pen"),
+            hoverBrush=kwargs.get("hover_brush"),
+            hoverPen=kwargs.get("hover_pen"),
             movable=False,
         )
 

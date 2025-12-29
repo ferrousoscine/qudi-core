@@ -18,7 +18,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['DoubleSlider']
+__all__ = ["DoubleSlider"]
 
 from PySide6 import QtCore, QtWidgets
 
@@ -39,20 +39,16 @@ class DoubleSlider(QtWidgets.QSlider):
         self.valueChanged.connect(self.__translate_value_changed)
         self.sliderMoved.connect(self.__translate_slider_moved)
         self.rangeChanged.connect(self.__translate_range_changed)
-        return
 
     def setMinimum(self, min_val):
         self._minimum_value = float(min_val)
-        return
 
     def setMaximum(self, max_val):
         self._maximum_value = float(max_val)
-        return
 
     def setRange(self, min_val, max_val):
         self._minimum_value = float(min_val)
         self._maximum_value = float(max_val)
-        return
 
     def minimum(self):
         return self._minimum_value
@@ -68,7 +64,7 @@ class DoubleSlider(QtWidgets.QSlider):
         max_val = self.maximum()
         min_val = self.minimum()
         val = max(min_val, min(max_val, val))
-        int_val = int(round((val - min_val) * self._step_number / (max_val - min_val)))
+        int_val = round((val - min_val) * self._step_number / (max_val - min_val))
         super().setValue(int_val)
 
     @property
@@ -86,22 +82,18 @@ class DoubleSlider(QtWidgets.QSlider):
         """
         number_of_steps = int(number_of_steps)
         if number_of_steps < 1:
-            raise ValueError('Number of steps must be larger than 0.')
+            raise ValueError("Number of steps must be larger than 0.")
         self._step_number = number_of_steps - 1  # Include 0 as position
         super().setRange(0, self._step_number)
-        return
 
     @QtCore.Slot(int)
     def __translate_value_changed(self, int_val):
         self.doubleValueChanged.emit(self.minimum() + (self.maximum() - self.minimum()) * (int_val / self._step_number))
-        return
 
     @QtCore.Slot(int)
     def __translate_slider_moved(self, int_val):
         self.doubleSliderMoved.emit(self.minimum() + (self.maximum() - self.minimum()) * (int_val / self._step_number))
-        return
 
     @QtCore.Slot()
     def __translate_range_changed(self):
         self.doubleRangeChanged.emit(self.minimum(), self.maximum())
-        return

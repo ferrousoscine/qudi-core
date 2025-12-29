@@ -18,7 +18,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['LinearTransformation', 'LinearTransformation3D', 'LinearTransformation2D']
+__all__ = ["LinearTransformation", "LinearTransformation2D", "LinearTransformation3D"]
 
 from collections.abc import Sequence
 
@@ -37,19 +37,19 @@ class LinearTransformation:
         if matrix is not None:
             self._matrix = np.array(matrix, dtype=float)
             if self._matrix.ndim != 2:
-                raise ValueError('LinearTransformation matrix must be 2-dimensional')
+                raise ValueError("LinearTransformation matrix must be 2-dimensional")
             if self._matrix.shape[0] != self._matrix.shape[1]:
-                raise ValueError('LinearTransformation matrix must be square')
+                raise ValueError("LinearTransformation matrix must be square")
         elif dimensions is not None:
             if not is_integer(dimensions):
                 raise TypeError(
-                    f'LinearTransformation dimensions must be integer type. Received {type(dimensions)} instead.'
+                    f"LinearTransformation dimensions must be integer type. Received {type(dimensions)} instead."
                 )
             if dimensions < 1:
-                raise ValueError(f'LinearTransformation dimensions must >= 1. Received {dimensions:d} instead.')
+                raise ValueError(f"LinearTransformation dimensions must >= 1. Received {dimensions:d} instead.")
             self._matrix = np.eye(dimensions + 1, dimensions + 1)
         else:
-            raise ValueError('Must either provide homogenous transformation matrix or number of dimensions')
+            raise ValueError("Must either provide homogenous transformation matrix or number of dimensions")
 
     def __call__(self, nodes: Sequence[float] | Sequence[Sequence[float]], invert: bool | None = False) -> np.ndarray:
         """Transforms any single node (vector) or sequence of nodes according to the
@@ -62,10 +62,10 @@ class LinearTransformation:
         if node_dim == 2:
             nodes = np.vstack([nodes.T, np.full(nodes.shape[0], 1)])
             return np.matmul(matrix, nodes)[: self.dimensions, :].T
-        elif node_dim == 1:
+        if node_dim == 1:
             nodes = np.append(nodes, 1)
             return np.matmul(matrix, nodes)[: self.dimensions]
-        raise ValueError('nodes to transform must either be 1D or 2D array')
+        raise ValueError("nodes to transform must either be 1D or 2D array")
 
     @property
     def matrix(self) -> np.ndarray:
@@ -95,10 +95,10 @@ class LinearTransformation:
         matrix = np.asarray(matrix, dtype=float)
         if matrix.shape != self._matrix.shape:
             raise ValueError(
-                f'LinearTransformation.add_transform expects a homogenious '
-                f'transformation matrix with the same shape as '
-                f'LinearTransformation.matrix {self._matrix.shape}. '
-                f'Received {matrix.shape} instead.'
+                f"LinearTransformation.add_transform expects a homogenious "
+                f"transformation matrix with the same shape as "
+                f"LinearTransformation.matrix {self._matrix.shape}. "
+                f"Received {matrix.shape} instead."
             )
         self._matrix = np.matmul(matrix, self._matrix)
 
@@ -109,7 +109,7 @@ class LinearTransformation:
         dim = self.dimensions
         if len(args) != dim:
             raise ValueError(
-                f'LinearTransformation.translate requires as many arguments as number of dimensions ({dim:d})'
+                f"LinearTransformation.translate requires as many arguments as number of dimensions ({dim:d})"
             )
         translate_matrix = np.asarray(np.diag([1] * (dim + 1)), dtype=float)
         translate_matrix[:-1, -1] = args
@@ -126,8 +126,8 @@ class LinearTransformation:
             diagonal[:-1] *= args
         else:
             raise ValueError(
-                f'LinearTransformation.scale requires either a single argument or as '
-                f'many arguments as number of dimensions ({self.dimensions:d})'
+                f"LinearTransformation.scale requires either a single argument or as "
+                f"many arguments as number of dimensions ({self.dimensions:d})"
             )
         scale_matrix = np.diag(diagonal)
         self.add_transform(scale_matrix)
@@ -136,7 +136,7 @@ class LinearTransformation:
         """Adds a rotation to the transformation. Must provide a rotation angle argument for each
         axis (dimension).
         """
-        raise NotImplementedError('Arbitrary rotation transformation not implemented yet')
+        raise NotImplementedError("Arbitrary rotation transformation not implemented yet")
 
     def from_support_vectors(self):
         # todo
@@ -278,7 +278,7 @@ def compute_reduced_vectors(points: np.ndarray) -> np.ndarray:
     return points[:, axes_changing_p]
 
 
-def compute_rotation_matrix_to_plane(v0: np.ndarray, v1: np.ndarray, v2: np.ndarray, ez=[0, 0, 1]) -> np.ndarray:
+def compute_rotation_matrix_to_plane(v0: np.ndarray, v1: np.ndarray, v2: np.ndarray, ez=None) -> np.ndarray:
     """
     Find the rotation matrix that transforms a plane given by three support vectors onto the z plane.
     This rotation is around the origin of the coordinate system.
@@ -304,8 +304,10 @@ def compute_rotation_matrix_to_plane(v0: np.ndarray, v1: np.ndarray, v2: np.ndar
     -----
     See the math here: https://en.wikipedia.org/wiki/Rodrigues'_rotation_formula:return:
     """
+    if ez is None:
+        ez = [0, 0, 1]
     if len(v0) != 3 or len(v1) != 3 or len(v2) != 3:
-        raise ValueError('The support vectors should have a length of 3.')
+        raise ValueError("The support vectors should have a length of 3.")
     s0 = v1 - v0
     s1 = v2 - v0
     ez = np.asarray(ez)

@@ -18,7 +18,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ('LogSignalHandler', 'LogTableModelHandler', 'qt_message_handler')
+__all__ = ("LogSignalHandler", "LogTableModelHandler", "qt_message_handler")
 
 import logging
 
@@ -53,8 +53,7 @@ class LogTableModelHandler(logging.Handler):
     """Logging handler that stores each log record in a QAbstractTableModel."""
 
     def __init__(self, level=logging.INFO, max_records=10000):
-        if level < logging.DEBUG:
-            level = logging.DEBUG
+        level = max(level, logging.DEBUG)
         super().__init__(level=level)
         self.__qt_signaller = QtSignaller()
         self.table_model = LogRecordsTableModel(max_records=max_records)
@@ -65,11 +64,11 @@ class LogTableModelHandler(logging.Handler):
         self.__qt_signaller.sigSignal.emit(record)
 
 
-def qt_message_handler(msg_type, context, msg):
+def qt_message_handler(msg_type, _context, msg):
     """
     A message handler handling Qt5 messages.
     """
-    logger = logging.getLogger('Qt')
+    logger = logging.getLogger("Qt")
     if msg_type == QtCore.QtDebugMsg:
         logger.debug(msg)
     elif msg_type == QtCore.QtInfoMsg:
@@ -81,5 +80,5 @@ def qt_message_handler(msg_type, context, msg):
     else:
         import traceback
 
-        traceback_str = ''.join(traceback.format_stack())
-        logger.critical(f'Fatal error occurred: {msg}\nTraceback:\n{traceback_str}')
+        traceback_str = "".join(traceback.format_stack())
+        logger.critical("Fatal error occurred: %s\nTraceback:\n%s", msg, traceback_str)

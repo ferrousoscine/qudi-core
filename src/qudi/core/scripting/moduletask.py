@@ -19,7 +19,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['ModuleTask', 'ModuleTaskStateMachine']
+__all__ = ["ModuleTask", "ModuleTaskStateMachine"]
 
 
 from collections.abc import Callable, Mapping
@@ -54,15 +54,15 @@ class ModuleTaskStateMachine(Fysom, QtCore.QObject):
         #   src:    source state,
         #   dst:    destination state
         fsm_cfg = {
-            'initial': 'stopped',
-            'events': [
-                {'name': 'start', 'src': 'stopped', 'dst': 'starting'},
-                {'name': 'run', 'src': 'starting', 'dst': 'running'},
-                {'name': 'finish', 'src': 'running', 'dst': 'finishing'},
-                {'name': 'terminate', 'src': 'finishing', 'dst': 'stopped'},
-                {'name': 'skip_run', 'src': 'starting', 'dst': 'finishing'},
+            "initial": "stopped",
+            "events": [
+                {"name": "start", "src": "stopped", "dst": "starting"},
+                {"name": "run", "src": "starting", "dst": "running"},
+                {"name": "finish", "src": "running", "dst": "finishing"},
+                {"name": "terminate", "src": "finishing", "dst": "stopped"},
+                {"name": "skip_run", "src": "starting", "dst": "finishing"},
             ],
-            'callbacks': dict() if callbacks is None else callbacks,
+            "callbacks": {} if callbacks is None else callbacks,
         }
 
         # Initialise state machine:
@@ -106,10 +106,10 @@ class ModuleTask(ModuleScript):
 
         # Set up state machine
         fsm_callbacks = {
-            'on_starting': self.__starting_callback,
-            'on_running': self.__running_callback,
-            'on_finishing': self.__finishing_callback,
-            'on_stopped': self.__stopped_callback,
+            "on_starting": self.__starting_callback,
+            "on_running": self.__running_callback,
+            "on_finishing": self.__finishing_callback,
+            "on_stopped": self.__stopped_callback,
         }
         self._state_machine = ModuleTaskStateMachine(callbacks=fsm_callbacks, parent=self)
 
@@ -124,7 +124,7 @@ class ModuleTask(ModuleScript):
         DO NOT OVERRIDE IN SUBCLASS!
         """
         if self.running:
-            self.log.error('Unable to run. Task is already running or has been interrupted immediately.')
+            self.log.error("Unable to run. Task is already running or has been interrupted immediately.")
         else:
             self._state_machine.start()
 
@@ -139,7 +139,6 @@ class ModuleTask(ModuleScript):
 
         Implement in subclass.
         """
-        pass
 
     def _cleanup(self) -> None:
         """Optional cleanup procedure to be performed after _setup() and _run() have been called.
@@ -149,14 +148,13 @@ class ModuleTask(ModuleScript):
 
         Implement in subclass.
         """
-        pass
 
     # Callbacks for FSM below. Ignore this part unless you know what you are doing!
     def __starting_callback(self, event: Any) -> None:
         """FSM startup callback. This will call _setup and set status flags accordingly.
         Resets last task result. Handles task interrupts during execution of _setup method.
         """
-        self.log.debug('Running setup')
+        self.log.debug("Running setup")
         self.sigStateChanged.emit(event.dst)
         self.result = None
         with self._thread_lock:
@@ -170,9 +168,9 @@ class ModuleTask(ModuleScript):
             self._check_interrupt()
             skip_run = False
         except ModuleScriptInterrupted:
-            self.log.info('Setup interrupted')
+            self.log.info("Setup interrupted")
         except:
-            self.log.exception('Exception during setup:')
+            self.log.exception("Exception during setup:")
             raise
         finally:
             if skip_run:
@@ -184,7 +182,7 @@ class ModuleTask(ModuleScript):
         """FSM callback to execute the mein task _run method. Sets success flag and task result.
         Handles task interrupts during execution of _run method.
         """
-        self.log.debug(f'Running main method with\n\targs: {self.args}\n\tkwargs: {self.kwargs}.')
+        self.log.debug("Running main method with\n\targs: %s\n\tkwargs: %s.", self.args, self.kwargs)
         self.sigStateChanged.emit(event.dst)
         try:
             self._check_interrupt()
@@ -192,9 +190,9 @@ class ModuleTask(ModuleScript):
             with self._thread_lock:
                 self._success = True
         except ModuleScriptInterrupted:
-            self.log.info('Main run method interrupted')
+            self.log.info("Main run method interrupted")
         except:
-            self.log.exception('Exception during main run method:')
+            self.log.exception("Exception during main run method:")
             raise
         finally:
             self._state_machine.finish()
@@ -203,14 +201,14 @@ class ModuleTask(ModuleScript):
         """FSM callback to always call _cleanup method in the end regardless of task success.
         Handles task interrupts during execution of _run method.
         """
-        self.log.debug('Running cleanup')
+        self.log.debug("Running cleanup")
         self.sigStateChanged.emit(event.dst)
         try:
             self._cleanup()
         except ModuleScriptInterrupted:
-            self.log.info('Cleanup interrupted')
+            self.log.info("Cleanup interrupted")
         except:
-            self.log.exception('Exception during cleanup:')
+            self.log.exception("Exception during cleanup:")
             raise
         finally:
             self._state_machine.terminate()
@@ -219,7 +217,7 @@ class ModuleTask(ModuleScript):
         """FSM callback to emit a finished Qt signal and reset the running flag after the task has
         been terminated.
         """
-        self.log.debug(f'ModuleTask "{self.__class__.__name__}" has been terminated.')
+        self.log.debug('ModuleTask "%s" has been terminated.', self.__class__.__name__)
         self.sigStateChanged.emit(event.dst)
         with self._thread_lock:
             self._running = False

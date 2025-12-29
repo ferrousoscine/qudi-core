@@ -18,10 +18,10 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['TaskWidget']
+__all__ = ["TaskWidget"]
 
-import os
 from collections.abc import Iterable
+from pathlib import Path
 from typing import Any
 
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -72,10 +72,10 @@ class TaskWidget(QtWidgets.QWidget):
 
         # Create control button and state label. Arrange them in a sub-layout and connect button.
         # Also add animated busy-indicator
-        icon_dir = os.path.join(get_artwork_dir(), 'icons')
-        self._play_icon = QtGui.QIcon(os.path.join(icon_dir, 'media-playback-start'))
-        self._stop_icon = QtGui.QIcon(os.path.join(icon_dir, 'media-playback-stop'))
-        self.state_label = QtWidgets.QLabel('stopped')
+        icon_dir = Path(get_artwork_dir()) / "icons"
+        self._play_icon = QtGui.QIcon(str(icon_dir / "media-playback-start"))
+        self._stop_icon = QtGui.QIcon(str(icon_dir / "media-playback-stop"))
+        self.state_label = QtWidgets.QLabel("stopped")
         self.state_label.setAlignment(QtCore.Qt.AlignCenter)
         font = self.state_label.font()
         font.setBold(True)
@@ -121,16 +121,16 @@ class TaskWidget(QtWidgets.QWidget):
     def __create_parameter_editor_widgets(task_type: type[ModuleTask]) -> _ParamWidgetsDict:
         """Helper function to create editor widgets and labels for each ModuleTask call parameter."""
         task_parameters = task_type.call_parameters()
-        param_widgets = dict()
+        param_widgets = {}
         for param_name, param in task_parameters.items():
             editor = ParameterWidgetMapper.widget_for_parameter(param)
             if editor is None:
-                editor = QtWidgets.QLabel('Unknown parameter type')
+                editor = QtWidgets.QLabel("Unknown parameter type")
                 editor.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
             else:
                 editor = editor()
                 # ToDo: Set default values here
-            label = QtWidgets.QLabel(f'{param_name}:')
+            label = QtWidgets.QLabel(f"{param_name}:")
             label.setAlignment(QtCore.Qt.AlignVCenter | QtCore.Qt.AlignRight)
             param_widgets[param_name] = (label, editor)
         return param_widgets
@@ -191,11 +191,10 @@ class TaskWidget(QtWidgets.QWidget):
     @QtCore.Slot(object, bool)
     def set_task_result(self, result: Any, success: bool) -> None:
         """Updates the task result display."""
-        print(result, success)
 
     def get_parameters(self) -> dict[str, Any]:
         """Reads parameters from parameter editors and returns them in a dict."""
-        parameters = dict()
+        parameters = {}
         for param_name, (_, editor) in self.parameter_widgets.items():
             if isinstance(editor, QtWidgets.QLabel):
                 continue

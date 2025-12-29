@@ -18,7 +18,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ('ABCQObjectMeta', 'ModuleMeta', 'QObjectMeta', 'QudiObjectMeta')
+__all__ = ("ABCQObjectMeta", "ModuleMeta", "QObjectMeta", "QudiObjectMeta")
 
 from abc import ABCMeta
 
@@ -35,15 +35,15 @@ class ABCQObjectMeta(ABCMeta, QObjectMeta):
     """Metaclass for abstract QObject subclasses."""
 
     def __new__(mcs, name, bases, attributes):
-        cls = super(ABCQObjectMeta, mcs).__new__(mcs, name, bases, attributes)
+        cls = super().__new__(mcs, name, bases, attributes)
         # Compute set of abstract method names
         abstracts = {
-            attr_name for attr_name, attr in attributes.items() if getattr(attr, '__isabstractmethod__', False)
+            attr_name for attr_name, attr in attributes.items() if getattr(attr, "__isabstractmethod__", False)
         }
         for base in bases:
-            for attr_name in getattr(base, '__abstractmethods__', set()):
+            for attr_name in getattr(base, "__abstractmethods__", set()):
                 attr = getattr(cls, attr_name, None)
-                if getattr(attr, '__isabstractmethod__', False):
+                if getattr(attr, "__isabstractmethod__", False):
                     abstracts.add(attr_name)
         cls.__abstractmethods__ = frozenset(abstracts)
         return cls
@@ -58,13 +58,13 @@ class QudiObjectMeta(ABCQObjectMeta):
     def __new__(mcs, name, bases, attributes):
         cls = super().__new__(mcs, name, bases, attributes)
 
-        meta = dict()
+        meta = {}
 
         # Collect qudi module meta attributes (Connector, StatusVar, ConfigOption) and put them
         # in the class variable dict "_meta" for easy bookkeeping and access.
-        connectors = dict()
-        status_vars = dict()
-        config_opt = dict()
+        connectors = {}
+        status_vars = {}
+        config_opt = {}
         for attr_name in dir(cls):
             attr = getattr(cls, attr_name, None)
             if isinstance(attr, Connector):
@@ -73,7 +73,7 @@ class QudiObjectMeta(ABCQObjectMeta):
                 status_vars[attr_name] = attr
             elif isinstance(attr, ConfigOption):
                 config_opt[attr_name] = attr
-        meta.update({'connectors': connectors, 'status_variables': status_vars, 'config_options': config_opt})
+        meta.update({"connectors": connectors, "status_variables": status_vars, "config_options": config_opt})
         cls._meta = meta
         return cls
 
@@ -85,15 +85,15 @@ class ModuleMeta(QudiObjectMeta):
         cls = super().__new__(mcs, name, bases, attributes)
 
         # Determine module base key and add to _meta dict
-        if getattr(cls, '_meta', None):
+        if getattr(cls, "_meta", None):
             for base in cls.mro():
-                if base.__name__ == 'GuiBase':
-                    cls._meta['base'] = 'gui'
+                if base.__name__ == "GuiBase":
+                    cls._meta["base"] = "gui"
                     break
-                elif base.__name__ == 'LogicBase':
-                    cls._meta['base'] = 'logic'
+                if base.__name__ == "LogicBase":
+                    cls._meta["base"] = "logic"
                     break
-                elif base.__name__ == 'Base':
-                    cls._meta['base'] = 'hardware'
+                if base.__name__ == "Base":
+                    cls._meta["base"] = "hardware"
                     break
         return cls

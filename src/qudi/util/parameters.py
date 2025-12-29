@@ -51,13 +51,13 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['FilePath', 'RealNumber', 'ParameterWidgetMapper']
+__all__ = ["FilePath", "ParameterWidgetMapper", "RealNumber"]
 
 import inspect
 import typing
 from collections.abc import Callable, Iterable, Mapping, MutableSequence, Sequence
 from os import PathLike
-from typing import Any, Union, get_args, get_origin
+from typing import Any, ClassVar, get_args, get_origin
 
 from PySide6 import QtWidgets
 
@@ -65,12 +65,12 @@ from qudi.util.helpers import is_complex_type, is_float_type, is_integer_type, i
 from qudi.util.widgets.literal_lineedit import ComplexLineEdit, DictLineEdit, ListLineEdit, SetLineEdit, TupleLineEdit
 from qudi.util.widgets.scientific_spinbox import ScienDSpinBox, ScienSpinBox
 
-FilePath = Union[str, bytes, PathLike]
-RealNumber = Union[int, float]
+FilePath = str | bytes | PathLike
+RealNumber = int | float
 
 
 class ParameterWidgetMapper:
-    _type_widget_map = {
+    _type_widget_map: ClassVar[dict[type, type]] = {
         int: ScienSpinBox,
         float: ScienDSpinBox,
         str: QtWidgets.QLineEdit,
@@ -101,10 +101,8 @@ class ParameterWidgetMapper:
         if param.annotation is inspect.Parameter.empty:
             if param.default is inspect.Parameter.empty:
                 return None
-            else:
-                return cls.widget_from_value(param.default)
-        else:
-            return cls.widget_from_annotation(param.annotation)
+            return cls.widget_from_value(param.default)
+        return cls.widget_from_annotation(param.annotation)
 
     @classmethod
     def widget_from_value(cls, value: Any) -> type[QtWidgets.QWidget] | None:
@@ -127,21 +125,21 @@ class ParameterWidgetMapper:
         """
         if is_string_type(typ):
             return str
-        elif is_integer_type(typ):
+        if is_integer_type(typ):
             return int
-        elif is_float_type(typ):
+        if is_float_type(typ):
             return float
-        elif is_complex_type(typ):
+        if is_complex_type(typ):
             return complex
-        elif issubclass(typ, (bytes, PathLike)):
+        if issubclass(typ, (bytes, PathLike)):
             return PathLike
-        elif issubclass(typ, (set, frozenset)):
+        if issubclass(typ, (set, frozenset)):
             return set
-        elif issubclass(typ, Mapping):
+        if issubclass(typ, Mapping):
             return dict
-        elif issubclass(typ, MutableSequence):
+        if issubclass(typ, MutableSequence):
             return list
-        elif issubclass(typ, (tuple, Iterable, Sequence)):
+        if issubclass(typ, (tuple, Iterable, Sequence)):
             return tuple
         return None
 
@@ -157,16 +155,14 @@ class ParameterWidgetMapper:
 
         if annotation == RealNumber:
             return float
-        elif annotation == FilePath:
+        if annotation == FilePath:
             return PathLike
-        else:
-            try:
-                if inspect.isclass(annotation):
-                    return cls._normalize_type(annotation)
-                else:
-                    return cls._normalize_type(get_origin(annotation))
-            except TypeError:
-                pass
+        try:
+            if inspect.isclass(annotation):
+                return cls._normalize_type(annotation)
+            return cls._normalize_type(get_origin(annotation))
+        except TypeError:
+            pass
         return None
 
     @staticmethod

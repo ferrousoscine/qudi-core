@@ -18,7 +18,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ('get_remote_module_instance', 'BaseServer', 'RemoteModulesServer', 'QudiNamespaceServer')
+__all__ = ("BaseServer", "QudiNamespaceServer", "RemoteModulesServer", "get_remote_module_instance")
 
 import ssl
 import weakref
@@ -57,11 +57,11 @@ def get_remote_module_instance(remote_url, certfile=None, keyfile=None, protocol
     parsed = urlparse(remote_url)
     if protocol_config is None:
         protocol_config = {
-            'allow_all_attrs': True,
-            'allow_setattr': True,
-            'allow_delattr': True,
-            'allow_pickle': True,
-            'sync_request_timeout': 3600,
+            "allow_all_attrs": True,
+            "allow_setattr": True,
+            "allow_delattr": True,
+            "allow_pickle": True,
+            "sync_request_timeout": 3600,
         }
     if certfile is not None and keyfile is not None:
         connection = rpyc.ssl_connect(
@@ -69,8 +69,8 @@ def get_remote_module_instance(remote_url, certfile=None, keyfile=None, protocol
         )
     else:
         connection = rpyc.connect(host=parsed.hostname, port=parsed.port, config=protocol_config)
-    logger.debug(f'get_remote_module_instance has protocol_config {protocol_config}')
-    return connection.root.get_module_instance(parsed.path.replace('/', ''))
+    logger.debug("get_remote_module_instance has protocol_config %s", protocol_config)
+    return connection.root.get_module_instance(parsed.path.replace("/", ""))
 
 
 class _ServerRunnable(QtCore.QObject):
@@ -101,17 +101,17 @@ class _ServerRunnable(QtCore.QObject):
         self.keyfile = keyfile
         if protocol_config is None:
             self.protocol_config = {
-                'allow_all_attrs': True,
-                'allow_setattr': True,
-                'allow_delattr': True,
-                'allow_pickle': True,
-                'sync_request_timeout': 3600,
+                "allow_all_attrs": True,
+                "allow_setattr": True,
+                "allow_delattr": True,
+                "allow_pickle": True,
+                "sync_request_timeout": 3600,
             }
         else:
             self.protocol_config = protocol_config
         self.ssl_version = ssl.PROTOCOL_TLSv1_2 if ssl_version is None else ssl_version
         self.cert_reqs = ssl.CERT_REQUIRED if cert_reqs is None else cert_reqs
-        self.ciphers = 'EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH' if ciphers is None else ciphers
+        self.ciphers = "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH" if ciphers is None else ciphers
 
     @QtCore.Slot()
     def run(self):
@@ -135,15 +135,16 @@ class _ServerRunnable(QtCore.QObject):
                 protocol_config=self.protocol_config,
                 authenticator=authenticator,
             )
-            logger.info(f'Starting RPyC server "{self.thread().objectName()}" on [{self.host}]:{self.port:d}')
+            logger.info('Starting RPyC server "%s" on [%s]:%d', self.thread().objectName(), self.host, self.port)
             logger.debug(
-                f'{self.thread().objectName()}: '
-                f'protocol_config is {self.protocol_config}, '
-                f'authenticator is {authenticator}'
+                "%s: protocol_config is %s, authenticator is %s",
+                self.thread().objectName(),
+                self.protocol_config,
+                authenticator,
             )
             self.server.start()
-        except:
-            logger.exception(f'Error during start of RPyC Server "{self.thread().objectName()}":')
+        except Exception:
+            logger.exception('Error during start of RPyC Server "%s":', self.thread().objectName())
             self.server = None
 
     @QtCore.Slot()
@@ -152,9 +153,9 @@ class _ServerRunnable(QtCore.QObject):
         if self.server is not None:
             try:
                 self.server.close()
-                logger.info(f'Stopped RPyC server on [{self.host}]:{self.port:d}')
-            except:
-                logger.exception(f'Exception while trying to stop RPyC server on [{self.host}]:{self.port:d}')
+                logger.info("Stopped RPyC server on [%s]:%d", self.host, self.port)
+            except Exception:
+                logger.exception("Exception while trying to stop RPyC server on [%s]:%d", self.host, self.port)
             finally:
                 self.server = None
 
@@ -218,21 +219,21 @@ class BaseServer(QtCore.QObject):
     def _qudi(self):
         qudi = self.__qudi_ref()
         if qudi is None:
-            raise RuntimeError('Dead qudi application reference encountered')
+            raise RuntimeError("Dead qudi application reference encountered")
         return qudi
 
     @property
     def _thread_manager(self):
         manager = self._qudi.thread_manager
         if manager is None:
-            raise RuntimeError('No thread manager initialized in qudi application')
+            raise RuntimeError("No thread manager initialized in qudi application")
         return manager
 
     @property
     def _module_manager(self):
         manager = self._qudi.module_manager
         if manager is None:
-            raise RuntimeError('No module manager initialized in qudi application')
+            raise RuntimeError("No module manager initialized in qudi application")
         return manager
 
     @QtCore.Slot()
@@ -245,7 +246,7 @@ class BaseServer(QtCore.QObject):
                 thread.started.connect(self._server.run)
                 thread.start()
             else:
-                logger.warning(f'RPyC server "{self._name}" is already running.')
+                logger.warning('RPyC server "%s" is already running.', self._name)
 
     @QtCore.Slot()
     def stop(self):
@@ -264,7 +265,7 @@ class RemoteModulesServer(BaseServer):
     """ """
 
     def __init__(self, force_remote_calls_by_value=False, **kwargs):
-        kwargs['service_instance'] = RemoteModulesService(force_remote_calls_by_value=force_remote_calls_by_value)
+        kwargs["service_instance"] = RemoteModulesService(force_remote_calls_by_value=force_remote_calls_by_value)
         super().__init__(**kwargs)
 
     def share_module(self, module):
@@ -302,5 +303,5 @@ class QudiNamespaceServer(BaseServer):
         """
         service_instance = QudiNamespaceService(qudi=qudi, force_remote_calls_by_value=force_remote_calls_by_value)
         super().__init__(
-            parent=parent, qudi=qudi, service_instance=service_instance, name=name, host='localhost', port=port
+            parent=parent, qudi=qudi, service_instance=service_instance, name=name, host="localhost", port=port
         )

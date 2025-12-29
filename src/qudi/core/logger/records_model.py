@@ -18,10 +18,11 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ('LogRecordsTableModel',)
+__all__ = ("LogRecordsTableModel",)
 
 import traceback
 from datetime import datetime
+from typing import ClassVar
 
 from PySide6 import QtCore, QtGui
 
@@ -33,22 +34,22 @@ class LogRecordsTableModel(QtCore.QAbstractTableModel):
     Can be displayed with a QTableView for example.
     """
 
-    _color_map = {
-        'debug': QtGui.QColor('#77F'),
-        'info': QtGui.QColor('#1F1'),
-        'warning': QtGui.QColor('#F90'),
-        'error': QtGui.QColor('#F11'),
-        'critical': QtGui.QColor('#FF00FF'),
+    _color_map: ClassVar[dict[str, QtGui.QColor]] = {
+        "debug": QtGui.QColor("#77F"),
+        "info": QtGui.QColor("#1F1"),
+        "warning": QtGui.QColor("#F90"),
+        "error": QtGui.QColor("#F11"),
+        "critical": QtGui.QColor("#FF00FF"),
     }
-    _fallback_color = QtGui.QColor('#FFF')
-    _header = ('Time', 'Level', 'Source', 'Message')
+    _fallback_color: ClassVar[QtGui.QColor] = QtGui.QColor("#FFF")
+    _header: ClassVar[tuple[str, ...]] = ("Time", "Level", "Source", "Message")
 
     def __init__(self, *args, max_records=10000, **kwargs):
         super().__init__(*args, **kwargs)
 
         self._thread_lock = Mutex()
         self._max_records = max(int(max_records), 1)
-        self._records = list()
+        self._records = []
         self._begin = 0
         self._end = 0
         self._fill_count = 0
@@ -109,6 +110,7 @@ class LogRecordsTableModel(QtCore.QAbstractTableModel):
                 return self._color_map.get(record[1], self._fallback_color)
             if role in (QtCore.Qt.DisplayRole, QtCore.Qt.ToolTipRole, QtCore.Qt.EditRole):
                 return record[index.column()]
+        return None
 
     def headerData(self, section, orientation, role=None):
         """Data for the table view headers.
@@ -132,7 +134,7 @@ class LogRecordsTableModel(QtCore.QAbstractTableModel):
                 return self._header[section]
             except IndexError:
                 pass
-        return
+        return None
 
     @QtCore.Slot(object)
     def add_record(self, data):
@@ -175,7 +177,7 @@ class LogRecordsTableModel(QtCore.QAbstractTableModel):
             self._begin = 0
             self._end = 0
             self._fill_count = 0
-            self._records = list()
+            self._records = []
             self.endResetModel()
 
     @property
@@ -187,14 +189,14 @@ class LogRecordsTableModel(QtCore.QAbstractTableModel):
         # Compose message to display
         message = record.getMessage()  # message if hasattr(record, 'message') else record.msg
         if record.exc_info is not None:
-            message += f'\n\n{traceback.format_exception(*record.exc_info)[-1][:-1]}'
-            tb = '\n'.join(traceback.format_exception(*record.exc_info)[:-1])
+            message += f"\n\n{traceback.format_exception(*record.exc_info)[-1][:-1]}"
+            tb = "\n".join(traceback.format_exception(*record.exc_info)[:-1])
             if tb:
-                message += f'\n{tb}'
+                message += f"\n{tb}"
 
         # Create human-readable timestamp
-        timestamp = datetime.fromtimestamp(record.created).strftime('%Y-%m-%d %H:%M:%S')
+        timestamp = datetime.fromtimestamp(record.created).strftime("%Y-%m-%d %H:%M:%S")
 
         # return 4 element tuple (timestamp, level, name, message)
         # Avoid problems with Qt by eliminating NULL bytes in strings.
-        return timestamp, record.levelname, record.name, message.replace('\0', '\\x00')
+        return timestamp, record.levelname, record.name, message.replace("\0", "\\x00")

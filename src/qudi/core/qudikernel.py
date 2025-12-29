@@ -18,14 +18,15 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['install_kernel', 'uninstall_kernel', 'QudiIPythonKernel', 'QudiKernelClient', 'QudiKernelService']
+__all__ = ["QudiIPythonKernel", "QudiKernelClient", "QudiKernelService", "install_kernel", "uninstall_kernel"]
 
+import contextlib
 import json
 import logging
-import os
 import shutil
 import sys
 import tempfile
+from pathlib import Path
 
 import rpyc
 from ipykernel.ipkernel import IPythonKernel
@@ -36,42 +37,39 @@ from qudi.core.config import Configuration, ValidationError, YAMLError
 def install_kernel():
     from jupyter_client.kernelspec import KernelSpecManager
 
-    print('> Installing qudi kernel...')
     try:
         # prepare temporary kernelspec folder
-        tempdir = tempfile.mkdtemp(suffix='_kernels')
-        path = os.path.join(tempdir, 'qudi')
-        kernel_path = os.path.abspath(__file__)
-        os.mkdir(path)
+        tempdir = Path(tempfile.mkdtemp(suffix="_kernels"))
+        path = tempdir / "qudi"
+        kernel_path = str(Path(__file__).resolve())
+        path.mkdir()
 
         kernel_dict = {
-            'argv': [sys.executable, kernel_path, '-f', '{connection_file}'],
-            'display_name': 'qudi',
-            'language': 'python',
+            "argv": [sys.executable, kernel_path, "-f", "{connection_file}"],
+            "display_name": "qudi",
+            "language": "python",
         }
         # write the kernelspec file
-        with open(os.path.join(path, 'kernel.json'), 'w') as f:
+        with (path / "kernel.json").open("w") as f:
             json.dump(kernel_dict, f, indent=1)
 
         # install kernelspec folder
         kernel_spec_manager = KernelSpecManager()
-        dest = kernel_spec_manager.install_kernel_spec(path, kernel_name='qudi', user=True)
-        print(f'> Successfully installed kernelspec "qudi" in {dest}')
+        kernel_spec_manager.install_kernel_spec(str(path), kernel_name="qudi", user=True)
     finally:
-        if os.path.isdir(tempdir):
+        if tempdir.is_dir():
             shutil.rmtree(tempdir)
 
 
 def uninstall_kernel():
     from jupyter_client.kernelspec import KernelSpecManager
 
-    print('> Uninstalling qudi kernel...')
     try:
-        KernelSpecManager().remove_kernel_spec('qudi')
+        KernelSpecManager().remove_kernel_spec("qudi")
     except KeyError:
-        print('> No kernelspec "qudi" found')
+        pass
     else:
-        print('> Successfully uninstalled kernelspec "qudi"')
+        pass
 
 
 class QudiKernelService(rpyc.Service):
@@ -82,14 +80,14 @@ class QudiKernelService(rpyc.Service):
         self._background_server = None
 
     def on_connect(self, conn):
-        logging.warning('Qudi IPython kernel connected to local module service.')
+        logging.warning("Qudi IPython kernel connected to local module service.")
         self._background_server = rpyc.BgServingThread(conn)
 
     def on_disconnect(self, conn):
-        logging.warning('Qudi IPython kernel disconnected from local module service.')
+        logging.warning("Qudi IPython kernel disconnected from local module service.")
         try:
             self._background_server.stop()
-        except:
+        except Exception:
             pass
         finally:
             self._background_server = None
@@ -107,32 +105,30 @@ class QudiKernelClient:
 
     def get_active_modules(self):
         if self.connection is None or self.connection.closed:
-            return dict()
+            return {}
         try:
             return self.connection.root.get_namespace_dict()
         except (ConnectionError, EOFError):
             self.disconnect()
-            return dict()
+            return {}
 
     def get_logger(self, name: str) -> logging.Logger:
         return self.connection.root.get_logger(name)
 
     def connect(self):
         config = Configuration()
-        try:
+        with contextlib.suppress(ValueError, ValidationError, YAMLError):
             config.load()
-        except (ValueError, ValidationError, YAMLError):
-            pass
         self.connection = rpyc.connect(
-            host='localhost',
+            host="localhost",
             config={
-                'allow_all_attrs': True,
-                'allow_setattr': True,
-                'allow_delattr': True,
-                'allow_pickle': True,
-                'sync_request_timeout': 3600,
+                "allow_all_attrs": True,
+                "allow_setattr": True,
+                "allow_delattr": True,
+                "allow_pickle": True,
+                "sync_request_timeout": 3600,
             },
-            port=config['namespace_server_port'],
+            port=config["namespace_server_port"],
             service=self.service_instance,
         )
 
@@ -140,7 +136,7 @@ class QudiKernelClient:
         if self.connection is not None:
             try:
                 self.connection.close()
-            except:
+            except Exception:
                 pass
             finally:
                 self.connection = None
@@ -154,7 +150,7 @@ class QudiIPythonKernel(IPythonKernel):
         self._qudi_client = QudiKernelClient()
         self._qudi_client.connect()
         self._namespace_qudi_modules = set()
-        self._qudi_logger = self._qudi_client.get_logger(f'QudiIPythonKernel_{str(self.ident)}')
+        self._qudi_logger = self._qudi_client.get_logger(f"QudiIPythonKernel_{self.ident!s}")
         self.update_module_namespace()
         # Fixme: Dirty workaround after hours of searching on how to disable the insanely
         #  aggressive tab completion resolution of jedi that causes each descriptor (e.g. property)
@@ -175,8 +171,8 @@ class QudiIPythonKernel(IPythonKernel):
         removed = self._namespace_qudi_modules.difference(modules)
         for mod in removed:
             self.shell.user_ns.pop(mod, None)
-        self.shell.user_ns.pop('logger', None)
-        self.shell.push({'logger': self._qudi_logger})
+        self.shell.user_ns.pop("logger", None)
+        self.shell.push({"logger": self._qudi_logger})
         self.shell.push(modules)
         self._namespace_qudi_modules = set(modules)
 
@@ -191,10 +187,10 @@ class QudiIPythonKernel(IPythonKernel):
         return super().do_shutdown(restart)
 
 
-if __name__ == '__main__':
-    if len(sys.argv) == 2 and sys.argv[1] == 'install':
+if __name__ == "__main__":
+    if len(sys.argv) == 2 and sys.argv[1] == "install":
         install_kernel()
-    elif len(sys.argv) == 2 and sys.argv[1] == 'uninstall':
+    elif len(sys.argv) == 2 and sys.argv[1] == "uninstall":
         uninstall_kernel()
     else:
         from ipykernel.kernelapp import IPKernelApp

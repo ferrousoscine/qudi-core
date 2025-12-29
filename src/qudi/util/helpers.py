@@ -17,35 +17,36 @@ If not, see <https://www.gnu.org/licenses/>.
 """
 
 __all__ = [
-    'csv_2_list',
-    'in_range',
-    'is_complex',
-    'is_complex_type',
-    'is_float',
-    'is_float_type',
-    'is_integer',
-    'is_integer_type',
-    'is_number',
-    'is_number_type',
-    'is_string',
-    'is_string_type',
-    'iter_modules_recursive',
-    'natural_sort',
-    'str_to_number',
+    "csv_2_list",
+    "in_range",
+    "is_complex",
+    "is_complex_type",
+    "is_float",
+    "is_float_type",
+    "is_integer",
+    "is_integer_type",
+    "is_number",
+    "is_number_type",
+    "is_string",
+    "is_string_type",
+    "iter_modules_recursive",
+    "natural_sort",
+    "str_to_number",
 ]
 
 import os
 import pkgutil
 import re
 from collections.abc import Callable, Iterable
-from typing import Any, Union
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 
-_RealNumber = Union[int, float]
+_RealNumber = int | float
 
 
-def iter_modules_recursive(paths: str | Iterable[str], prefix: str | None = '') -> list[pkgutil.ModuleInfo]:
+def iter_modules_recursive(paths: str | Iterable[str], prefix: str | None = "") -> list[pkgutil.ModuleInfo]:
     """Has the same signature as pkgutil.iter_modules() but extends the functionality by walking
     through the entire directory tree and concatenating the return values of pkgutil.iter_modules()
     for each directory.
@@ -68,23 +69,20 @@ def iter_modules_recursive(paths: str | Iterable[str], prefix: str | None = '') 
     """
     if isinstance(paths, str):
         paths = [paths]
-    module_infos = list()
+    module_infos = []
     for search_top in paths:
-        for root, dirs, files in os.walk(search_top):
+        for root, dirs, _files in os.walk(search_top):
             rel_path = os.path.relpath(root, search_top)
-            if rel_path and rel_path != '.' and rel_path[0] in '._':
+            if rel_path and rel_path != "." and rel_path[0] in "._":
                 # Prevent os.walk to descent further down this tree branch
                 dirs.clear()
                 # Ignore this directory
                 continue
             # Resolve current module prefix
-            if not rel_path or rel_path == '.':
-                curr_prefix = prefix
-            else:
-                curr_prefix = prefix + '.'.join(rel_path.split(os.sep)) + '.'
+            curr_prefix = prefix if not rel_path or rel_path == "." else prefix + ".".join(Path(rel_path).parts) + "."
             # find modules and packages in current dir
             tmp = pkgutil.iter_modules([root], prefix=curr_prefix)
-            module_infos.extend([mod_inf for mod_inf in tmp if not mod_inf.name.rsplit('.', 1)[-1].startswith('__')])
+            module_infos.extend([mod_inf for mod_inf in tmp if not mod_inf.name.rsplit(".", 1)[-1].startswith("__")])
     return module_infos
 
 
@@ -108,8 +106,8 @@ def natural_sort(iterable: Iterable[Any]) -> list[Any]:
         return int(s) if s.isdigit() else s
 
     try:
-        return sorted(iterable, key=lambda key: [conv(i) for i in re.split(r'(\d+)', key)])
-    except:
+        return sorted(iterable, key=lambda key: [conv(i) for i in re.split(r"(\d+)", key)])
+    except Exception:
         return sorted(iterable)
 
 
@@ -200,21 +198,21 @@ def csv_2_list(csv_string: str, str_2_val: Callable[[str], Any] | None = None) -
         List of float values. If `str_2_val` is provided, type is invoked by this function.
     """
     if not isinstance(csv_string, str):
-        raise TypeError('string_2_list accepts only str type input.')
+        raise TypeError("string_2_list accepts only str type input.")
 
     if csv_string == "":
         return []
 
-    csv_string = csv_string.replace('[', '').replace(']', '')  # Remove square brackets
-    csv_string = csv_string.replace('(', '').replace(')', '')  # Remove round brackets
-    csv_string = csv_string.replace('{', '').replace('}', '')  # Remove curly brackets
-    csv_string = csv_string.strip().strip(',')  # Remove trailing/leading blanks and commas
+    csv_string = csv_string.replace("[", "").replace("]", "")  # Remove square brackets
+    csv_string = csv_string.replace("(", "").replace(")", "")  # Remove round brackets
+    csv_string = csv_string.replace("{", "").replace("}", "")  # Remove curly brackets
+    csv_string = csv_string.strip().strip(",")  # Remove trailing/leading blanks and commas
 
     # Cast each str value to float if no explicit cast function is given by parameter str_2_val.
     if str_2_val is None:
-        csv_list = [str_to_number(val_str) for val_str in csv_string.split(',')]
+        csv_list = [str_to_number(val_str) for val_str in csv_string.split(",")]
     else:
-        csv_list = [str_2_val(val_str.strip()) for val_str in csv_string.split(',')]
+        csv_list = [str_2_val(val_str.strip()) for val_str in csv_string.split(",")]
     return csv_list
 
 
@@ -228,8 +226,7 @@ def str_to_number(str_value: str, return_failed: bool | None = False) -> int | f
         except ValueError:
             try:
                 return complex(str_value)
-            except ValueError:
+            except ValueError as err:
                 if return_failed:
                     return str_value
-                else:
-                    raise ValueError(f'Could not convert string to int, float or complex: \'{str_value}\'')
+                raise ValueError(f"Could not convert string to int, float or complex: '{str_value}'") from err

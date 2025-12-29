@@ -19,17 +19,18 @@ If not, see <https://www.gnu.org/licenses/>.
 """
 
 __all__ = [
-    'BaseAttribute',
-    'DefaultAttribute',
-    'ReadOnlyAttribute',
-    'TypedAttribute',
-    'CheckedAttribute',
-    'DefaultMixin',
-    'ReadOnlyMixin',
-    'TypedMixin',
-    'ValidateMixin',
+    "BaseAttribute",
+    "CheckedAttribute",
+    "DefaultAttribute",
+    "DefaultMixin",
+    "ReadOnlyAttribute",
+    "ReadOnlyMixin",
+    "TypedAttribute",
+    "TypedMixin",
+    "ValidateMixin",
 ]
 
+import contextlib
 from collections.abc import Callable, Iterable
 from inspect import isclass, isfunction
 from typing import Any
@@ -55,20 +56,18 @@ class DefaultMixin:
             return self.default
 
     def __delete__(self, instance):
-        try:
+        with contextlib.suppress(AttributeError):
             super().__delete__(instance)
-        except AttributeError:
-            pass
 
 
 class ReadOnlyMixin:
     """Mixin for BaseAttribute introducing read-only access."""
 
     def __delete__(self, instance):
-        raise AttributeError('Read-only attribute can not be deleted')
+        raise AttributeError("Read-only attribute can not be deleted")
 
     def __set__(self, instance, value):
-        raise AttributeError('Read-only attribute can not be overwritten')
+        raise AttributeError("Read-only attribute can not be overwritten")
 
     def set_value(self, instance: object, value: Any) -> None:
         super().__set__(instance, value)
@@ -81,7 +80,7 @@ class TypedMixin:
         super().__init__(**kwargs)
         self.valid_types = None if valid_types is None else tuple(valid_types)
         if self.valid_types and not all(isclass(typ) for typ in self.valid_types):
-            raise TypeError('valid_types must be iterable of types (classes)')
+            raise TypeError("valid_types must be iterable of types (classes)")
 
     def __set__(self, instance, value):
         self.check_type(value)
@@ -101,10 +100,10 @@ class ValidateMixin:
 
     def __init__(self, static_validators: Iterable[Callable[[Any], None]] | None = None, **kwargs):
         super().__init__(**kwargs)
-        self.static_validators = list() if static_validators is None else list(static_validators)
-        self.bound_validators = list()
+        self.static_validators = [] if static_validators is None else list(static_validators)
+        self.bound_validators = []
         if not all(callable(val) for val in self.static_validators):
-            raise TypeError('static_validators must be iterable of callables')
+            raise TypeError("static_validators must be iterable of callables")
 
     def __set__(self, instance, value):
         self.validate(value, instance)
@@ -129,12 +128,12 @@ class ValidateMixin:
                 self.static_validators.append(func)
                 return func
         else:
-            raise TypeError('validator must either be function, staticmethod or classmethod object')
+            raise TypeError("validator must either be function, staticmethod or classmethod object")
 
         # Take care of name mangling for private members
-        if func_obj.__name__.startswith('__'):
-            cls_name = func_obj.__qualname__.rsplit('.', 1)[0]
-            self.bound_validators.append(f'_{cls_name}{func_obj.__name__}')
+        if func_obj.__name__.startswith("__"):
+            cls_name = func_obj.__qualname__.rsplit(".", 1)[0]
+            self.bound_validators.append(f"_{cls_name}{func_obj.__name__}")
         else:
             self.bound_validators.append(func_obj.__name__)
         return func
@@ -218,8 +217,6 @@ class ReadOnlyAttribute(ReadOnlyMixin, DefaultAttribute):
                 # The following would raise an AttributeError
                 # self.variable_b = 0
     """
-
-    pass
 
 
 class TypedAttribute(TypedMixin, DefaultAttribute):

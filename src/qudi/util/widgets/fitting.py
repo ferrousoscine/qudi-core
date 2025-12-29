@@ -18,10 +18,10 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['FitWidget', 'FitConfigurationWidget', 'FitConfigurationDialog']
+__all__ = ["FitConfigurationDialog", "FitConfigurationWidget", "FitWidget"]
 
-import os
 import weakref
+from pathlib import Path
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -43,7 +43,7 @@ class FitWidget(QtWidgets.QWidget):
 
         self.selection_combobox = QtWidgets.QComboBox()
         self.selection_combobox.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
-        self.fit_pushbutton = QtWidgets.QPushButton('Fit')
+        self.fit_pushbutton = QtWidgets.QPushButton("Fit")
         self.fit_pushbutton.setMinimumWidth(3 * self.fit_pushbutton.sizeHint().width())
         self.result_label = QtWidgets.QLabel()
         self.result_label.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
@@ -60,9 +60,8 @@ class FitWidget(QtWidgets.QWidget):
             self.link_fit_container(fit_container)
 
     def link_fit_container(self, fit_container):
-        assert (fit_container is None) or isinstance(fit_container, FitContainer), (
-            'Can only link qudi FitContainer instances.'
-        )
+        if not ((fit_container is None) or isinstance(fit_container, FitContainer)):
+            raise TypeError("Can only link qudi FitContainer instances.")
         old_container = self.__fit_container_ref()
         # disconnect old fit container if present
         if old_container is not None:
@@ -71,7 +70,7 @@ class FitWidget(QtWidgets.QWidget):
         # link new fit container
         self.result_label.clear()
         self.selection_combobox.clear()
-        self.selection_combobox.addItem('No Fit')
+        self.selection_combobox.addItem("No Fit")
         if fit_container is None:
             self.__fit_container_ref = lambda: None
         else:
@@ -86,7 +85,7 @@ class FitWidget(QtWidgets.QWidget):
     def update_fit_configurations(self, config_names):
         old_text = self.selection_combobox.currentText()
         self.selection_combobox.clear()
-        self.selection_combobox.addItem('No Fit')
+        self.selection_combobox.addItem("No Fit")
         self.selection_combobox.addItems(config_names)
         if old_text in config_names:
             self.selection_combobox.setCurrentText(old_text)
@@ -100,7 +99,7 @@ class FitWidget(QtWidgets.QWidget):
             if container is not None:
                 self.result_label.setText(container.formatted_result(fit_result))
             else:
-                self.result_label.setText('')
+                self.result_label.setText("")
 
     @QtCore.Slot()
     def _fit_clicked(self):
@@ -114,13 +113,14 @@ class FitConfigurationWidget(QtWidgets.QWidget):
     _sigAddNewConfig = QtCore.Signal(str, str)  # name, model
 
     def __init__(self, *args, fit_config_model, **kwargs):
-        assert isinstance(fit_config_model, FitConfigurationsModel)
+        if not isinstance(fit_config_model, FitConfigurationsModel):
+            raise TypeError("fit_config_model must be FitConfigurationsModel instance")
         super().__init__(*args, **kwargs)
         main_layout = QtWidgets.QVBoxLayout()
         self.setLayout(main_layout)
         main_layout.setContentsMargins(0, 0, 0, 0)
 
-        icon_dir = os.path.join(get_artwork_dir(), 'icons')
+        icon_dir = Path(get_artwork_dir()) / "icons"
 
         # Create new fit config editor elements
         self.model_combobox = QtWidgets.QComboBox()
@@ -129,7 +129,7 @@ class FitConfigurationWidget(QtWidgets.QWidget):
         self.name_lineedit = QtWidgets.QLineEdit()
         self.add_config_toolbutton = QtWidgets.QToolButton()
         self.add_config_toolbutton.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
-        self.add_config_toolbutton.setIcon(QtGui.QIcon(os.path.join(icon_dir, 'list-add')))
+        self.add_config_toolbutton.setIcon(QtGui.QIcon(str(icon_dir / "list-add")))
         hlayout = QtWidgets.QHBoxLayout()
         hlayout.addWidget(self.model_combobox)
         hlayout.addWidget(self.name_lineedit)
@@ -163,7 +163,7 @@ class FitConfigurationDialog(QtWidgets.QDialog):
 
     def __init__(self, *args, fit_config_model, **kwargs):
         super().__init__(*args, **kwargs)
-        self.setWindowTitle('Fit Configuration')
+        self.setWindowTitle("Fit Configuration")
         # create main layout
         main_layout = QtWidgets.QVBoxLayout()
         self.setLayout(main_layout)
@@ -172,7 +172,7 @@ class FitConfigurationDialog(QtWidgets.QDialog):
         main_layout.addWidget(self.fit_config_widget)
         # create dialog buttonbox
         button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok, QtCore.Qt.Horizontal)
-        min_width = QtGui.QFontMetrics(QtGui.QFont()).horizontalAdvance('OK OK OK')
+        min_width = QtGui.QFontMetrics(QtGui.QFont()).horizontalAdvance("OK OK OK")
         button_box.buttons()[0].setMinimumWidth(min_width)
         button_box.setCenterButtons(True)
         button_box.accepted.connect(self.accept)
@@ -197,21 +197,19 @@ class FitConfigurationListView(QtWidgets.QListView):
 
     def mouseMoveEvent(self, event):
         curr_index = self.indexAt(event.pos())
-        if curr_index != self.__previous_index:
-            if curr_index.isValid():
-                if self.__previous_index.isValid():
-                    self.closePersistentEditor(self.__previous_index)
-                self.openPersistentEditor(curr_index)
-                self.__previous_index = curr_index
+        if curr_index != self.__previous_index and curr_index.isValid():
+            if self.__previous_index.isValid():
+                self.closePersistentEditor(self.__previous_index)
+            self.openPersistentEditor(curr_index)
+            self.__previous_index = curr_index
         return super().mouseMoveEvent(event)
 
-    def eventFilter(self, object, event):
-        if event.type() == QtCore.QEvent.HoverLeave:
-            if not self.geometry().contains(event.pos()):
-                if self.__previous_index.isValid():
-                    self.closePersistentEditor(self.__previous_index)
-                self.__previous_index = QtCore.QModelIndex()
-                return True
+    def eventFilter(self, obj, event):
+        if event.type() == QtCore.QEvent.HoverLeave and not self.geometry().contains(event.pos()):
+            if self.__previous_index.isValid():
+                self.closePersistentEditor(self.__previous_index)
+            self.__previous_index = QtCore.QModelIndex()
+            return True
         return False
 
     @QtCore.Slot(str)
@@ -228,7 +226,8 @@ class _FitConfigPanel(QtWidgets.QWidget):
     sigConfigurationRemovedClicked = QtCore.Signal(str)
 
     def __init__(self, *args, fit_config, **kwargs):
-        assert isinstance(fit_config, FitConfiguration)
+        if not isinstance(fit_config, FitConfiguration):
+            raise TypeError("fit_config must be FitConfiguration instance")
         super().__init__(*args, **kwargs)
         layout = QtWidgets.QHBoxLayout()
         self.setLayout(layout)
@@ -243,18 +242,18 @@ class _FitConfigPanel(QtWidgets.QWidget):
         groupbox.setLayout(main_layout)
 
         # add remove button
-        icon_dir = os.path.join(get_artwork_dir(), 'icons')
+        icon_dir = Path(get_artwork_dir()) / "icons"
         self._name = fit_config.name
         self.remove_config_toolbutton = QtWidgets.QToolButton()
         self.remove_config_toolbutton.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
-        self.remove_config_toolbutton.setIcon(QtGui.QIcon(os.path.join(icon_dir, 'list-remove')))
+        self.remove_config_toolbutton.setIcon(QtGui.QIcon(str(icon_dir / "list-remove")))
         self.remove_config_toolbutton.clicked.connect(lambda: self.sigConfigurationRemovedClicked.emit(self._name))
 
         # add estimator combobox
         self.estimator_selection_combobox = QtWidgets.QComboBox()
         self.estimator_selection_combobox.addItems(fit_config.available_estimators)
         self.estimator_selection_combobox.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
-        label = QtWidgets.QLabel('Estimator:')
+        label = QtWidgets.QLabel("Estimator:")
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         hlayout = QtWidgets.QHBoxLayout()
         main_layout.addLayout(hlayout)
@@ -269,24 +268,24 @@ class _FitConfigPanel(QtWidgets.QWidget):
         # add parameters
         param_layout = QtWidgets.QGridLayout()
         main_layout.addLayout(param_layout)
-        label = QtWidgets.QLabel('customize?')
+        label = QtWidgets.QLabel("customize?")
         param_layout.addWidget(label, 0, 0)
-        label = QtWidgets.QLabel('vary?')
+        label = QtWidgets.QLabel("vary?")
         param_layout.addWidget(label, 0, 2)
-        label = QtWidgets.QLabel('init:')
+        label = QtWidgets.QLabel("init:")
         param_layout.addWidget(label, 0, 3)
-        label = QtWidgets.QLabel('min:')
+        label = QtWidgets.QLabel("min:")
         param_layout.addWidget(label, 0, 4)
-        label = QtWidgets.QLabel('max:')
+        label = QtWidgets.QLabel("max:")
         param_layout.addWidget(label, 0, 5)
         # determine minimum width for SpinBoxes based on font metrics
-        min_width = QtGui.QFontMetrics(label.font()).horizontalAdvance('999.999')
-        self.parameters_widgets = dict()
+        min_width = QtGui.QFontMetrics(label.font()).horizontalAdvance("999.999")
+        self.parameters_widgets = {}
         row = 1
         for param_name, param in fit_config.default_parameters.items():
             customize_checkbox = QtWidgets.QCheckBox()
             param_layout.addWidget(customize_checkbox, row, 0)
-            label = QtWidgets.QLabel(param_name + ':')
+            label = QtWidgets.QLabel(param_name + ":")
             label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
             param_layout.addWidget(label, row, 1)
             vary_checkbox = QtWidgets.QCheckBox()
@@ -330,7 +329,7 @@ class _FitConfigPanel(QtWidgets.QWidget):
 
     @property
     def custom_parameters(self):
-        parameters = dict()
+        parameters = {}
         for param_name, widgets in self.parameters_widgets.items():
             if widgets[0].isChecked():
                 parameters[param_name] = (
@@ -385,8 +384,7 @@ class _FitConfigurationItemDelegate(QtWidgets.QStyledItemDelegate):
         return option.rect
 
     def sizeHint(self, option, index):
-        size = _FitConfigPanel(fit_config=index.data(QtCore.Qt.DisplayRole)).sizeHint()
-        return size
+        return _FitConfigPanel(fit_config=index.data(QtCore.Qt.DisplayRole)).sizeHint()
 
     def paint(self, painter, option, index):
         painter.save()

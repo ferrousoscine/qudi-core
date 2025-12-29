@@ -18,7 +18,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ('Sine', 'DoubleSine', 'ExponentialDecaySine', 'estimate_frequency_ft')
+__all__ = ("DoubleSine", "ExponentialDecaySine", "Sine", "estimate_frequency_ft")
 
 import numpy as np
 
@@ -39,29 +39,29 @@ class Sine(FitModelBase):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.set_param_hint('offset', value=0.0, min=-np.inf, max=np.inf)
-        self.set_param_hint('amplitude', value=1.0, min=0.0, max=np.inf)
-        self.set_param_hint('frequency', value=0.0, min=0.0, max=np.inf)
-        self.set_param_hint('phase', value=0.0, min=-np.pi, max=np.pi)
+        self.set_param_hint("offset", value=0.0, min=-np.inf, max=np.inf)
+        self.set_param_hint("amplitude", value=1.0, min=0.0, max=np.inf)
+        self.set_param_hint("frequency", value=0.0, min=0.0, max=np.inf)
+        self.set_param_hint("phase", value=0.0, min=-np.pi, max=np.pi)
 
     @staticmethod
     def _model_function(x, offset, amplitude, frequency, phase):
         return offset + amplitude * np.sin(2 * np.pi * frequency * x + phase)
 
-    @estimator('default')
+    @estimator("default")
     def estimate(self, data, x):
         data, x = sort_check_data(data, x)
         x_span = abs(max(x) - min(x))
         offset = np.mean(data)
 
         estimate = self.estimate_no_offset(data - offset, x)
-        if 1 / (2 * estimate['frequency'].value) > x_span:
-            estimate['offset'].set(value=offset, min=-np.inf, max=np.inf, vary=True)
+        if 1 / (2 * estimate["frequency"].value) > x_span:
+            estimate["offset"].set(value=offset, min=-np.inf, max=np.inf, vary=True)
         else:
-            estimate['offset'].set(value=offset, min=min(data), max=max(data), vary=True)
+            estimate["offset"].set(value=offset, min=min(data), max=max(data), vary=True)
         return estimate
 
-    @estimator('No Offset')
+    @estimator("No Offset")
     def estimate_no_offset(self, data, x):
         data, x = sort_check_data(data, x)
         x_step = min(abs(np.ediff1d(x)))
@@ -75,7 +75,7 @@ class Sine(FitModelBase):
         #            The sum shows how well the sine was fitting to the actual data.
         #            The best fitting sine should be a maximum of the summed time
         #            trace.
-        iter_steps = max(1, int(round(1 / (frequency * x_step))))
+        iter_steps = max(1, round(1 / (frequency * x_step)))
         test_phases = 2 * np.pi * np.arange(iter_steps) / iter_steps
         sum_res = np.zeros(iter_steps)
         for ii, phase in enumerate(test_phases):
@@ -83,13 +83,13 @@ class Sine(FitModelBase):
         phase = test_phases[sum_res.argmax()] - np.pi  # Maximum sum value corresponds to worst fit
 
         estimate = self.make_params()
-        estimate['frequency'].set(value=frequency, min=0, max=1 / (2 * x_step), vary=True)
-        estimate['amplitude'].set(value=amplitude, min=0, max=2 * data_span, vary=True)
-        estimate['phase'].set(value=phase, min=-np.pi, max=np.pi, vary=True)
-        estimate['offset'].set(value=0, min=-np.inf, max=np.inf, vary=False)
+        estimate["frequency"].set(value=frequency, min=0, max=1 / (2 * x_step), vary=True)
+        estimate["amplitude"].set(value=amplitude, min=0, max=2 * data_span, vary=True)
+        estimate["phase"].set(value=phase, min=-np.pi, max=np.pi, vary=True)
+        estimate["offset"].set(value=0, min=-np.inf, max=np.inf, vary=False)
         return estimate
 
-    @estimator('Zero Phase')
+    @estimator("Zero Phase")
     def estimate_zero_phase(self, data, x):
         data, x = sort_check_data(data, x)
         x_step = min(abs(np.ediff1d(x)))
@@ -101,13 +101,13 @@ class Sine(FitModelBase):
         frequency, _ = estimate_frequency_ft(data - offset, x)
 
         estimate = self.make_params()
-        estimate['frequency'].set(value=frequency, min=0, max=1 / (2 * x_step), vary=True)
-        estimate['amplitude'].set(value=amplitude, min=0, max=2 * data_span, vary=True)
+        estimate["frequency"].set(value=frequency, min=0, max=1 / (2 * x_step), vary=True)
+        estimate["amplitude"].set(value=amplitude, min=0, max=2 * data_span, vary=True)
         if 1 / (2 * frequency) > x_span:
-            estimate['offset'].set(value=offset, min=-np.inf, max=np.inf, vary=True)
+            estimate["offset"].set(value=offset, min=-np.inf, max=np.inf, vary=True)
         else:
-            estimate['offset'].set(value=offset, min=min(data), max=max(data), vary=True)
-        estimate['phase'].set(value=0, min=-np.pi, max=np.pi, vary=False)
+            estimate["offset"].set(value=offset, min=min(data), max=max(data), vary=True)
+        estimate["phase"].set(value=0, min=-np.pi, max=np.pi, vary=False)
         return estimate
 
 
@@ -116,13 +116,13 @@ class DoubleSine(FitModelBase):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.set_param_hint('offset', value=0.0, min=-np.inf, max=np.inf)
-        self.set_param_hint('amplitude_1', value=1.0, min=0.0, max=np.inf)
-        self.set_param_hint('amplitude_2', value=1.0, min=0.0, max=np.inf)
-        self.set_param_hint('frequency_1', value=0.0, min=0.0, max=np.inf)
-        self.set_param_hint('frequency_2', value=0.0, min=0.0, max=np.inf)
-        self.set_param_hint('phase_1', value=0.0, min=-np.pi, max=np.pi)
-        self.set_param_hint('phase_2', value=0.0, min=-np.pi, max=np.pi)
+        self.set_param_hint("offset", value=0.0, min=-np.inf, max=np.inf)
+        self.set_param_hint("amplitude_1", value=1.0, min=0.0, max=np.inf)
+        self.set_param_hint("amplitude_2", value=1.0, min=0.0, max=np.inf)
+        self.set_param_hint("frequency_1", value=0.0, min=0.0, max=np.inf)
+        self.set_param_hint("frequency_2", value=0.0, min=0.0, max=np.inf)
+        self.set_param_hint("phase_1", value=0.0, min=-np.pi, max=np.pi)
+        self.set_param_hint("phase_2", value=0.0, min=-np.pi, max=np.pi)
 
     @staticmethod
     def _model_function(x, offset, amplitude_1, amplitude_2, frequency_1, frequency_2, phase_1, phase_2):
@@ -130,19 +130,19 @@ class DoubleSine(FitModelBase):
         result += amplitude_2 * np.sin(2 * np.pi * frequency_2 * x + phase_2)
         return result + offset
 
-    @estimator('default')
+    @estimator("default")
     def estimate(self, data, x):
         x_span = abs(max(x) - min(x))
         offset = np.mean(data)
 
         estimate = self.estimate_no_offset(data - offset, x)
-        if 1 / (2 * min(estimate['frequency_1'].value, estimate['frequency_2'].value)) > x_span:
-            estimate['offset'].set(value=offset, min=-np.inf, max=np.inf, vary=True)
+        if 1 / (2 * min(estimate["frequency_1"].value, estimate["frequency_2"].value)) > x_span:
+            estimate["offset"].set(value=offset, min=-np.inf, max=np.inf, vary=True)
         else:
-            estimate['offset'].set(value=offset, min=min(data), max=max(data), vary=True)
+            estimate["offset"].set(value=offset, min=min(data), max=max(data), vary=True)
         return estimate
 
-    @estimator('No Offset')
+    @estimator("No Offset")
     def estimate_no_offset(self, data, x):
         data, x = sort_check_data(data, x)
         # Fit a single sine to the data
@@ -155,43 +155,43 @@ class DoubleSine(FitModelBase):
 
         single_fit_params = single_sine_result.params
         estimate = self.make_params()
-        estimate['amplitude_1'].set(
-            value=single_fit_params['amplitude'].value,
-            min=single_fit_params['amplitude'].min,
-            max=single_fit_params['amplitude'].max,
+        estimate["amplitude_1"].set(
+            value=single_fit_params["amplitude"].value,
+            min=single_fit_params["amplitude"].min,
+            max=single_fit_params["amplitude"].max,
             vary=True,
         )
-        estimate['amplitude_2'].set(
-            value=single_sine_estimate['amplitude'].value,
-            min=single_sine_estimate['amplitude'].min,
-            max=single_sine_estimate['amplitude'].max,
+        estimate["amplitude_2"].set(
+            value=single_sine_estimate["amplitude"].value,
+            min=single_sine_estimate["amplitude"].min,
+            max=single_sine_estimate["amplitude"].max,
             vary=True,
         )
-        estimate['frequency_1'].set(
-            value=single_fit_params['frequency'].value,
-            min=single_fit_params['frequency'].min,
-            max=single_fit_params['frequency'].max,
+        estimate["frequency_1"].set(
+            value=single_fit_params["frequency"].value,
+            min=single_fit_params["frequency"].min,
+            max=single_fit_params["frequency"].max,
             vary=True,
         )
-        estimate['frequency_2'].set(
-            value=single_sine_estimate['frequency'].value,
-            min=single_sine_estimate['frequency'].min,
-            max=single_sine_estimate['frequency'].max,
+        estimate["frequency_2"].set(
+            value=single_sine_estimate["frequency"].value,
+            min=single_sine_estimate["frequency"].min,
+            max=single_sine_estimate["frequency"].max,
             vary=True,
         )
-        estimate['phase_1'].set(
-            value=single_fit_params['phase'].value,
-            min=single_fit_params['phase'].min,
-            max=single_fit_params['phase'].max,
+        estimate["phase_1"].set(
+            value=single_fit_params["phase"].value,
+            min=single_fit_params["phase"].min,
+            max=single_fit_params["phase"].max,
             vary=True,
         )
-        estimate['phase_2'].set(
-            value=single_sine_estimate['phase'].value,
-            min=single_sine_estimate['phase'].min,
-            max=single_sine_estimate['phase'].max,
+        estimate["phase_2"].set(
+            value=single_sine_estimate["phase"].value,
+            min=single_sine_estimate["phase"].min,
+            max=single_sine_estimate["phase"].max,
             vary=True,
         )
-        estimate['offset'].set(value=0, min=-np.inf, max=np.inf, vary=False)
+        estimate["offset"].set(value=0, min=-np.inf, max=np.inf, vary=False)
         return estimate
 
 
@@ -200,37 +200,37 @@ class ExponentialDecaySine(FitModelBase):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.set_param_hint('offset', value=0.0, min=-np.inf, max=np.inf)
-        self.set_param_hint('amplitude', value=1.0, min=0.0, max=np.inf)
-        self.set_param_hint('frequency', value=0.0, min=0.0, max=np.inf)
-        self.set_param_hint('phase', value=0.0, min=-np.pi, max=np.pi)
-        self.set_param_hint('decay', value=1.0, min=0.0, max=np.inf)
-        self.set_param_hint('stretch', value=1.0, min=0.0, max=np.inf)
+        self.set_param_hint("offset", value=0.0, min=-np.inf, max=np.inf)
+        self.set_param_hint("amplitude", value=1.0, min=0.0, max=np.inf)
+        self.set_param_hint("frequency", value=0.0, min=0.0, max=np.inf)
+        self.set_param_hint("phase", value=0.0, min=-np.pi, max=np.pi)
+        self.set_param_hint("decay", value=1.0, min=0.0, max=np.inf)
+        self.set_param_hint("stretch", value=1.0, min=0.0, max=np.inf)
 
     @staticmethod
     def _model_function(x, offset, amplitude, frequency, phase, decay, stretch):
         return offset + amplitude * np.exp(-((x / decay) ** stretch)) * np.sin(2 * np.pi * frequency * x + phase)
 
-    @estimator('Decay')
+    @estimator("Decay")
     def estimate_decay(self, data, x):
         x_span = abs(max(x) - min(x))
         offset = np.mean(data)
 
         estimate = self.estimate_decay_no_offset(data - offset, x)
-        if 1 / (2 * estimate['frequency'].value) > x_span:
-            estimate['offset'].set(value=offset, min=-np.inf, max=np.inf, vary=True)
+        if 1 / (2 * estimate["frequency"].value) > x_span:
+            estimate["offset"].set(value=offset, min=-np.inf, max=np.inf, vary=True)
         else:
-            estimate['offset'].set(value=offset, min=min(data), max=max(data), vary=True)
+            estimate["offset"].set(value=offset, min=min(data), max=max(data), vary=True)
         return estimate
 
-    @estimator('Stretched Decay')
+    @estimator("Stretched Decay")
     def estimate_stretched_decay(self, data, x):
         # ToDo: Stretch estimation
         estimate = self.estimate_decay(data, x)
-        estimate['stretch'].set(value=2, min=0, max=np.inf, vary=True)
+        estimate["stretch"].set(value=2, min=0, max=np.inf, vary=True)
         return estimate
 
-    @estimator('Decay (no offset)')
+    @estimator("Decay (no offset)")
     def estimate_decay_no_offset(self, data, x):
         data, x = sort_check_data(data, x)
         x_step = min(abs(np.ediff1d(x)))
@@ -242,7 +242,7 @@ class ExponentialDecaySine(FitModelBase):
         # remove noise for peak width and decay constant estimation
         dft_y[np.argwhere(dft_y <= np.std(dft_y))] = 0
         # calculating the width of the FT peak for the estimation of decay constant
-        decay = 1 / (2 * np.trapz(dft_y, dft_x) / max(dft_y))
+        decay = 1 / (2 * np.trapezoid(dft_y, dft_x) / max(dft_y))
         # s = 0
         # for i in range(0, len(dft_x)):
         #     s += dft_y[i] * abs(dft_x[1] - dft_x[0]) / max(dft_y)
@@ -253,7 +253,7 @@ class ExponentialDecaySine(FitModelBase):
         #            The sum shows how well the sine was fitting to the actual data.
         #            The best fitting sine should be a maximum of the summed time
         #            trace.
-        iter_steps = max(1, int(round(1 / (frequency * x_step))))
+        iter_steps = max(1, round(1 / (frequency * x_step)))
         test_phases = 2 * np.pi * np.arange(iter_steps) / iter_steps
         sum_res = np.zeros(iter_steps)
         for ii, phase in enumerate(test_phases):
@@ -261,19 +261,19 @@ class ExponentialDecaySine(FitModelBase):
         phase = test_phases[sum_res.argmax()] - np.pi  # Maximum sum value corresponds to worst fit
 
         estimate = self.make_params()
-        estimate['frequency'].set(value=frequency, min=0, max=1 / (2 * x_step), vary=True)
-        estimate['amplitude'].set(value=amplitude, min=0, max=2 * data_span, vary=True)
-        estimate['phase'].set(value=phase, min=-np.pi, max=np.pi, vary=True)
-        estimate['decay'].set(value=decay, min=2 * x_step, max=1 / (abs(dft_x[1] - dft_x[0]) * 0.5), vary=True)
-        estimate['stretch'].set(value=1, min=0, max=np.inf, vary=False)
-        estimate['offset'].set(value=0, min=-np.inf, max=np.inf, vary=False)
+        estimate["frequency"].set(value=frequency, min=0, max=1 / (2 * x_step), vary=True)
+        estimate["amplitude"].set(value=amplitude, min=0, max=2 * data_span, vary=True)
+        estimate["phase"].set(value=phase, min=-np.pi, max=np.pi, vary=True)
+        estimate["decay"].set(value=decay, min=2 * x_step, max=1 / (abs(dft_x[1] - dft_x[0]) * 0.5), vary=True)
+        estimate["stretch"].set(value=1, min=0, max=np.inf, vary=False)
+        estimate["offset"].set(value=0, min=-np.inf, max=np.inf, vary=False)
         return estimate
 
-    @estimator('Stretched Decay (no offset)')
+    @estimator("Stretched Decay (no offset)")
     def estimate_stretched_decay_no_offset(self, data, x):
         # ToDo: Stretch estimation
         estimate = self.estimate_decay_no_offset(data, x)
-        estimate['stretch'].set(value=2, min=0, max=np.inf, vary=True)
+        estimate["stretch"].set(value=2, min=0, max=np.inf, vary=True)
         return estimate
 
 
@@ -282,15 +282,15 @@ class ExponentialDecayDoubleSine(FitModelBase):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.set_param_hint('offset', value=0.0, min=-np.inf, max=np.inf)
-        self.set_param_hint('amplitude_1', value=1.0, min=0.0, max=np.inf)
-        self.set_param_hint('amplitude_2', value=1.0, min=0.0, max=np.inf)
-        self.set_param_hint('frequency_1', value=0.0, min=0.0, max=np.inf)
-        self.set_param_hint('frequency_2', value=0.0, min=0.0, max=np.inf)
-        self.set_param_hint('phase_1', value=0.0, min=-np.pi, max=np.pi)
-        self.set_param_hint('phase_2', value=0.0, min=-np.pi, max=np.pi)
-        self.set_param_hint('decay', value=1.0, min=0.0, max=np.inf)
-        self.set_param_hint('stretch', value=1.0, min=0.0, max=np.inf)
+        self.set_param_hint("offset", value=0.0, min=-np.inf, max=np.inf)
+        self.set_param_hint("amplitude_1", value=1.0, min=0.0, max=np.inf)
+        self.set_param_hint("amplitude_2", value=1.0, min=0.0, max=np.inf)
+        self.set_param_hint("frequency_1", value=0.0, min=0.0, max=np.inf)
+        self.set_param_hint("frequency_2", value=0.0, min=0.0, max=np.inf)
+        self.set_param_hint("phase_1", value=0.0, min=-np.pi, max=np.pi)
+        self.set_param_hint("phase_2", value=0.0, min=-np.pi, max=np.pi)
+        self.set_param_hint("decay", value=1.0, min=0.0, max=np.inf)
+        self.set_param_hint("stretch", value=1.0, min=0.0, max=np.inf)
 
     @staticmethod
     def _model_function(
@@ -300,26 +300,26 @@ class ExponentialDecayDoubleSine(FitModelBase):
         result += amplitude_2 * np.sin(2 * np.pi * frequency_2 * x + phase_2)
         return np.exp(-((x / decay) ** stretch)) * result + offset
 
-    @estimator('Decay')
+    @estimator("Decay")
     def estimate_decay(self, data, x):
         x_span = abs(max(x) - min(x))
         offset = np.mean(data)
 
         estimate = self.estimate_decay_no_offset(data - offset, x)
-        if 1 / (2 * min(estimate['frequency_1'].value, estimate['frequency_2'].value)) > x_span:
-            estimate['offset'].set(value=offset, min=-np.inf, max=np.inf, vary=True)
+        if 1 / (2 * min(estimate["frequency_1"].value, estimate["frequency_2"].value)) > x_span:
+            estimate["offset"].set(value=offset, min=-np.inf, max=np.inf, vary=True)
         else:
-            estimate['offset'].set(value=offset, min=min(data), max=max(data), vary=True)
+            estimate["offset"].set(value=offset, min=min(data), max=max(data), vary=True)
         return estimate
 
-    @estimator('Stretched Decay')
+    @estimator("Stretched Decay")
     def estimate_stretched_decay(self, data, x):
         # ToDo: Stretch estimation
         estimate = self.estimate_decay(data, x)
-        estimate['stretch'].set(value=2, min=0, max=np.inf, vary=True)
+        estimate["stretch"].set(value=2, min=0, max=np.inf, vary=True)
         return estimate
 
-    @estimator('Decay (no offset)')
+    @estimator("Decay (no offset)")
     def estimate_decay_no_offset(self, data, x):
         data, x = sort_check_data(data, x)
 
@@ -334,51 +334,51 @@ class ExponentialDecayDoubleSine(FitModelBase):
         first_params = first_sine_fit.params
         second_params = second_sine_fit.params
         estimate = self.make_params()
-        estimate['frequency_1'].set(
-            value=first_params['frequency'].value,
-            min=first_params['frequency'].min,
-            max=first_params['frequency'].max,
+        estimate["frequency_1"].set(
+            value=first_params["frequency"].value,
+            min=first_params["frequency"].min,
+            max=first_params["frequency"].max,
             vary=True,
         )
-        estimate['frequency_2'].set(
-            value=second_params['frequency'].value,
-            min=second_params['frequency'].min,
-            max=second_params['frequency'].max,
+        estimate["frequency_2"].set(
+            value=second_params["frequency"].value,
+            min=second_params["frequency"].min,
+            max=second_params["frequency"].max,
             vary=True,
         )
-        estimate['amplitude_1'].set(
-            value=first_params['amplitude'].value,
-            min=first_params['amplitude'].min,
-            max=first_params['amplitude'].max,
+        estimate["amplitude_1"].set(
+            value=first_params["amplitude"].value,
+            min=first_params["amplitude"].min,
+            max=first_params["amplitude"].max,
             vary=True,
         )
-        estimate['amplitude_2'].set(
-            value=second_params['amplitude'].value,
-            min=second_params['amplitude'].min,
-            max=second_params['amplitude'].max,
+        estimate["amplitude_2"].set(
+            value=second_params["amplitude"].value,
+            min=second_params["amplitude"].min,
+            max=second_params["amplitude"].max,
             vary=True,
         )
-        estimate['phase_1'].set(
-            value=first_params['phase'].value, min=first_params['phase'].min, max=first_params['phase'].max, vary=True
+        estimate["phase_1"].set(
+            value=first_params["phase"].value, min=first_params["phase"].min, max=first_params["phase"].max, vary=True
         )
-        estimate['phase_2'].set(
-            value=second_params['phase'].value,
-            min=second_params['phase'].min,
-            max=second_params['phase'].max,
+        estimate["phase_2"].set(
+            value=second_params["phase"].value,
+            min=second_params["phase"].min,
+            max=second_params["phase"].max,
             vary=True,
         )
-        estimate['decay'].set(
-            value=first_params['decay'].value, min=first_params['decay'].min, max=first_params['decay'].max, vary=True
+        estimate["decay"].set(
+            value=first_params["decay"].value, min=first_params["decay"].min, max=first_params["decay"].max, vary=True
         )
-        estimate['stretch'].set(value=1, min=0, max=np.inf, vary=False)
-        estimate['offset'].set(value=0, min=-np.inf, max=np.inf, vary=False)
+        estimate["stretch"].set(value=1, min=0, max=np.inf, vary=False)
+        estimate["offset"].set(value=0, min=-np.inf, max=np.inf, vary=False)
         return estimate
 
-    @estimator('Stretched Decay (no offset)')
+    @estimator("Stretched Decay (no offset)")
     def estimate_stretched_decay_no_offset(self, data, x):
         # ToDo: Stretch estimation
         estimate = self.estimate_decay_no_offset(data, x)
-        estimate['stretch'].set(value=2, min=0, max=np.inf, vary=True)
+        estimate["stretch"].set(value=2, min=0, max=np.inf, vary=True)
         return estimate
 
 

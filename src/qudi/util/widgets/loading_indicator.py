@@ -49,9 +49,12 @@ class CircleLoadingIndicator(QtWidgets.QWidget):
         None
             (or specify the return type and description if the function returns something)
         """
-        assert cycle_time > 0, 'cycle_time must be larger than 0'
-        assert 0 < indicator_length < 5760, 'indicator_length must be >0 and <5760'
-        assert 0 < indicator_width_ratio <= 0.5, 'indicator_width_ratio must be >0 and <=0.5'
+        if cycle_time <= 0:
+            raise ValueError("cycle_time must be larger than 0")
+        if not 0 < indicator_length < 5760:
+            raise ValueError("indicator_length must be >0 and <5760")
+        if not 0 < indicator_width_ratio <= 0.5:
+            raise ValueError("indicator_width_ratio must be >0 and <=0.5")
         super().__init__(*args, **kwargs)
         self.setMinimumSize(6, 6)
         self.setMouseTracking(False)
@@ -59,7 +62,7 @@ class CircleLoadingIndicator(QtWidgets.QWidget):
 
         # Fixed init parameters
         self._indicator_length = indicator_length
-        self._cycle_time_ms = int(round(1000 * cycle_time))
+        self._cycle_time_ms = round(1000 * cycle_time)
         self._indicator_width_ratio = indicator_width_ratio
 
         # property value (angle in 1/16th of a degree) for current indicator position.
@@ -106,7 +109,7 @@ class CircleLoadingIndicator(QtWidgets.QWidget):
     def showEvent(self, ev):
         super().showEvent(ev)
         if self.__animation is None:
-            self.__animation = QtCore.QPropertyAnimation(self, b'indicator_position', self)
+            self.__animation = QtCore.QPropertyAnimation(self, b"indicator_position", self)
             self.__animation.setDuration(self._cycle_time_ms)
             self.__animation.setStartValue(0)
             self.__animation.setEndValue(-5760)
@@ -130,7 +133,7 @@ class CircleLoadingIndicator(QtWidgets.QWidget):
             x_offset = (width - height) // 2
             y_offset = 0
             base_size = height
-        line_width = max(1, int(round(base_size * self._indicator_width_ratio)))
+        line_width = max(1, round(base_size * self._indicator_width_ratio))
         margin = max(1, line_width // 2)
         size = base_size - 2 * margin
         self.__draw_rect = QtCore.QRect(x_offset + margin, y_offset + margin, size, size)

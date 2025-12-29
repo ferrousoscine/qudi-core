@@ -18,7 +18,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['GlobalEditorWidget']
+__all__ = ["GlobalEditorWidget"]
 
 from collections.abc import Mapping
 from typing import Any
@@ -34,7 +34,7 @@ class GlobalEditorWidget(QtWidgets.QStackedWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent=parent)
 
-        self.placeholder_label = QtWidgets.QLabel('Please load configuration from file\nor create a new one.')
+        self.placeholder_label = QtWidgets.QLabel("Please load configuration from file\nor create a new one.")
         font = self.placeholder_label.font()
         font.setBold(True)
         font.setPointSize(font.pointSize() + 4)
@@ -52,8 +52,7 @@ class GlobalEditorWidget(QtWidgets.QStackedWidget):
     def config(self) -> None | dict[str, Any]:
         if self.currentIndex() == 0:
             return None
-        else:
-            return self.global_editor_widget.config
+        return self.global_editor_widget.config
 
     def set_config(self, config: None | dict[str, Any]) -> None:
         self.global_editor_widget.set_config(config)

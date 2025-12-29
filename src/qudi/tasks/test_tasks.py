@@ -25,7 +25,7 @@ from qudi.core.scripting.moduletask import ModuleTask
 
 
 class TestTask(ModuleTask):
-    _derp = Connector(name='derp', interface='TemplateLogic')
+    _derp = Connector(name="derp", interface="TemplateLogic")
 
     def _setup(self) -> None:
         i = 0
@@ -37,7 +37,7 @@ class TestTask(ModuleTask):
         for i in range(100000000):
             i += 1
 
-    def _run(self, pos_arg='abc', kw_arg=42):
+    def _run(self, pos_arg="abc", kw_arg=42):
         i = 0
         for i in range(10000000):
             self._check_interrupt()
@@ -45,7 +45,7 @@ class TestTask(ModuleTask):
 
 
 class TestTask2(ModuleTask):
-    _derp = Connector(name='derp', interface='TemplateLogic')
+    _derp = Connector(name="derp", interface="TemplateLogic")
 
     def _setup(self) -> None:
         i = 0

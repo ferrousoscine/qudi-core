@@ -14,26 +14,25 @@ See the GNU Lesser General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public License along with qudi.
 If not, see <https://www.gnu.org/licenses/>.
-
-ToDo: Throw errors around for non-existent directories
 """
 
 __all__ = [
-    'get_appdata_dir',
-    'get_default_config_dir',
-    'get_default_log_dir',
-    'get_default_data_dir',
-    'get_daily_directory',
-    'get_home_dir',
-    'get_main_dir',
-    'get_userdata_dir',
-    'get_artwork_dir',
-    'get_module_app_data_path',
+    "get_appdata_dir",
+    "get_artwork_dir",
+    "get_daily_directory",
+    "get_default_config_dir",
+    "get_default_data_dir",
+    "get_default_log_dir",
+    "get_home_dir",
+    "get_main_dir",
+    "get_module_app_data_path",
+    "get_userdata_dir",
 ]
 
 import datetime
 import os
 import sys
+from pathlib import Path
 
 
 def get_main_dir() -> str:
@@ -45,9 +44,9 @@ def get_main_dir() -> str:
     str
         Path to the main tree of the software.
     """
-    import qudi.core as core
+    from qudi import core  # noqa: PLC0415
 
-    return os.path.abspath(os.path.join(os.path.dirname(core.__file__), '..'))
+    return str((Path(core.__file__).parent / "..").resolve())
 
 
 def get_artwork_dir() -> str:
@@ -59,7 +58,7 @@ def get_artwork_dir() -> str:
     str
         Path to the artwork directory of Qudi.
     """
-    return os.path.join(get_main_dir(), 'artwork')
+    return str(Path(get_main_dir()) / "artwork")
 
 
 def get_home_dir() -> str:
@@ -71,7 +70,7 @@ def get_home_dir() -> str:
     str
         Absolute path to the home directory.
     """
-    return os.path.abspath(os.path.expanduser('~'))
+    return str(Path.home().resolve())
 
 
 def get_userdata_dir(create_missing: bool | None = False) -> str:
@@ -84,12 +83,10 @@ def get_userdata_dir(create_missing: bool | None = False) -> str:
     str
         Absolute path to the Qudi subfolder in the user home directory.
     """
-    path = os.path.join(get_home_dir(), 'qudi')
-    # Create directory if desired. Will throw an exception if path returned by get_home_dir() is
-    # non-existent (which should never happen).
-    if create_missing and not os.path.exists(path):
-        os.mkdir(path)
-    return path
+    path = Path(get_home_dir()) / "qudi"
+    if create_missing and not path.exists():
+        path.mkdir()
+    return str(path)
 
 
 def get_appdata_dir(create_missing: bool | None = False) -> str:
@@ -101,19 +98,16 @@ def get_appdata_dir(create_missing: bool | None = False) -> str:
     str
         Path to the application data directory specific to the system.
     """
-    if sys.platform == 'win32':
-        # resolves to "C:\Documents and Settings\<UserName>\Application Data" on XP and
-        # "C:\Users\<UserName>\AppData\Roaming" on win7 and newer
-        path = os.path.join(os.environ['APPDATA'], 'qudi')
-    elif sys.platform == 'darwin':
-        path = os.path.abspath(os.path.expanduser('~/Library/Preferences/qudi'))
+    if sys.platform == "win32":
+        path = Path(os.environ["APPDATA"]) / "qudi"
+    elif sys.platform == "darwin":
+        path = Path.home() / "Library" / "Preferences" / "qudi"
     else:
-        path = os.path.abspath(os.path.expanduser('~/.local/qudi'))
+        path = Path.home() / ".local" / "qudi"
 
-    # Create path if desired.
-    if create_missing and not os.path.exists(path):
-        os.makedirs(path)
-    return path
+    if create_missing and not path.exists():
+        path.mkdir(parents=True)
+    return str(path)
 
 
 def get_default_config_dir(create_missing: bool | None = False) -> str:
@@ -126,11 +120,10 @@ def get_default_config_dir(create_missing: bool | None = False) -> str:
         Path to the application data directory specific to the system.
 
     """
-    path = os.path.join(get_userdata_dir(create_missing), 'config')
-    # Create path if desired.
-    if create_missing and not os.path.exists(path):
-        os.mkdir(path)
-    return path
+    path = Path(get_userdata_dir(create_missing)) / "config"
+    if create_missing and not path.exists():
+        path.mkdir()
+    return str(path)
 
 
 def get_default_log_dir(create_missing: bool | None = False) -> str:
@@ -143,12 +136,10 @@ def get_default_log_dir(create_missing: bool | None = False) -> str:
         Path to the default logging directory specific to the system.
 
     """
-    # FIXME: This needs to be properly done for linux systems
-    path = os.path.join(get_userdata_dir(create_missing), 'log')
-    # Create path if desired.
-    if create_missing and not os.path.exists(path):
-        os.mkdir(path)
-    return path
+    path = Path(get_userdata_dir(create_missing)) / "log"
+    if create_missing and not path.exists():
+        path.mkdir()
+    return str(path)
 
 
 def get_default_data_dir(create_missing: bool | None = False) -> str:
@@ -160,12 +151,10 @@ def get_default_data_dir(create_missing: bool | None = False) -> str:
     str
         Path to default data root directory.
     """
-    # FIXME: This needs to be properly done for linux systems
-    path = os.path.join(get_userdata_dir(create_missing), 'Data')
-    # Create path if desired.
-    if create_missing and not os.path.exists(path):
-        os.mkdir(path)
-    return path
+    path = Path(get_userdata_dir(create_missing)) / "Data"
+    if create_missing and not path.exists():
+        path.mkdir()
+    return str(path)
 
 
 def get_daily_directory(
@@ -193,19 +182,19 @@ def get_daily_directory(
         Path representing the directory structure based on the timestamp.
     """
     if timestamp is None:
-        timestamp = datetime.datetime.now()
+        timestamp = datetime.datetime.now(tz=datetime.UTC)
 
-    day_dir = timestamp.strftime('%Y-%m-%d')
-    year_dir, month_dir = day_dir.split('-')[:2]
-    daily_path = os.path.join(year_dir, month_dir, day_dir)
+    day_dir = timestamp.strftime("%Y-%m-%d")
+    year_dir, month_dir = day_dir.split("-")[:2]
+    daily_path = Path(year_dir) / month_dir / day_dir
     if root is not None:
-        daily_path = os.path.join(root, daily_path)
+        daily_path = Path(root) / daily_path
         if create_missing:
-            os.makedirs(daily_path, exist_ok=True)
-    return daily_path
+            daily_path.mkdir(parents=True, exist_ok=True)
+    return str(daily_path)
 
 
 def get_module_app_data_path(cls_name: str, module_base: str, module_name: str) -> str:
     """Constructs the appData file path for the given qudi module."""
-    file_name = f'status-{cls_name}_{module_base}_{module_name}.cfg'
-    return os.path.join(get_appdata_dir(), file_name)
+    file_name = f"status-{cls_name}_{module_base}_{module_name}.cfg"
+    return str(Path(get_appdata_dir()) / file_name)

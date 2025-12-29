@@ -51,15 +51,15 @@ class TestExpDecayMethods(unittest.TestCase):
 
         fit_model = StretchedExponentialDecay()
         guess = fit_model.guess(y_values, self.x_values)
-        guess['stretch'].set(vary=False, value=1)
+        guess["stretch"].set(vary=False, value=1)
         fit_result = fit_model.fit(data=y_values, x=self.x_values, **guess)
 
-        params_ideal = {'offset': self.offset, 'amplitude': self.amplitude, 'decay': self.decay}
+        params_ideal = {"offset": self.offset, "amplitude": self.amplitude, "decay": self.decay}
         for name, ideal_val in params_ideal.items():
             diff = abs(fit_result.best_values[name] - ideal_val)
             tolerance = abs(ideal_val * self._fit_param_tolerance)
             msg = f'Exp. decay fit parameter "{name}" not within {self._fit_param_tolerance:.2%} tolerance'
-            self.assertLessEqual(diff, tolerance, msg)
+            assert diff <= tolerance, msg
 
     def test_stretched_exp_decay(self):
         # Test for stretched exponential decay
@@ -71,17 +71,17 @@ class TestExpDecayMethods(unittest.TestCase):
         fit_result = fit_model.fit(data=y_values, x=self.x_values, **fit_model.guess(y_values, self.x_values))
 
         params_ideal = {
-            'offset': self.offset,
-            'amplitude': self.amplitude,
-            'decay': self.decay,
-            'stretch': self.stretch,
+            "offset": self.offset,
+            "amplitude": self.amplitude,
+            "decay": self.decay,
+            "stretch": self.stretch,
         }
         for name, ideal_val in params_ideal.items():
             diff = abs(fit_result.best_values[name] - ideal_val)
             tolerance = abs(ideal_val * self._fit_param_tolerance)
             msg = f'Stretched exp. decay fit parameter "{name}" not within {self._fit_param_tolerance:.2%} tolerance'
-            self.assertLessEqual(diff, tolerance, msg)
+            assert diff <= tolerance, msg
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

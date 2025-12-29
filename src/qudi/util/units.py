@@ -19,12 +19,12 @@ If not, see <https://www.gnu.org/licenses/>.
 """
 
 __all__ = (
-    'create_formatted_output',
-    'get_relevant_digit',
-    'get_si_norm',
-    'get_unit_prefix_dict',
-    'round_value_to_error',
-    'ScaledFloat',
+    "ScaledFloat",
+    "create_formatted_output",
+    "get_relevant_digit",
+    "get_si_norm",
+    "get_unit_prefix_dict",
+    "round_value_to_error",
 )
 
 import math
@@ -49,26 +49,25 @@ def get_unit_prefix_dict():
     dict
         Keys are string prefix and values are magnitude values.
     """
-    unit_prefix_dict = {
-        'y': 1e-24,
-        'z': 1e-21,
-        'a': 1e-18,
-        'f': 1e-15,
-        'p': 1e-12,
-        'n': 1e-9,
-        'µ': 1e-6,
-        'm': 1e-3,
-        '': 1,
-        'k': 1e3,
-        'M': 1e6,
-        'G': 1e9,
-        'T': 1e12,
-        'P': 1e15,
-        'E': 1e18,
-        'Z': 1e21,
-        'Y': 1e24,
+    return {
+        "y": 1e-24,
+        "z": 1e-21,
+        "a": 1e-18,
+        "f": 1e-15,
+        "p": 1e-12,
+        "n": 1e-9,
+        "µ": 1e-6,
+        "m": 1e-3,
+        "": 1,
+        "k": 1e3,
+        "M": 1e6,
+        "G": 1e9,
+        "T": 1e12,
+        "P": 1e15,
+        "E": 1e18,
+        "Z": 1e21,
+        "Y": 1e24,
     }
-    return unit_prefix_dict
 
 
 class ScaledFloat(float):
@@ -97,14 +96,12 @@ class ScaledFloat(float):
 
         # Zero makes the log crash and should not have a prefix
         if self == 0:
-            return ''
+            return ""
 
         exponent = math.floor(math.log10(abs(self)) / 3)
-        if exponent < -8:
-            exponent = -8
-        if exponent > 8:
-            exponent = 8
-        prefix = 'yzafpnµm kMGTPEZY'
+        exponent = max(exponent, -8)
+        exponent = min(exponent, 8)
+        prefix = "yzafpnµm kMGTPEZY"
         return prefix[8 + exponent].strip()
 
     @property
@@ -132,25 +129,21 @@ class ScaledFloat(float):
         """
         autoscale = False
         if len(fmt) >= 2:
-            if fmt[-2] == 'r':
+            if fmt[-2] == "r":
                 autoscale = True
                 fmt = fmt[:-2] + fmt[-1]
-            elif fmt[-1] == 'r':
+            elif fmt[-1] == "r":
                 autoscale = True
-                fmt = fmt[:-1] + 'f'
-        elif fmt[-1] == 'r':
+                fmt = fmt[:-1] + "f"
+        elif fmt[-1] == "r":
             autoscale = True
-            fmt = fmt[:-1] + 'f'
+            fmt = fmt[:-1] + "f"
         if autoscale:
             scale = self.scale
-            if scale == 'u':
-                index = 'micro'
-            else:
-                index = scale
+            index = "micro" if scale == "u" else scale
             value = self / get_unit_prefix_dict()[index]
-            return f'{value.__format__(fmt):s} {scale:s}'
-        else:
-            return super().__format__(fmt)
+            return f"{value.__format__(fmt):s} {scale:s}"
+        return super().__format__(fmt)
 
 
 def create_formatted_output(param_dict, num_sig_digits=5):
@@ -196,12 +189,12 @@ def create_formatted_output(param_dict, num_sig_digits=5):
     if fn is None:
         raise RuntimeError('Function "create_formatted_output" requires pyqtgraph.')
 
-    output_str = ''
+    output_str = ""
     atol = 1e-18  # absolute tolerance for the detection of zero.
 
     for entry in param_dict:
-        if param_dict[entry].get('error') is not None:
-            value, error, digit = round_value_to_error(param_dict[entry]['value'], param_dict[entry]['error'])
+        if param_dict[entry].get("error") is not None:
+            value, error, _digit = round_value_to_error(param_dict[entry]["value"], param_dict[entry]["error"])
 
             if (
                 np.isclose(value, 0.0, atol=atol)
@@ -209,14 +202,14 @@ def create_formatted_output(param_dict, num_sig_digits=5):
                 or np.isclose(error, 0.0, atol=atol)
                 or np.isinf(error)
             ):
-                sc_fact, unit_prefix = fn.siScale(param_dict[entry]['value'])
-                str_val = '{0:.{1}e}'.format(param_dict[entry]['value'], num_sig_digits - 1)
+                sc_fact, unit_prefix = fn.siScale(param_dict[entry]["value"])
+                str_val = "{0:.{1}e}".format(param_dict[entry]["value"], num_sig_digits - 1)
                 if np.isnan(float(str_val)):
                     value = np.nan
                 elif np.isinf(float(str_val)):
                     value = np.inf
                 else:
-                    value = float('{0:.{1}e}'.format(param_dict[entry]['value'], num_sig_digits - 1))
+                    value = float("{0:.{1}e}".format(param_dict[entry]["value"], num_sig_digits - 1))
 
             else:
                 # the factor 10 moves the displayed digit by one to the right,
@@ -224,18 +217,18 @@ def create_formatted_output(param_dict, num_sig_digits=5):
                 # range, rather then from the value 1000 to 1, which is
                 # default.
                 sc_fact, unit_prefix = fn.siScale(error * 10)
-            output_str += '{0}: ({1} \u00b1 {2}) {3}{4} \n'.format(
+            output_str += "{}: ({} \u00b1 {}) {}{} \n".format(
                 entry,
                 round(value * sc_fact, num_sig_digits - 1),
                 round(error * sc_fact, num_sig_digits - 1),
                 unit_prefix,
-                param_dict[entry]['unit'],
+                param_dict[entry]["unit"],
             )
         else:
             output_str += (
-                f'{entry}: '
-                + fn.siFormat(param_dict[entry]['value'], precision=num_sig_digits, suffix=param_dict[entry]['unit'])
-                + ' (fixed) \n'
+                f"{entry}: "
+                + fn.siFormat(param_dict[entry]["value"], precision=num_sig_digits, suffix=param_dict[entry]["unit"])
+                + " (fixed) \n"
             )
     return output_str
 
@@ -331,14 +324,11 @@ def round_value_to_error(value, error):
     # error can only be positive!
     log_val = np.log10(abs(error))
 
-    if log_val < 0:
-        round_digit = -(int(log_val) - 1)
-    else:
-        round_digit = -(int(log_val))
+    round_digit = -(int(log_val) - 1) if log_val < 0 else -int(log_val)
 
-    first_err_digit = f'{error:e}'[0]
+    first_err_digit = f"{error:e}"[0]
 
-    if first_err_digit in ('1', '2'):
+    if first_err_digit in ("1", "2"):
         round_digit += 1
 
     # Use the python round function, since np.round uses the __repr__ conversion
@@ -372,9 +362,8 @@ def get_relevant_digit(entry):
 
     if np.log10(entry) >= 0:
         return int(np.log10(entry))
-    else:
-        # catch the asymmetric behaviour of the log and int operation.
-        return int(int(np.abs(np.log10(entry))) + 1 + np.log10(entry)) - (int(np.abs(np.log10(entry))) + 1)
+    # catch the asymmetric behaviour of the log and int operation.
+    return int(int(np.abs(np.log10(entry))) + 1 + np.log10(entry)) - (int(np.abs(np.log10(entry))) + 1)
 
 
 def get_si_norm(entry):

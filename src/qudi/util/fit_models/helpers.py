@@ -19,18 +19,17 @@ If not, see <https://www.gnu.org/licenses/>.
 """
 
 __all__ = (
-    'correct_offset_histogram',
-    'find_highest_peaks',
-    'estimate_double_peaks',
-    'estimate_triple_peaks',
-    'sort_check_data',
-    'smooth_data',
+    "correct_offset_histogram",
+    "estimate_double_peaks",
+    "estimate_triple_peaks",
+    "find_highest_peaks",
+    "smooth_data",
+    "sort_check_data",
 )
 
 import numpy as np
 from scipy.ndimage.filters import gaussian_filter1d as _gaussian_filter
-from scipy.signal import find_peaks as _find_peaks
-from scipy.signal import peak_widths as _peak_widths
+from scipy.signal import find_peaks as _find_peaks, peak_widths as _peak_widths
 
 
 def sort_check_data(data, x):
@@ -43,7 +42,7 @@ def sort_check_data(data, x):
 
 def smooth_data(data, filter_width=None):
     if filter_width is None:
-        filter_width = max(1, int(round(len(data) / 100)))
+        filter_width = max(1, round(len(data) / 100))
     return _gaussian_filter(data, sigma=filter_width), filter_width
 
 
@@ -74,7 +73,7 @@ def correct_offset_histogram(data, bin_width=None):
     if bin_width is None:
         bin_width = max(1, data.size // 50)
     elif not isinstance(bin_width, int):
-        bin_width = max(1, int(round(bin_width)))
+        bin_width = max(1, round(bin_width))
     hist = np.histogram(data, bins=bin_width)
     offset = (hist[1][hist[0].argmax()] + hist[1][hist[0].argmax() + 1]) / 2
     return data - offset, offset
@@ -85,18 +84,20 @@ def find_highest_peaks(data, peak_count, allow_borders=True, **kwargs):
     ToDo: Document
     """
     peak_count = int(peak_count)
-    assert peak_count > 0, 'Parameter "peak_count" must be integer >= 1'
-    assert len(data) >= 5, 'Data must contain at least 5 data points'
+    if peak_count <= 0:
+        raise ValueError('Parameter "peak_count" must be integer >= 1')
+    if len(data) < 5:
+        raise ValueError("Data must contain at least 5 data points")
 
     # Return early if all elements are the same
     if min(data) == max(data):
-        return list(), list(), list()
+        return [], [], []
 
     # Find all peaks
-    peaks, properties = _find_peaks(data, **kwargs)
+    peaks, _properties = _find_peaks(data, **kwargs)
     if len(peaks) == 0:
         # ToDo: warn
-        return list(), list(), list()
+        return [], [], []
 
     # Sort found peaks by increasing peak height
     sorted_args = np.argsort(data[peaks])
@@ -109,7 +110,7 @@ def find_highest_peaks(data, peak_count, allow_borders=True, **kwargs):
 
     # Check if data borders are more promising as peak locations and replace found peaks
     if allow_borders:
-        width = max(2, int(round(max(peak_widths))))
+        width = max(2, round(max(peak_widths)))
         left_mean = np.mean(data[:width])
         right_mean = np.mean(data[-width:])
         if 2 * min(peak_heights) < left_mean and min(peaks) > 2 * width:
@@ -150,8 +151,8 @@ def estimate_double_peaks(data, x, minimum_distance=None):
     # Replace missing peaks with sensible default value
     if len(peak_indices) == 1:
         # If just one peak was found, assume it is two peaks overlapping and split it into two
-        left_peak_index = max(0, int(round(peak_indices[0] - peak_widths[0] / 2)))
-        right_peak_index = min(len(x) - 1, int(round(peak_indices[0] + peak_widths[0] / 2)))
+        left_peak_index = max(0, round(peak_indices[0] - peak_widths[0] / 2))
+        right_peak_index = min(len(x) - 1, round(peak_indices[0] + peak_widths[0] / 2))
         peak_indices = (left_peak_index, right_peak_index)
         peak_heights = (peak_heights[0] / 2, peak_heights[0] / 2)
         peak_widths = (peak_widths[0] / 2, peak_widths[0] / 2)
@@ -162,14 +163,14 @@ def estimate_double_peaks(data, x, minimum_distance=None):
         peak_widths = (x_spacing * 10, x_spacing * 10)
 
     estimate = {
-        'height': np.asarray(peak_heights),
-        'fwhm': np.asarray(peak_widths) * x_spacing,
-        'center': np.asarray(x[np.asarray(peak_indices)]),
+        "height": np.asarray(peak_heights),
+        "fwhm": np.asarray(peak_widths) * x_spacing,
+        "center": np.asarray(x[np.asarray(peak_indices)]),
     }
     limits = {
-        'height': ((0, 2 * data_span),) * 2,
-        'fwhm': ((x_spacing, x_span),) * 2,
-        'center': ((min(x) - x_span / 2, max(x) + x_span / 2),) * 2,
+        "height": ((0, 2 * data_span),) * 2,
+        "fwhm": ((x_spacing, x_span),) * 2,
+        "center": ((min(x) - x_span / 2, max(x) + x_span / 2),) * 2,
     }
     return estimate, limits
 
@@ -196,8 +197,8 @@ def estimate_triple_peaks(data, x, minimum_distance=None):
         peak_widths = (peak_widths[0], middle_peak_width, peak_widths[1])
     elif len(peak_indices) == 1:
         # If just one peak was found, assume it is three peaks overlapping and split it
-        left_peak_index = max(0, int(round(peak_indices[0] - peak_widths[0] / 2)))
-        right_peak_index = min(len(x) - 1, int(round(peak_indices[0] + peak_widths[0] / 2)))
+        left_peak_index = max(0, round(peak_indices[0] - peak_widths[0] / 2))
+        right_peak_index = min(len(x) - 1, round(peak_indices[0] + peak_widths[0] / 2))
         peak_indices = (left_peak_index, peak_indices[0], right_peak_index)
         peak_heights = (peak_heights[0] / 2, peak_heights[0] / 2, peak_heights[0] / 2)
         peak_widths = (peak_widths[0] / 2, peak_widths[0] / 2, peak_widths[0] / 2)
@@ -208,13 +209,13 @@ def estimate_triple_peaks(data, x, minimum_distance=None):
         peak_widths = (x_spacing * 10, x_spacing * 10, x_spacing * 10)
 
     estimate = {
-        'height': np.asarray(peak_heights),
-        'fwhm': np.asarray(peak_widths) * x_spacing,
-        'center': np.asarray(x[np.asarray(peak_indices)]),
+        "height": np.asarray(peak_heights),
+        "fwhm": np.asarray(peak_widths) * x_spacing,
+        "center": np.asarray(x[np.asarray(peak_indices)]),
     }
     limits = {
-        'height': ((0, 2 * data_span),) * 3,
-        'fwhm': ((x_spacing, x_span),) * 3,
-        'center': ((min(x) - x_span / 2, max(x) + x_span / 2),) * 3,
+        "height": ((0, 2 * data_span),) * 3,
+        "fwhm": ((x_spacing, x_span),) * 3,
+        "center": ((min(x) - x_span / 2, max(x) + x_span / 2),) * 3,
     }
     return estimate, limits

@@ -18,8 +18,9 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['GlobalConfigWidget', 'GlobalOptionsWidget', 'RemoteServerWidget', 'CustomOptionsWidget']
+__all__ = ["CustomOptionsWidget", "GlobalConfigWidget", "GlobalOptionsWidget", "RemoteServerWidget"]
 
+import contextlib
 from collections.abc import Mapping
 from typing import Any
 
@@ -43,13 +44,13 @@ class RemoteServerWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
         # server enable flag
-        label = QtWidgets.QLabel('Remote modules server:')
+        label = QtWidgets.QLabel("Remote modules server:")
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.enable_checkbox = QtWidgets.QCheckBox()
         self.enable_checkbox.setChecked(True)
         self.enable_checkbox.setToolTip(
-            'Whether qudi should start a remote modules server at all.\nYou will not be able to '
-            'communicate with remote qudi instances if this is disabled.'
+            "Whether qudi should start a remote modules server at all.\nYou will not be able to "
+            "communicate with remote qudi instances if this is disabled."
         )
         self.enable_checkbox.toggled.connect(self._toggle_editors)
         layout.addWidget(label, 0, 0)
@@ -59,35 +60,35 @@ class RemoteServerWidget(QtWidgets.QWidget):
         self._server_layout = QtWidgets.QGridLayout()
         self._server_layout.setColumnStretch(1, 1)
         layout.addLayout(self._server_layout, 1, 0, 1, 2)
-        label = QtWidgets.QLabel('Host address:')
+        label = QtWidgets.QLabel("Host address:")
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.host_lineedit = QtWidgets.QLineEdit()
-        self.host_lineedit.setToolTip('The host address to share qudi modules with other qudi instances')
+        self.host_lineedit.setToolTip("The host address to share qudi modules with other qudi instances")
         self._server_layout.addWidget(label, 0, 0)
         self._server_layout.addWidget(self.host_lineedit, 0, 1)
 
-        label = QtWidgets.QLabel('Port:')
+        label = QtWidgets.QLabel("Port:")
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.port_spinbox = QtWidgets.QSpinBox()
-        self.port_spinbox.setToolTip('Port number for the remote modules server to bind to')
+        self.port_spinbox.setToolTip("Port number for the remote modules server to bind to")
         self.port_spinbox.setRange(0, 65535)
         self.port_spinbox.setValue(12345)
         self._server_layout.addWidget(label, 1, 0)
         self._server_layout.addWidget(self.port_spinbox, 1, 1)
 
-        label = QtWidgets.QLabel('Certificate file:')
+        label = QtWidgets.QLabel("Certificate file:")
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.certfile_lineedit = PathLineEdit(dialog_caption='Select SSL Certificate File', follow_symlinks=True)
-        self.certfile_lineedit.setPlaceholderText('No certificate')
-        self.certfile_lineedit.setToolTip('SSL certificate file path for the remote module server')
+        self.certfile_lineedit = PathLineEdit(dialog_caption="Select SSL Certificate File", follow_symlinks=True)
+        self.certfile_lineedit.setPlaceholderText("No certificate")
+        self.certfile_lineedit.setToolTip("SSL certificate file path for the remote module server")
         self._server_layout.addWidget(label, 2, 0)
         self._server_layout.addWidget(self.certfile_lineedit, 2, 1)
 
-        label = QtWidgets.QLabel('Key file:')
+        label = QtWidgets.QLabel("Key file:")
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        self.keyfile_lineedit = PathLineEdit(dialog_caption='Select SSL Key File', follow_symlinks=True)
-        self.keyfile_lineedit.setPlaceholderText('No key')
-        self.keyfile_lineedit.setToolTip('SSL key file path for the remote module server')
+        self.keyfile_lineedit = PathLineEdit(dialog_caption="Select SSL Key File", follow_symlinks=True)
+        self.keyfile_lineedit.setPlaceholderText("No key")
+        self.keyfile_lineedit.setToolTip("SSL key file path for the remote module server")
         self._server_layout.addWidget(label, 3, 0)
         self._server_layout.addWidget(self.keyfile_lineedit, 3, 1)
 
@@ -97,15 +98,11 @@ class RemoteServerWidget(QtWidgets.QWidget):
     def config(self) -> None | dict[str, int | str]:
         if self.enable_checkbox.isChecked():
             host = self.host_lineedit.text().strip()
-            cfg = {'address': host if host else 'localhost', 'port': self.port_spinbox.value()}
-            try:
-                cfg['certfile'] = self.certfile_lineedit.paths[0]
-            except IndexError:
-                pass
-            try:
-                cfg['keyfile'] = self.keyfile_lineedit.paths[0]
-            except IndexError:
-                pass
+            cfg = {"address": host if host else "localhost", "port": self.port_spinbox.value()}
+            with contextlib.suppress(IndexError):
+                cfg["certfile"] = self.certfile_lineedit.paths[0]
+            with contextlib.suppress(IndexError):
+                cfg["keyfile"] = self.keyfile_lineedit.paths[0]
 
             return cfg
         return None
@@ -115,16 +112,16 @@ class RemoteServerWidget(QtWidgets.QWidget):
             self.enable_checkbox.setChecked(False)
         else:
             self.enable_checkbox.setChecked(True)
-            host = config.get('address', None)
-            port = config.get('port', None)
-            certfile = config.get('certfile', None)
-            keyfile = config.get('keyfile', None)
+            host = config.get("address", None)
+            port = config.get("port", None)
+            certfile = config.get("certfile", None)
+            keyfile = config.get("keyfile", None)
             if host is None:
-                host = 'localhost'
+                host = "localhost"
             if port is None:
                 port = 12345
             if certfile is None or keyfile is None:
-                certfile = keyfile = ''
+                certfile = keyfile = ""
             self.host_lineedit.setText(host)
             self.port_spinbox.setValue(port)
             self.certfile_lineedit.setText(certfile)
@@ -156,125 +153,125 @@ class GlobalOptionsWidget(QtWidgets.QWidget):
         layout.addWidget(HorizontalLine(), 1, 0, 1, 2)
 
         # Create local module server port editor
-        label = QtWidgets.QLabel('Namespace server port:')
+        label = QtWidgets.QLabel("Namespace server port:")
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.namespace_port_spinbox = QtWidgets.QSpinBox()
-        self.namespace_port_spinbox.setToolTip('Port number for the local namespace server')
+        self.namespace_port_spinbox.setToolTip("Port number for the local namespace server")
         self.namespace_port_spinbox.setRange(0, 65535)
         layout.addWidget(label, 2, 0)
         layout.addWidget(self.namespace_port_spinbox, 2, 1)
 
         # Create flag editor to enforce remote calls by value
-        label = QtWidgets.QLabel('Force remote calls by value:')
+        label = QtWidgets.QLabel("Force remote calls by value:")
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.force_calls_by_value_checkbox = QtWidgets.QCheckBox()
         self.force_calls_by_value_checkbox.setToolTip(
-            'Will force all arguments from remote calls to qudi API methods to pass by value\n'
-            '(serialized -> sent to qudi -> de-serialized).'
+            "Will force all arguments from remote calls to qudi API methods to pass by value\n"
+            "(serialized -> sent to qudi -> de-serialized)."
         )
         layout.addWidget(label, 3, 0)
         layout.addWidget(self.force_calls_by_value_checkbox, 3, 1)
 
         # Create flag editor to hide manager window upon startup
-        label = QtWidgets.QLabel('Hide manager window:')
+        label = QtWidgets.QLabel("Hide manager window:")
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.hide_manager_window_checkbox = QtWidgets.QCheckBox()
-        self.hide_manager_window_checkbox.setToolTip('Whether to suppress the qudi module manager window at startup.')
+        self.hide_manager_window_checkbox.setToolTip("Whether to suppress the qudi module manager window at startup.")
         layout.addWidget(label, 4, 0)
         layout.addWidget(self.hide_manager_window_checkbox, 4, 1)
 
         # Create flag editor to auomatically create a data sub-directory for each day
-        label = QtWidgets.QLabel('Create daily data directories:')
+        label = QtWidgets.QLabel("Create daily data directories:")
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.daily_data_dirs_checkbox = QtWidgets.QCheckBox()
         self.daily_data_dirs_checkbox.setToolTip(
-            'Whether to automatically create daily sub-directories in the data directory for file '
-            'based data storage facilities'
+            "Whether to automatically create daily sub-directories in the data directory for file "
+            "based data storage facilities"
         )
         layout.addWidget(label, 5, 0)
         layout.addWidget(self.daily_data_dirs_checkbox, 5, 1)
 
         # Create default data path editor
-        label = QtWidgets.QLabel('Default data directory:')
+        label = QtWidgets.QLabel("Default data directory:")
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.data_directory_lineedit = PathLineEdit(
-            dialog_caption='Select Default Data Directory', select_directory=True
+            dialog_caption="Select Default Data Directory", select_directory=True
         )
         self.data_directory_lineedit.setPlaceholderText('Default "<UserHome>/qudi/Data/"')
         self.data_directory_lineedit.setToolTip(
-            'Default data directory for qudi modules to save measurement data into.'
+            "Default data directory for qudi modules to save measurement data into."
         )
         layout.addWidget(label, 6, 0)
         layout.addWidget(self.data_directory_lineedit, 6, 1)
 
         # Create startup modules editor
-        label = QtWidgets.QLabel('Startup Modules:')
+        label = QtWidgets.QLabel("Startup Modules:")
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.startup_lineedit = QtWidgets.QLineEdit()
-        self.startup_lineedit.setPlaceholderText('No startup modules')
+        self.startup_lineedit.setPlaceholderText("No startup modules")
         self.startup_lineedit.setToolTip(
-            'Modules to be automatically activated on qudi startup.\nSeparate multiple module names with commas.'
+            "Modules to be automatically activated on qudi startup.\nSeparate multiple module names with commas."
         )
         layout.addWidget(label, 7, 0)
         layout.addWidget(self.startup_lineedit, 7, 1)
 
         # Create stylesheet file path editor
-        label = QtWidgets.QLabel('Stylesheet:')
+        label = QtWidgets.QLabel("Stylesheet:")
         label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.stylesheet_lineedit = PathLineEdit(
-            dialog_caption='Select QSS Stylesheet', filters='Stylesheets (*.qss)', follow_symlinks=True
+            dialog_caption="Select QSS Stylesheet", filters="Stylesheets (*.qss)", follow_symlinks=True
         )
-        self.stylesheet_lineedit.setPlaceholderText('Platform dependent Qt default')
+        self.stylesheet_lineedit.setPlaceholderText("Platform dependent Qt default")
         self.stylesheet_lineedit.setToolTip(
-            'File path for qudi QSS stylesheet to use.\nIf just a file name is given, the file '
-            'must be found in the qudi artwork resources.'
+            "File path for qudi QSS stylesheet to use.\nIf just a file name is given, the file "
+            "must be found in the qudi artwork resources."
         )
         layout.addWidget(label, 8, 0)
         layout.addWidget(self.stylesheet_lineedit, 8, 1)
 
         # Get default config from JSON schema
-        global_props = config_schema()['properties']['global']['properties']
-        self._config_defaults = {name: prop.get('default', None) for name, prop in global_props.items()}
+        global_props = config_schema()["properties"]["global"]["properties"]
+        self._config_defaults = {name: prop.get("default", None) for name, prop in global_props.items()}
         # Fixme: Remove deprecated option manually
-        del self._config_defaults['extension_paths']
+        del self._config_defaults["extension_paths"]
 
         self.set_config(config)
 
     @property
     def config(self) -> dict[str, Any]:
         config = {
-            'remote_modules_server': self.remote_server_editor.config,
-            'namespace_server_port': self.namespace_port_spinbox.value(),
-            'force_remote_calls_by_value': self.force_calls_by_value_checkbox.isChecked(),
-            'hide_manager_window': self.hide_manager_window_checkbox.isChecked(),
-            'daily_data_dirs': self.daily_data_dirs_checkbox.isChecked(),
-            'startup_modules': [mod.strip() for mod in self.startup_lineedit.text().split(',') if mod.strip()],
+            "remote_modules_server": self.remote_server_editor.config,
+            "namespace_server_port": self.namespace_port_spinbox.value(),
+            "force_remote_calls_by_value": self.force_calls_by_value_checkbox.isChecked(),
+            "hide_manager_window": self.hide_manager_window_checkbox.isChecked(),
+            "daily_data_dirs": self.daily_data_dirs_checkbox.isChecked(),
+            "startup_modules": [mod.strip() for mod in self.startup_lineedit.text().split(",") if mod.strip()],
         }
         try:
-            config['default_data_dir'] = self.data_directory_lineedit.paths[0]
+            config["default_data_dir"] = self.data_directory_lineedit.paths[0]
         except IndexError:
-            config['default_data_dir'] = self._config_defaults['default_data_dir']
+            config["default_data_dir"] = self._config_defaults["default_data_dir"]
         try:
-            config['stylesheet'] = self.stylesheet_lineedit.paths[0]
+            config["stylesheet"] = self.stylesheet_lineedit.paths[0]
         except IndexError:
-            config['stylesheet'] = self._config_defaults['stylesheet']
+            config["stylesheet"] = self._config_defaults["stylesheet"]
         return config
 
     def set_config(self, config: None | Mapping[str, Any]):
         if config is None:
-            config = dict()
+            config = {}
         config = {name: config.get(name, default) for name, default in self._config_defaults.items()}
 
-        self.remote_server_editor.set_config(config['remote_modules_server'])
-        self.namespace_port_spinbox.setValue(config['namespace_server_port'])
-        self.force_calls_by_value_checkbox.setChecked(config['force_remote_calls_by_value'])
-        self.hide_manager_window_checkbox.setChecked(config['hide_manager_window'])
-        self.daily_data_dirs_checkbox.setChecked(config['daily_data_dirs'])
-        default_data_dir = config['default_data_dir']
-        self.data_directory_lineedit.setText('' if default_data_dir is None else default_data_dir)
-        stylesheet = config['stylesheet']
-        self.stylesheet_lineedit.setText('' if stylesheet is None else stylesheet)
-        self.startup_lineedit.setText(','.join(config['startup_modules']))
+        self.remote_server_editor.set_config(config["remote_modules_server"])
+        self.namespace_port_spinbox.setValue(config["namespace_server_port"])
+        self.force_calls_by_value_checkbox.setChecked(config["force_remote_calls_by_value"])
+        self.hide_manager_window_checkbox.setChecked(config["hide_manager_window"])
+        self.daily_data_dirs_checkbox.setChecked(config["daily_data_dirs"])
+        default_data_dir = config["default_data_dir"]
+        self.data_directory_lineedit.setText("" if default_data_dir is None else default_data_dir)
+        stylesheet = config["stylesheet"]
+        self.stylesheet_lineedit.setText("" if stylesheet is None else stylesheet)
+        self.startup_lineedit.setText(",".join(config["startup_modules"]))
 
 
 class GlobalConfigWidget(QtWidgets.QWidget):
@@ -288,7 +285,7 @@ class GlobalConfigWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
         # Create Caption
-        label = QtWidgets.QLabel('Global Configuration')
+        label = QtWidgets.QLabel("Global Configuration")
         label.setAlignment(QtCore.Qt.AlignCenter)
         font = label.font()
         font.setBold(True)

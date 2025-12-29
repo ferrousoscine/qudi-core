@@ -20,11 +20,11 @@ If not, see <https://www.gnu.org/licenses/>.
 """
 
 __all__ = [
-    'ImageWidget',
-    'MouseTrackingImageWidget',
-    'RubberbandZoomImageWidget',
-    'DataSelectionImageWidget',
-    'RubberbandZoomSelectionImageWidget',
+    "DataSelectionImageWidget",
+    "ImageWidget",
+    "MouseTrackingImageWidget",
+    "RubberbandZoomImageWidget",
+    "RubberbandZoomSelectionImageWidget",
 ]
 
 

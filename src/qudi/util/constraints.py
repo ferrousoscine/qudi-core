@@ -18,7 +18,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['ScalarConstraint', 'DiscreteScalarConstraint']
+__all__ = ["DiscreteScalarConstraint", "ScalarConstraint"]
 
 import warnings
 from bisect import bisect_left
@@ -61,9 +61,9 @@ class ScalarConstraint:
 
     def __init__(
         self,
-        default: int | float,
+        default: float,
         bounds: tuple[int | float, int | float],
-        increment: int | float | None = None,
+        increment: float | None = None,
         enforce_int: bool | None = False,
         checker: Callable[[int | float], bool] | None = None,
     ) -> None:
@@ -75,8 +75,8 @@ class ScalarConstraint:
             self.check_value_type(increment)
         if checker is not None and not callable(checker):
             raise TypeError(
-                'checker must be either None or a callable accepting a single scalar '
-                'and returning a valid-flag bool or raising ValueError'
+                "checker must be either None or a callable accepting a single scalar "
+                "and returning a valid-flag bool or raising ValueError"
             )
         self._default = default
         self._minimum, self._maximum = sorted(bounds)
@@ -84,7 +84,7 @@ class ScalarConstraint:
         self._checker = checker
 
         if not self.is_valid(self._default):
-            raise ValueError(f'invalid default value ({self._default}) encountered')
+            raise ValueError(f"invalid default value ({self._default}) encountered")
 
     @property
     def bounds(self) -> tuple[int | float, int | float]:
@@ -155,7 +155,7 @@ class ScalarConstraint:
         """
         return self._enforce_int
 
-    def check(self, value: int | float) -> None:
+    def check(self, value: float) -> None:
         """
         Checks whether the given value is allowed by the constraint by calling various checker
         functions. If a checker function fails it will raise an Exception, indicating what is wrong
@@ -178,7 +178,7 @@ class ScalarConstraint:
         self.check_value_range(value)
         self.check_custom(value)
 
-    def is_valid(self, value: int | float) -> bool:
+    def is_valid(self, value: float) -> bool:
         """
         Checks whether the given value is valid.
 
@@ -197,7 +197,7 @@ class ScalarConstraint:
             return False
         return True
 
-    def clip(self, value: int | float) -> int | float:
+    def clip(self, value: float) -> int | float:
         """
         Clips the given value to the nearest valid value.
 
@@ -229,7 +229,7 @@ class ScalarConstraint:
             checker=self._checker,
         )
 
-    def check_custom(self, value: int | float) -> None:
+    def check_custom(self, value: float) -> None:
         """
         Checks the given value with the supplied custom checker function.
 
@@ -246,9 +246,9 @@ class ScalarConstraint:
             If custom checker fails to validate.
         """
         if (self._checker is not None) and (not self._checker(value)):
-            raise ValueError(f'Custom checker failed to validate {value}')
+            raise ValueError(f"Custom checker failed to validate {value}")
 
-    def check_value_range(self, value: int | float) -> None:
+    def check_value_range(self, value: float) -> None:
         """
         Checks the given value if it is in bounds.
 
@@ -281,45 +281,46 @@ class ScalarConstraint:
         """
         if self._enforce_int:
             if not is_integer(value):
-                raise TypeError(f'values must be int type (received {value})')
-        else:
-            if not (is_integer(value) or is_float(value)):
-                raise TypeError(f'values must be int or float type (received {value})')
+                raise TypeError(f"values must be int type (received {value})")
+        elif not (is_integer(value) or is_float(value)):
+            raise TypeError(f"values must be int or float type (received {value})")
 
     def __repr__(self) -> str:
         cls = self.__class__.__name__
         module = self.__class__.__module__
         return (
-            f'{module}.{cls}('
-            f'default={self.default}, '
-            f'bounds={self.bounds}, '
-            f'increment={self.increment}, '
-            f'enforce_int={self.enforce_int}, '
-            f'checker={self._checker})'
+            f"{module}.{cls}("
+            f"default={self.default}, "
+            f"bounds={self.bounds}, "
+            f"increment={self.increment}, "
+            f"enforce_int={self.enforce_int}, "
+            f"checker={self._checker})"
         )
 
     def __copy__(self):
         return self.copy()
 
-    def __deepcopy__(self, memodict={}):
+    def __deepcopy__(self, memodict=None):
+        if memodict is None:
+            memodict = {}
         new_obj = self.copy()
         memodict[id(self)] = new_obj
         return new_obj
 
     # Backwards compatibility properties:
     @default.setter
-    def default(self, value: int | float):
+    def default(self, value: float):
         """
         .. deprecated:: 1.3.0
             constraints should be immutable. Pass all values to :py:func:`__init__` instead.
         """
         warnings.warn(
-            'ScalarConstraint should be immutable. Pass all values to __init__ instead.',
+            "ScalarConstraint should be immutable. Pass all values to __init__ instead.",
             DeprecationWarning,
             stacklevel=2,
         )
         if not self.is_valid(value):
-            raise ValueError(f'invalid default value ({value}) encountered')
+            raise ValueError(f"invalid default value ({value}) encountered")
         self._default = value
 
     @property
@@ -330,20 +331,20 @@ class ScalarConstraint:
             instead.
         """
         warnings.warn(
-            'ScalarConstraint.min will be removed in the near future. Use ScalarConstraint.minimum instead.',
+            "ScalarConstraint.min will be removed in the near future. Use ScalarConstraint.minimum instead.",
             DeprecationWarning,
             stacklevel=2,
         )
         return self._minimum
 
     @min.setter
-    def min(self, value: int | float):
+    def min(self, value: float):
         """
         .. deprecated:: 1.3.0
             constraints should be immutable. Pass all values to :py:func:`__init__` instead.
         """
         warnings.warn(
-            'ScalarConstraint should be immutable. Pass all values to __init__ instead.',
+            "ScalarConstraint should be immutable. Pass all values to __init__ instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -357,20 +358,20 @@ class ScalarConstraint:
             instead.
         """
         warnings.warn(
-            'ScalarConstraint.max will be removed in the near future. Use ScalarConstraint.maximum instead.',
+            "ScalarConstraint.max will be removed in the near future. Use ScalarConstraint.maximum instead.",
             DeprecationWarning,
             stacklevel=2,
         )
         return self._maximum
 
     @max.setter
-    def max(self, value: int | float):
+    def max(self, value: float):
         """
         .. deprecated:: 1.3.0
             constraints should be immutable. Pass all values to :py:func:`__init__` instead.
         """
         warnings.warn(
-            'ScalarConstraint should be immutable. Pass all values to __init__ instead.',
+            "ScalarConstraint should be immutable. Pass all values to __init__ instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -384,20 +385,20 @@ class ScalarConstraint:
             instead.
         """
         warnings.warn(
-            'ScalarConstraint.step will be removed in the near future. Use ScalarConstraint.increment instead.',
+            "ScalarConstraint.step will be removed in the near future. Use ScalarConstraint.increment instead.",
             DeprecationWarning,
             stacklevel=2,
         )
         return self._increment
 
     @step.setter
-    def step(self, value: None | int | float):
+    def step(self, value: None | float):
         """
         .. deprecated:: 1.3.0
             constraints should be immutable. Pass all values to :py:func:`__init__` instead.
         """
         warnings.warn(
-            'ScalarConstraint should be immutable. Pass all values to __init__ instead.',
+            "ScalarConstraint should be immutable. Pass all values to __init__ instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -432,7 +433,7 @@ class DiscreteScalarConstraint(ScalarConstraint):
 
     def __init__(
         self,
-        default: int | float,
+        default: float,
         allowed_values: Iterable[int | float],
         precision: float | None = None,
         enforce_int: bool | None = False,
@@ -444,7 +445,7 @@ class DiscreteScalarConstraint(ScalarConstraint):
         self._allowed_values = tuple(sorted(set(allowed_values)))
         self._precision = None if (precision is None or precision == 0) else abs(precision)
         if len(self._allowed_values) == 0:
-            raise ValueError('Must provide at least one allowed value')
+            raise ValueError("Must provide at least one allowed value")
         super().__init__(
             default=default,
             bounds=(min(self._allowed_values), max(self._allowed_values)),
@@ -474,11 +475,11 @@ class DiscreteScalarConstraint(ScalarConstraint):
         """
         return self._precision
 
-    def check(self, value: int | float) -> None:
+    def check(self, value: float) -> None:
         super().check(value)
         self.check_allowed_values(value)
 
-    def check_allowed_values(self, value: int | float) -> None:
+    def check_allowed_values(self, value: float) -> None:
         """
         Method that checks whether the given value is in the set of allowed discrete values.
 
@@ -500,10 +501,10 @@ class DiscreteScalarConstraint(ScalarConstraint):
             else:
                 raise ValueError(f"Value {value} is not in allowed discrete value set.")
 
-    def clip(self, value: int | float) -> int | float:
+    def clip(self, value: float) -> int | float:
         return self._find_closest_value(value)
 
-    def copy(self) -> 'DiscreteScalarConstraint':
+    def copy(self) -> "DiscreteScalarConstraint":
         """
         Method copies this DiscreteScalarConstraint instance.
 
@@ -540,7 +541,7 @@ class DiscreteScalarConstraint(ScalarConstraint):
             f"precision={self.precision})"
         )
 
-    def _find_closest_value(self, value: int | float) -> int | float:
+    def _find_closest_value(self, value: float) -> int | float:
         """Find allowed value closest to given value"""
         pos = bisect_left(self._allowed_values, value)
         if pos == 0:
@@ -550,8 +551,5 @@ class DiscreteScalarConstraint(ScalarConstraint):
         else:
             before = self._allowed_values[pos - 1]
             after = self._allowed_values[pos]
-            if value - before >= after - value:
-                closest = after
-            else:
-                closest = before
+            closest = after if value - before >= after - value else before
         return closest

@@ -36,27 +36,27 @@ class AboutQudiDialog(QtWidgets.QDialog):
         self.ok_button = buttonbox.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
         self.ok_button.clicked.connect(self.accept)
 
-        self.header_label = QtWidgets.QLabel('qudi')
-        self.header_label.setObjectName('headerLabel')
+        self.header_label = QtWidgets.QLabel("qudi")
+        self.header_label.setObjectName("headerLabel")
         font = self.header_label.font()
         font.setBold(True)
         font.setPointSize(20)
         self.header_label.setFont(font)
-        self.version_label = QtWidgets.QLabel('Version number goes here...')
-        self.version_label.setObjectName('versionLabel')
+        self.version_label = QtWidgets.QLabel("Version number goes here...")
+        self.version_label.setObjectName("versionLabel")
         self.version_label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse | QtCore.Qt.TextBrowserInteraction)
         self.version_label.setOpenExternalLinks(True)
 
         self.about_label = QtWidgets.QLabel(
-            '<html><head/><body><p>Qudi is a suite of tools for '
-            'operating multi-instrument and multi-computer '
-            'laboratory experiments. Originally built around a '
-            'confocal fluorescence microscope experiments, it has '
-            'grown to be a generally applicaple framework for '
-            'controlling experiments.</p></body></html>'
+            "<html><head/><body><p>Qudi is a suite of tools for "
+            "operating multi-instrument and multi-computer "
+            "laboratory experiments. Originally built around a "
+            "confocal fluorescence microscope experiments, it has "
+            "grown to be a generally applicaple framework for "
+            "controlling experiments.</p></body></html>"
         )
         self.about_label.setWordWrap(True)
-        self.about_label.setObjectName('aboutLabel')
+        self.about_label.setObjectName("aboutLabel")
         self.about_label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse | QtCore.Qt.TextBrowserInteraction)
         self.about_label.setOpenExternalLinks(True)
 
@@ -69,7 +69,7 @@ class AboutQudiDialog(QtWidgets.QDialog):
             'page</span></a>.</p></body></html>'
         )
         self.credits_label.setWordWrap(True)
-        self.credits_label.setObjectName('creditsLabel')
+        self.credits_label.setObjectName("creditsLabel")
         self.credits_label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse | QtCore.Qt.TextBrowserInteraction)
         self.credits_label.setOpenExternalLinks(True)
 
@@ -107,7 +107,7 @@ class AboutQudiDialog(QtWidgets.QDialog):
         )
         self.license_label.setWordWrap(True)
         self.license_label.setOpenExternalLinks(True)
-        self.license_label.setObjectName('licenseLabel')
+        self.license_label.setObjectName("licenseLabel")
         self.license_label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse | QtCore.Qt.TextBrowserInteraction)
         self.license_label.setOpenExternalLinks(True)
 
@@ -134,33 +134,33 @@ class AboutQudiDialog(QtWidgets.QDialog):
             '</p></body></html>'
         )
         self.citation_label.setWordWrap(True)
-        self.citation_label.setObjectName('creditsLabel')
+        self.citation_label.setObjectName("creditsLabel")
         self.citation_label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse | QtCore.Qt.TextBrowserInteraction)
         self.citation_label.setOpenExternalLinks(True)
 
         about_scroll_widget = QtWidgets.QScrollArea()
         about_scroll_widget.setWidgetResizable(True)
         about_scroll_widget.setWidget(self.about_label)
-        about_scroll_widget.setObjectName('aboutScrollArea')
+        about_scroll_widget.setObjectName("aboutScrollArea")
         credits_scroll_widget = QtWidgets.QScrollArea()
         credits_scroll_widget.setWidgetResizable(True)
         credits_scroll_widget.setWidget(self.credits_label)
-        credits_scroll_widget.setObjectName('creditsScrollArea')
+        credits_scroll_widget.setObjectName("creditsScrollArea")
         license_scroll_widget = QtWidgets.QScrollArea()
         license_scroll_widget.setWidgetResizable(True)
         license_scroll_widget.setWidget(self.license_label)
-        license_scroll_widget.setObjectName('licenseScrollArea')
+        license_scroll_widget.setObjectName("licenseScrollArea")
         citation_scroll_widget = QtWidgets.QScrollArea()
         citation_scroll_widget.setWidgetResizable(True)
         citation_scroll_widget.setWidget(self.citation_label)
-        citation_scroll_widget.setObjectName('citationScrollArea')
+        citation_scroll_widget.setObjectName("citationScrollArea")
 
         self.tab_widget = QtWidgets.QTabWidget()
-        self.tab_widget.setObjectName('tabWidget')
-        self.tab_widget.addTab(about_scroll_widget, 'About')
-        self.tab_widget.addTab(credits_scroll_widget, 'Credits')
-        self.tab_widget.addTab(license_scroll_widget, 'License')
-        self.tab_widget.addTab(citation_scroll_widget, 'Cite Qudi')
+        self.tab_widget.setObjectName("tabWidget")
+        self.tab_widget.addTab(about_scroll_widget, "About")
+        self.tab_widget.addTab(credits_scroll_widget, "Credits")
+        self.tab_widget.addTab(license_scroll_widget, "License")
+        self.tab_widget.addTab(citation_scroll_widget, "Cite Qudi")
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.header_label)
@@ -170,4 +170,3 @@ class AboutQudiDialog(QtWidgets.QDialog):
 
         self.setLayout(layout)
         self.about_label.setFocus()
-        return

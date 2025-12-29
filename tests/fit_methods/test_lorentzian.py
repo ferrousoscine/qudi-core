@@ -52,12 +52,12 @@ class TestLorentzianMethods(unittest.TestCase):
         fit_model = Lorentzian()
         fit_result = fit_model.fit(data=y_values, x=self.x_values, **fit_model.guess(y_values, self.x_values))
 
-        params_ideal = {'offset': self.offset, 'amplitude': self.amplitude, 'center': self.center, 'sigma': self.sigma}
+        params_ideal = {"offset": self.offset, "amplitude": self.amplitude, "center": self.center, "sigma": self.sigma}
         for name, fit_param in fit_result.best_values.items():
             diff = abs(fit_param - params_ideal[name])
             tolerance = abs(params_ideal[name] * self._fit_param_tolerance)
             msg = f'Lorentzian peak fit parameter "{name}" not within {self._fit_param_tolerance:.2%} tolerance'
-            self.assertLessEqual(diff, tolerance, msg)
+            assert diff <= tolerance, msg
 
         # Test for lorentzian dip
         y_values = self.noise + self.lorentzian(self.x_values, self.offset, -self.amplitude, self.center, self.sigma)
@@ -65,13 +65,13 @@ class TestLorentzianMethods(unittest.TestCase):
         fit_model = Lorentzian()
         fit_result = fit_model.fit(data=y_values, x=self.x_values, **fit_model.guess(y_values, self.x_values))
 
-        params_ideal['amplitude'] = -self.amplitude
+        params_ideal["amplitude"] = -self.amplitude
         for name, fit_param in fit_result.best_values.items():
             diff = abs(fit_param - params_ideal[name])
             tolerance = abs(params_ideal[name] * self._fit_param_tolerance)
             msg = f'Lorentzian dip fit parameter "{name}" not within {self._fit_param_tolerance:.2%} tolerance'
-            self.assertLessEqual(diff, tolerance, msg)
+            assert diff <= tolerance, msg
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

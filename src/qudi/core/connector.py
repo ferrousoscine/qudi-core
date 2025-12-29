@@ -18,22 +18,22 @@ You should have received a copy of the GNU Lesser General Public License along w
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ['Connector']
+__all__ = ["Connector"]
 
 import weakref
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from qudi.util.overload import OverloadProxy
 
 if TYPE_CHECKING:
     from qudi.core.module import Base
 
-    M = TypeVar('M', bound=Base)
+    M = TypeVar("M", bound=Base)
 else:
-    M = TypeVar('M')
+    M = TypeVar("M")
 
 
-class Connector(Generic[M]):
+class Connector[M]:
     """A connector used to connect qudi modules with each other."""
 
     def __init__(self, interface: str | type[M], name: str | None = None, optional: bool | None = False):
@@ -55,11 +55,12 @@ class Connector(Generic[M]):
             If `name` is not `None` or a non-empty string.
             If `optional` is not a boolean.
         """
-        assert isinstance(interface, (str, type)), (
-            'Parameter "interface" must be an interface class or the class name as str.'
-        )
-        assert name is None or (isinstance(name, str) and name), 'Parameter "name" must be non-empty str or None.'
-        assert isinstance(optional, bool), 'Parameter "optional" must be bool type.'
+        if not isinstance(interface, (str, type)):
+            raise TypeError('Parameter "interface" must be an interface class or the class name as str.')
+        if not (name is None or (isinstance(name, str) and name)):
+            raise ValueError('Parameter "name" must be non-empty str or None.')
+        if not isinstance(optional, bool):
+            raise TypeError('Parameter "optional" must be bool type.')
         self.interface = interface if isinstance(interface, str) else interface.__name__
         self.name = name
         self.optional = optional
@@ -81,7 +82,9 @@ class Connector(Generic[M]):
     def __copy__(self):
         return self.copy()
 
-    def __deepcopy__(self, memodict={}):
+    def __deepcopy__(self, memodict=None):
+        if memodict is None:
+            memodict = {}
         return self.copy()
 
     def __repr__(self):
@@ -121,7 +124,7 @@ class Connector(Generic[M]):
     def copy(self, **kwargs):
         """Create a new instance of Connector with copied values and update"""
         return Connector(
-            kwargs.get('interface', self.interface),
-            kwargs.get('name', self.name),
-            kwargs.get('optional', self.optional),
+            kwargs.get("interface", self.interface),
+            kwargs.get("name", self.name),
+            kwargs.get("optional", self.optional),
         )

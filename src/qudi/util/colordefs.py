@@ -34,16 +34,18 @@ If not, see <https://www.gnu.org/licenses/>.
 """
 
 __all__ = [
-    'ColorScale',
-    'ColorScaleRainbow',
-    'ColorScaleMagma',
-    'ColorScaleInferno',
-    'ColorScalePlasma',
-    'ColorScaleViridis',
-    'QudiPalette',
-    'QudiPalettePale',
-    'QudiMatplotlibStyle',
+    "ColorScale",
+    "ColorScaleInferno",
+    "ColorScaleMagma",
+    "ColorScalePlasma",
+    "ColorScaleRainbow",
+    "ColorScaleViridis",
+    "QudiMatplotlibStyle",
+    "QudiPalette",
+    "QudiPalettePale",
 ]
+
+from typing import ClassVar
 
 import numpy as np
 import pyqtgraph as pg
@@ -1204,23 +1206,23 @@ class QudiPalettePale:
 class QudiMatplotlibStyle:
     """Matplotlib style definition for this 'qudi-look'."""
 
-    __mpl_colors = ['#1f17f4', '#ffa40e', '#ff3487', '#008b00', '#17becf', '#850085']
-    __mpl_markers = ['o', 's', '^', 'v', 'D', 'd']
+    __mpl_colors: ClassVar[list[str]] = ["#1f17f4", "#ffa40e", "#ff3487", "#008b00", "#17becf", "#850085"]
+    __mpl_markers: ClassVar[list[str]] = ["o", "s", "^", "v", "D", "d"]
 
-    style = {
-        'axes.prop_cycle': cycler('color', __mpl_colors) + cycler('marker', __mpl_markers),
-        'axes.edgecolor': '0.3',
-        'xtick.color': '0.3',
-        'ytick.color': '0.3',
-        'axes.labelcolor': 'black',
-        'font.size': '14',
-        'lines.linewidth': '2',
-        'figure.figsize': '12, 6',
-        'lines.markeredgewidth': '0',
-        'lines.markersize': '5',
-        'axes.spines.right': True,
-        'axes.spines.top': True,
-        'xtick.minor.visible': True,
-        'ytick.minor.visible': True,
-        'savefig.dpi': '180',
+    style: ClassVar[dict] = {
+        "axes.prop_cycle": cycler("color", __mpl_colors) + cycler("marker", __mpl_markers),
+        "axes.edgecolor": "0.3",
+        "xtick.color": "0.3",
+        "ytick.color": "0.3",
+        "axes.labelcolor": "black",
+        "font.size": "14",
+        "lines.linewidth": "2",
+        "figure.figsize": "12, 6",
+        "lines.markeredgewidth": "0",
+        "lines.markersize": "5",
+        "axes.spines.right": True,
+        "axes.spines.top": True,
+        "xtick.minor.visible": True,
+        "ytick.minor.visible": True,
+        "savefig.dpi": "180",
     }
